@@ -44,7 +44,10 @@ class AssignStm implements Stm
 
 class PrintStm implements Stm
 {
-    ExpList exps;
+    // ConsoleOutput used by default.
+    // Can be assigned alternate Output implementations in unit tests
+    protected static Output output = new ConsoleOutput();
+    private ExpList exps;
 
     PrintStm(ExpList e)
     {
@@ -53,14 +56,21 @@ class PrintStm implements Stm
 
     public void evaluate(IdNumMap idMap)
     {
+        
+        boolean first = true;
+        
         //There is always at least one
         ExpList current = exps;
         do
         {
-            System.out.print(current.getExp().evaluate(idMap) + " ");
+            //Only prepend on a space starting with the second printed expression
+            if(!first)
+                output.print(" ");
+            output.print(Integer.toString(current.getExp().evaluate(idMap)));
+            first = false;
         }
         while((current = current.getNext()) != null);
-        System.out.println();
+        output.printNewLine();
     }
 }
 
