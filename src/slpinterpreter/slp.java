@@ -1,158 +1,196 @@
 package slpinterpreter;
 
-interface Stm 
+interface Stm
 {
-	void evaluate();
+    // An IdNumMap is passed, pre-constructed, to the top of the call stack.
+    // This is so evaluating separate Stmt trees in parallel will maintain a separate
+    // "namespace." 
+    void evaluate(IdNumMap idMap);
 }
 
-class CompoundStm implements Stm 
+class CompoundStm implements Stm
 {
-   Stm stm1, stm2;
-   CompoundStm(Stm s1, Stm s2) 
-   {
-	   stm1=s1; 
-	   stm2=s2;
-   }
-   
-   public void evaluate()
-   {
-	stm1.evaluate();
-	stm2.evaluate();
-   }
+    Stm stm1, stm2;
+
+    CompoundStm(Stm s1, Stm s2)
+    {
+        stm1 = s1;
+        stm2 = s2;
+    }
+
+    public void evaluate(IdNumMap idMap)
+    {
+        stm1.evaluate(idMap);
+        stm2.evaluate(idMap);
+    }
 }
 
-class AssignStm implements Stm 
-{
-   String id;
-   Exp exp;
-   AssignStm(String i, Exp e) 
-   {
-	   id=i;
-	   exp=e;
-   }
-   
-   public void evaluate()
-   {
-	   throw new RuntimeException("Not implemented.");
-   }   
+class AssignStm implements Stm
+{   
+    String id;
+    Exp exp;
+
+    AssignStm(String i, Exp e)
+    {
+        id = i;
+        exp = e;
+    }
+
+    public void evaluate(IdNumMap idMap)
+    {
+        idMap.update(id, exp.evaluate(idMap));
+    }
 }
 
-class PrintStm implements Stm 
+class PrintStm implements Stm
 {
-   ExpList exps;
-   PrintStm(ExpList e) 
-   {
-	   exps=e;
-   }
-   
-   public void evaluate()
-   {
-	   
-   }   
+    ExpList exps;
+
+    PrintStm(ExpList e)
+    {
+        exps = e;
+    }
+
+    public void evaluate(IdNumMap idMap)
+    {
+        //There is always at least one
+        ExpList current = exps;
+        do
+        {
+            System.out.print(current.getExp().evaluate(idMap) + " ");
+        }
+        while((current = current.getNext()) != null);
+        System.out.println();
+    }
 }
 
-interface Exp 
+interface Exp
 {
-	int evaluate();
+    int evaluate(IdNumMap idMap);
 }
 
-class IdExp implements Exp 
+class IdExp implements Exp
 {
-   String id;
-   IdExp(String i) 
-   {
-	   id=i;
-   }
-   
-   public int evaluate()
-   {
-	   throw new RuntimeException("Not implemented");	   
-   }
+    String id;
+
+    IdExp(String i)
+    {
+        id = i;
+    }
+
+    public int evaluate(IdNumMap idMap)
+    {
+        return idMap.lookup(id);
+    }
 }
 
-class NumExp implements Exp 
+class NumExp implements Exp
 {
-   int num;
-   NumExp(int n) 
-   {
-	   num=n;
-   }
-   
-   public int evaluate()
-   {
-	   return num;
-   }
+    int num;
+
+    NumExp(int n)
+    {
+        num = n;
+    }
+
+    public int evaluate(IdNumMap idMap)
+    {
+        return num;
+    }
 }
 
-class OpExp implements Exp 
+class OpExp implements Exp
 {
-   Exp left, right; 
-   int oper;
-   final static int Plus=1,Minus=2,Times=3,Div=4;
-   OpExp(Exp l, int o, Exp r) 
-   {
-	   left=l; 
-	   oper=o; 
-	   right=r;
-   }
-   
-   public int evaluate()
-   {
-	   switch(oper)
-	   {
-	   case Plus:
-		   return left.evaluate() + right.evaluate();		   
-	   case Minus:
-		   return left.evaluate() - right.evaluate();		   
-	   case Times:
-	   	return left.evaluate() * right.evaluate();	   	
-	   case Div:
-		   return left.evaluate() / right.evaluate();		   
-	   default:
-		   throw new RuntimeException("Invalid operator!");			   
-	   }
-	   
-   }
+    Exp left, right;
+    int oper;
+    final static int Plus = 1, Minus = 2, Times = 3, Div = 4;
+
+    OpExp(Exp l, int o, Exp r)
+    {
+        left = l;
+        oper = o;
+        right = r;
+    }
+
+    public int evaluate(IdNumMap idMap)
+    {
+        switch (oper)
+        {
+            case Plus:
+                return left.evaluate(idMap) + right.evaluate(idMap);
+            case Minus:
+                return left.evaluate(idMap) - right.evaluate(idMap);
+            case Times:
+                return left.evaluate(idMap) * right.evaluate(idMap);
+            case Div:
+                return left.evaluate(idMap) / right.evaluate(idMap);
+            default:
+                throw new RuntimeException("Invalid operator!");
+        }
+
+    }
 }
 
-class EseqExp implements Exp 
+class EseqExp implements Exp
 {
-   Stm stm; Exp exp;
-   EseqExp(Stm s, Exp e) 
-   {
-	   stm=s; 
-	   exp=e;
-   }
-   
-   public int evaluate()
-   {
-	   //Side effect only
-	   stm.evaluate();
-	   
-	   return exp.evaluate();
-   }
+    Stm stm;
+    Exp exp;
+
+    EseqExp(Stm s, Exp e)
+    {
+        stm = s;
+        exp = e;
+    }
+
+    public int evaluate(IdNumMap idMap)
+    {
+        // Side effect only
+        stm.evaluate(idMap);
+
+        //This is the value we care about
+        return exp.evaluate(idMap);
+    }
 }
 
-interface ExpList 
-{	
+abstract class ExpList
+{
+    protected Exp head;
+    public Exp getExp()
+    {
+        return head;
+    }
+    
+    //returns null on last element of list
+    public abstract ExpList getNext();
+    
+    
 }
 
-class PairExpList implements ExpList 
-{
-   Exp head; ExpList tail;
-   public PairExpList(Exp h, ExpList t) 
-   {
-	   head=h; 
-	   tail=t;
-   }  
+class PairExpList extends ExpList
+{    
+    private ExpList tail;
 
+    public PairExpList(Exp h, ExpList t)
+    {
+        head = h;
+        tail = t;
+    }
+    
+    public ExpList getNext()
+    {
+        return tail;        
+    }
 }
 
-class LastExpList implements ExpList 
+class LastExpList extends ExpList
 {
-   Exp head; 
-   public LastExpList(Exp h) 
-   {
-	   head=h;
-   }
+    public LastExpList(Exp h)
+    {
+        head = h;
+    }
+    
+    public ExpList getNext()
+    {
+        return null;
+    }
 }

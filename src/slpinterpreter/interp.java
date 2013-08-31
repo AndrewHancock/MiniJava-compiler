@@ -4,7 +4,7 @@ class interp {
 
     static void interp(Stm s) 
     { 
-    	/* you write this part */ 
+    	s.evaluate(new IdNumHashMap());
     }
 
     static int maxargs(Stm s) 
