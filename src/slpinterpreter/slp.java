@@ -6,6 +6,7 @@ interface Stm
     // This is so evaluating separate Stmt trees in parallel will maintain a separate
     // "namespace." 
     void evaluate(IdNumMap idMap);
+    int maxargs();
 }
 
 class CompoundStm implements Stm
@@ -22,6 +23,13 @@ class CompoundStm implements Stm
     {
         stm1.evaluate(idMap);
         stm2.evaluate(idMap);
+    }
+    
+    public int maxargs()
+    {
+        // The pain of the computational complexity and stack usage of this is extreme.
+        // But it will be decided! It's concise.
+        return stm1.maxargs() >stm2.maxargs() ? stm1.maxargs() : stm2.maxargs();
     }
 }
 
@@ -40,10 +48,25 @@ class AssignStm implements Stm
     {
         idMap.update(id, exp.evaluate(idMap));
     }
+    
+    public int maxargs()
+    {
+        return exp.maxargs();
+    }
 }
 
 class PrintStm implements Stm
 {
+    //This is a possibly misguided attempt to use closures....And generics!
+    private abstract class Action<T>
+    {
+        abstract void execute(ExpList list);
+        protected T getResult()
+        {
+            return null;
+        }
+        
+    }
     // ConsoleOutput used by default.
     // Can be assigned alternate Output implementations in unit tests
     protected static Output output = new ConsoleOutput();
@@ -55,28 +78,72 @@ class PrintStm implements Stm
     }
 
     public void evaluate(IdNumMap idMap)
+    {   
+        // Required for closure purposes
+        final IdNumMap map = idMap;
+        
+        //We don't use result, so Object
+        iterate(new Action<Object>()
+        {
+            boolean first = true;
+            public void execute(ExpList current)
+            {
+                //Only prepend on a space starting with the second printed expression
+                if(!first)
+                    output.print(" ");
+                output.print(Integer.toString(current.getExp().evaluate(map)));
+                first = false; 
+            }
+        });
+        output.printNewLine();
+    }
+    
+    public int maxargs()
+    {   
+        Action<Integer> maxArgs =      
+        new Action<Integer>()
+        {
+            private int largestArgs = 0;
+            private int argCount = 0;
+            public void execute(ExpList current)
+            {                
+                argCount++;
+                
+                //Special case: NumExp and IdExp just increment argCount and "continue"
+                if((current.getExp() instanceof NumExp) || (current.getExp() instanceof IdExp))
+                {                    
+                    return;
+                }
+                int currentMax = current.getExp().maxargs();                
+                largestArgs = currentMax > largestArgs ? currentMax : largestArgs;                
+            }
+            
+            public Integer getResult()
+            {
+                //Return the largestArgs, or this PrintStm if it was largest
+                return largestArgs > argCount ? largestArgs : argCount;
+            }
+        };
+        iterate(maxArgs);
+        return maxArgs.getResult();        
+    }
+    
+    private void iterate(Action<?> action)
     {
-        
-        boolean first = true;
-        
-        //There is always at least one
+        //There's always at least one
         ExpList current = exps;
         do
         {
-            //Only prepend on a space starting with the second printed expression
-            if(!first)
-                output.print(" ");
-            output.print(Integer.toString(current.getExp().evaluate(idMap)));
-            first = false;
+            action.execute(current);
         }
-        while((current = current.getNext()) != null);
-        output.printNewLine();
+        while((current = current.getNext()) != null);        
     }
 }
 
 interface Exp
 {
     int evaluate(IdNumMap idMap);
+    int maxargs();
 }
 
 class IdExp implements Exp
@@ -92,6 +159,11 @@ class IdExp implements Exp
     {
         return idMap.lookup(id);
     }
+    
+    public int maxargs()
+    {
+        return 0;
+    }
 }
 
 class NumExp implements Exp
@@ -106,6 +178,11 @@ class NumExp implements Exp
     public int evaluate(IdNumMap idMap)
     {
         return num;
+    }
+    
+    public int maxargs()
+    {
+        return 0;
     }
 }
 
@@ -137,7 +214,11 @@ class OpExp implements Exp
             default:
                 throw new RuntimeException("Invalid operator!");
         }
-
+    }
+    
+    public int maxargs()
+    {
+        return left.maxargs() > right.maxargs() ? left.maxargs() : right.maxargs();
     }
 }
 
@@ -159,6 +240,11 @@ class EseqExp implements Exp
 
         //This is the value we care about
         return exp.evaluate(idMap);
+    }
+    
+    public int maxargs()
+    {
+        return stm.maxargs() > exp.maxargs() ? stm.maxargs() : exp.maxargs();
     }
 }
 

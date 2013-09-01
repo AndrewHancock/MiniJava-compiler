@@ -26,6 +26,7 @@ public class StmtTest
         assertEquals("Unexpected output", "8 7\n80\n", output.getOutput());
         assertEquals("Invalid id->num mapping", 8, idNumMap.lookup("a"));
         assertEquals("invalid id->num mapping", 80, idNumMap.lookup("b"));
+        assertEquals("Invalid maxargs()", 2, prog.prog.maxargs());
     }
     
     @Test
@@ -36,7 +37,8 @@ public class StmtTest
         
         //Ensure no output
         assertEquals("Unexpected output", "".trim(), output.getOutput().trim());
-        assertEquals("Inalid id-num mapping", 10, idNumMap.lookup("a"));
+        assertEquals("Inavlid id->num mapping", 10, idNumMap.lookup("a"));
+        assertEquals("Invalid maxargs()", 0, prog.assign.maxargs());
     }
     
     @Test
@@ -45,7 +47,8 @@ public class StmtTest
     {
         prog.print.evaluate(idNumMap);
         
-        assertEquals("Unexpected output", "5\n", output.getOutput());        
+        assertEquals("Unexpected output", "5\n", output.getOutput());  
+        assertEquals("Invalid maxargs()", 1, prog.print.maxargs());
     }
     
     @Test
@@ -56,6 +59,7 @@ public class StmtTest
         
         assertEquals("Unexpected output", "8\n", output.getOutput());
         assertEquals("Invalid id->num mapping", 8, idNumMap.lookup("a"));
+        assertEquals("Invalid maxargs()", 1, prog.assignPrint.maxargs());
     }
         
     @Test
@@ -68,5 +72,6 @@ public class StmtTest
         assertEquals("Unexpected output", "10 9 8 11 10 9 8 7\n5\n", output.getOutput());
         assertEquals("Invalid id->num mapping", 3, idNumMap.lookup("b"));
         assertEquals("invalid id->num mapping", 6, idNumMap.lookup("c"));
+        assertEquals("Invalid maxargs()", 5, prog.complexCompoundStm.maxargs());
     }
 }

@@ -2,16 +2,9 @@ package slpinterpreter;
 
 class interp 
 {
-
-    static int maxargs(Stm s) 
-    { 
-    	/* you write this part */
-        return 0;
-    }
-
     public static void main(String args[]) throws java.io.IOException 
     {
-        System.out.println(maxargs(prog.prog));
+        System.out.println(Integer.toString(prog.prog.maxargs()));
         prog.prog.evaluate(new IdNumHashMap());
     }
 }
