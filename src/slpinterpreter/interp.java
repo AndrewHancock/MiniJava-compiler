@@ -1,11 +1,7 @@
 package slpinterpreter;
 
-class interp {
-
-    static void interp(Stm s) 
-    { 
-    	s.evaluate(new IdNumHashMap());
-    }
+class interp 
+{
 
     static int maxargs(Stm s) 
     { 
@@ -16,6 +12,6 @@ class interp {
     public static void main(String args[]) throws java.io.IOException 
     {
         System.out.println(maxargs(prog.prog));
-        interp(prog.prog);
+        prog.prog.evaluate(new IdNumHashMap());
     }
 }
