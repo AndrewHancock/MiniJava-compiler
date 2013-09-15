@@ -24,8 +24,8 @@ class CompoundStm implements Stm
     
     public int maxargs()
     {
-        // The pain of the computational complexity and stack usage of this is extreme.
-        // But it will be decided! It's concise.
+        // This is inefficient because the same methods will be called multiple times,
+        // And will walk at least stm1 twice. But it is very concise.
         return stm1.maxargs() >stm2.maxargs() ? stm1.maxargs() : stm2.maxargs();
     }
 }
