@@ -2,27 +2,24 @@ package slpinterpreter;
 
 interface Stm
 {
-    // An IdNumMap is passed, pre-constructed, to the top of the call stack.
-    // This is so evaluating separate Stmt trees in parallel will maintain a separate
-    // "namespace." 
-    void evaluate(IdNumMap idMap);
+    Table evaluate(Table table);
     int maxargs();
 }
 
 class CompoundStm implements Stm
 {
-    Stm stm1, stm2;
+    private Stm stm1, stm2;
 
-    CompoundStm(Stm s1, Stm s2)
+    public CompoundStm(Stm s1, Stm s2)
     {
         stm1 = s1;
         stm2 = s2;
     }
 
-    public void evaluate(IdNumMap idMap)
+    public Table evaluate(Table table)
     {
-        stm1.evaluate(idMap);
-        stm2.evaluate(idMap);
+        Table firstTable = stm1.evaluate(table);
+        return stm2.evaluate(firstTable);
     }
     
     public int maxargs()
@@ -35,8 +32,8 @@ class CompoundStm implements Stm
 
 class AssignStm implements Stm
 {   
-    String id;
-    Exp exp;
+    private String id;
+    private Exp exp;
 
     AssignStm(String i, Exp e)
     {
@@ -44,9 +41,16 @@ class AssignStm implements Stm
         exp = e;
     }
 
-    public void evaluate(IdNumMap idMap)
+    public Table evaluate(Table table)
     {
-        idMap.update(id, exp.evaluate(idMap));
+        IntAndTable expResult = exp.evaluate(table);
+        
+        // This is the only place we need to handle the special case of a "null" table reference.
+        // Since we cannot call update yet, we simply create the first table entry.
+        if(expResult.getTable() == null)
+            return new Table(id, expResult.getValue(), null);        
+        
+        return expResult.getTable().update(id, expResult.getValue());                
     }
     
     public int maxargs()
@@ -57,45 +61,56 @@ class AssignStm implements Stm
 
 class PrintStm implements Stm
 {
-    //This is a possibly misguided attempt to use closures....And generics!
+    // The action class is used to generalize the iteration of the ExpList.
     private abstract class Action<T>
     {
         abstract void execute(ExpList list);
         protected T getResult()
         {
             return null;
-        }
-        
+        }        
     }
+    
     // ConsoleOutput used by default.
     // Can be assigned alternate Output implementations in unit tests
     protected static Output output = new ConsoleOutput();
     private ExpList exps;
 
-    PrintStm(ExpList e)
+    public PrintStm(ExpList e)
     {
         exps = e;
     }
 
-    public void evaluate(IdNumMap idMap)
-    {   
-        // Required for closure purposes
-        final IdNumMap map = idMap;
-        
-        //We don't use result, so Object
-        iterate(new Action<Object>()
-        {
-            boolean first = true;
-            public void execute(ExpList current)
-            {
-                //Only prepend on a space starting with the second printed expression
-                if(!first)
-                    output.print(" ");
-                output.print(Integer.toString(current.getExp().evaluate(map)));
-                first = false; 
-            }
-        });
-        output.printNewLine();
+    //Note: Table is declared final so it can be used in the closure.
+    public Table evaluate(final Table table)
+    {        
+        Action<Table> iterateAction = 
+                new Action<Table>()
+                {
+                    boolean first = true;
+                    
+                    // 0 is a dummy value here and will never be used.
+                    // This variable must be IntAndTable to retain the state of each iteration.                    
+                    IntAndTable currentTable = new IntAndTable(0, table);
+                    public void execute(ExpList current)
+                    {
+                        //Only prepend on a space starting with the second printed expression
+                        if(!first)
+                            output.print(" ");
+                        currentTable = current.getExp().evaluate(currentTable.getTable()); 
+                        output.print(Integer.toString(currentTable.getValue()));
+                        first = false; 
+                    }
+                    
+                    public Table getResult()
+                    {
+                        //Print a new line after iteration complete
+                        output.printNewLine();
+                        return currentTable.getTable();
+                    }
+                };
+        iterate(iterateAction);
+        return iterateAction.getResult();
     }
     
     public int maxargs()
@@ -136,28 +151,31 @@ class PrintStm implements Stm
         {
             action.execute(current);
         }
-        while((current = current.getNext()) != null);        
+        while((current = current.getNext()) != null);
     }
 }
 
 interface Exp
 {
-    int evaluate(IdNumMap idMap);
+    IntAndTable evaluate(Table table);
     int maxargs();
 }
 
 class IdExp implements Exp
 {
-    String id;
+    private String id;
 
-    IdExp(String i)
+    public IdExp(String i)
     {
         id = i;
     }
 
-    public int evaluate(IdNumMap idMap)
+    public IntAndTable evaluate(Table table)
     {
-        return idMap.lookup(id);
+        // Lookup will throw a RunTime exception if the id->num mapping is not found.
+        // This method may also throw a NullPointerException if table is null.
+        // These cases only occur when evaluating an id for which an assignment was never interpreted.
+        return new IntAndTable(table.lookup(id), table);
     }
     
     public int maxargs()
@@ -168,16 +186,16 @@ class IdExp implements Exp
 
 class NumExp implements Exp
 {
-    int num;
+    private int num;
 
-    NumExp(int n)
+    public NumExp(int n)
     {
         num = n;
     }
 
-    public int evaluate(IdNumMap idMap)
+    public IntAndTable evaluate(Table table)
     {
-        return num;
+        return new IntAndTable(num, table);
     }
     
     public int maxargs()
@@ -188,29 +206,31 @@ class NumExp implements Exp
 
 class OpExp implements Exp
 {
-    Exp left, right;
-    int oper;
-    final static int Plus = 1, Minus = 2, Times = 3, Div = 4;
+    public final static int Plus = 1, Minus = 2, Times = 3, Div = 4;
+    private Exp left, right;
+    private int oper;    
 
-    OpExp(Exp l, int o, Exp r)
+    public OpExp(Exp l, int o, Exp r)
     {
         left = l;
         oper = o;
         right = r;
     }
-
-    public int evaluate(IdNumMap idMap)
+    
+    public IntAndTable evaluate(Table table)
     {
+        IntAndTable leftResult = left.evaluate(table);
+        IntAndTable rightResult = right.evaluate(leftResult.getTable());
         switch (oper)
         {
-            case Plus:
-                return left.evaluate(idMap) + right.evaluate(idMap);
+            case Plus:                
+                return new IntAndTable(leftResult.getValue() + rightResult.getValue(), rightResult.getTable());                
             case Minus:
-                return left.evaluate(idMap) - right.evaluate(idMap);
+                return new IntAndTable(leftResult.getValue() - rightResult.getValue(), rightResult.getTable());
             case Times:
-                return left.evaluate(idMap) * right.evaluate(idMap);
+                return new IntAndTable(leftResult.getValue() * rightResult.getValue(), rightResult.getTable());
             case Div:
-                return left.evaluate(idMap) / right.evaluate(idMap);
+                return new IntAndTable(leftResult.getValue() / rightResult.getValue(), rightResult.getTable());
             default:
                 throw new RuntimeException("Invalid operator!");
         }
@@ -224,22 +244,22 @@ class OpExp implements Exp
 
 class EseqExp implements Exp
 {
-    Stm stm;
-    Exp exp;
+    private Stm stm;
+    private Exp exp;
 
-    EseqExp(Stm s, Exp e)
+    public EseqExp(Stm s, Exp e)
     {
         stm = s;
         exp = e;
     }
 
-    public int evaluate(IdNumMap idMap)
+    public IntAndTable evaluate(Table table)
     {
         // Side effect only
-        stm.evaluate(idMap);
+        Table sideEffectTable = stm.evaluate(table);
 
         //This is the value we care about
-        return exp.evaluate(idMap);
+        return exp.evaluate(sideEffectTable);
     }
     
     public int maxargs()
@@ -257,9 +277,7 @@ abstract class ExpList
     }
     
     //returns null on last element of list
-    public abstract ExpList getNext();
-    
-    
+    public abstract ExpList getNext();    
 }
 
 class PairExpList extends ExpList
