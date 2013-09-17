@@ -6,6 +6,8 @@ import org.junit.Test;
 
 public class StmtTest
 {
+    //TODO: Add validations for toString() to validate the expected code is returned. No time!
+    
     private TestOutput output;    
     
     @Before
@@ -76,6 +78,21 @@ public class StmtTest
         assertEquals("invalid id->num mapping", 6, table.lookup("c"));
         assertEquals("Invalid maxargs()", 5, prog.complexCompoundStm.maxargs());
         assertEquals("Unexpected assignments", 2, getTableCount(table));
+    }
+    
+    @Test
+    
+    public void testAnnoyingAndLongStm()
+    {
+        Table table = prog.annoyingAndLongStm.evaluate(null);
+        
+        assertEquals("Unexpected output", "5 8 4\n5 39 18 31\n1\n", output.getOutput());
+        assertEquals("Invalid id->num mapping", 1, table.lookup("a"));
+        assertEquals("invalid id->num mapping", 39, table.lookup("b"));
+        assertEquals("Invalid id->num mapping", 18, table.lookup("c"));
+        assertEquals("Invalid id->num mapping", 31, table.lookup("d"));
+        assertEquals("Invalid maxargs()", 4, prog.annoyingAndLongStm.maxargs());
+        assertEquals("Unexpected assignments", 6, getTableCount(table));
     }
     
     // This method should not be called on an empty (null) table.

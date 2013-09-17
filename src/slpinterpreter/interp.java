@@ -8,5 +8,7 @@ class interp
         
         //Our initial table contains no mappings, so we pass null
         prog.prog.evaluate(null);
+
+        System.out.println(prog.prog.toString());
     }
 }
