@@ -29,15 +29,41 @@ interact in the parsing process, but can be accessed from the parser. */
 will be returned */
 TOKEN : {	
 	< INTEGER_LITERAL : (< DIGIT >)+ >
+	| < CLASS : "class" >
+	| < PUBLIC : "public" >	
+	| < STATIC : "static" >
+	| < VOID : "void" >
+	| < MAIN : "main" >
+	| < RETURN : "return" >
+	| < INT : "type" >
+	| < BOOLEAN : "bool" >		
+	| < IF : "if" >
+	| < ELSE : "else" >
+	| < WHILE : "while" >
+	| < FOREACH : "foreach" >
+	| < EXCLAMATION : "!" >
+	| < PRINT : "print" >
+	| < PRINTLN : "println" >
+	| < LEFT_BRACKET : "[" >
+	| < RIGHT_BRACKET : "]" >
+	| < DOT : "." >
+	| < LENGTH : "length" >
+	| < TRUE : "true" >
+	| < FALSE : "false" >
+	| < THIS : "this" >
+	| < NEW : "new" >
+	| < L_PAREN : "(" >
+	| < R_PAREN : ")" >
+	| < SEMI : ";" >	
 	| < AND : "and" >
 	| < OR : "or" >
-	| < LTE: "lte" >
 	| < LT: "lt" >
+	| < LTE: "lte" >	
 	| < PLUS: "+">
 	| < MINUS: "-" >
 	| < MULTIPLY: "*" >  
 	| < #DIGIT : ["0"-"9"] > 
-	| < #LETTER : ["a"-"z", "A"-"Z"] >	 
+	| < #LETTER : ["a"-"z", "A"-"Z"] >	
 	| < IDENTIFIER : ["a"-"z","A"-"Z"] (["a"-"z","A"-"Z","0"-"9", "_"])* >  
 }
 
