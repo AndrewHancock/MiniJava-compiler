@@ -1,0 +1,9 @@
+class Fail1 
+{
+    public static void main(String[] a) 
+    {
+	//This declaration should fail because an identifier cannot begin with 1
+	int 1variable!
+        println(1variable)! 
+    }
+}

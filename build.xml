@@ -4,7 +4,7 @@
     </target>
     <target name="compile">
         <mkdir dir="build/classes"/>
-	<javacc target="src/frontend/RamLexSpec.jj" outputdirectory="src/frontend/generated/" javacchome="C:\java\javacc-5.0\bin\lib"/> 
+	<javacc target="src/frontend/RamLexSpec.jj" outputdirectory="src/frontend/generated/" javacchome="lib"/> 
         <javac includeantruntime="false" srcdir="src" destdir="build/classes"/>
     </target>
     <target name="jar">
@@ -16,7 +16,8 @@
         </jar>
     </target>
     <target name="run">
-        <java jar="build/jar/HelloWorld.jar" fork="true"/>
+        <java jar="build/jar/MiniJava.jar" fork="true">
+	  <arg value="programs/Fail1.ram13"/>
+	</java>
     </target>
-
 </project>
