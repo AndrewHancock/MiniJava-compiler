@@ -17,7 +17,7 @@
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-	  <arg value="programs/Fail1.ram13"/>
+	  <arg value="programs/Success2.ram13"/>
 	</java>
     </target>
 </project>

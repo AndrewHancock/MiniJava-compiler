@@ -13,7 +13,7 @@ PARSER_END(RamParser)
 tokens are constructed from the productions that are defined here. */
 SKIP : {
 
-	"\n" | " " | "\t" | < "//" (~["\n"])* "\n" | "\r" | "/*" ((~["*"])* "*" (~["/"]))* ((~["*"])* "*") "/"  >  
+	"\n" | "\t" | " "| < "//" (~["\n"])* "\n" | "\r" | "/*" ((~["*"])* "*" (~["/"]))* ((~["*"])* "*") "/"  >  
 }
 
 
@@ -28,14 +28,14 @@ interact in the parsing process, but can be accessed from the parser. */
 /* For the regular expressions on the right, the token on the left 
 will be returned */
 TOKEN : {	
-	< INTEGER_LITERAL : (< DIGIT >)+ >
-	| < CLASS : "class" >
+	< CLASS : "class" >
 	| < PUBLIC : "public" >	
 	| < STATIC : "static" >
 	| < VOID : "void" >
 	| < MAIN : "main" >
+	| < STRING : "String" >
 	| < RETURN : "return" >
-	| < INT : "type" >
+	| < INT : "int" >
 	| < BOOLEAN : "bool" >		
 	| < IF : "if" >
 	| < ELSE : "else" >
@@ -61,10 +61,13 @@ TOKEN : {
 	| < LTE: "lte" >	
 	| < PLUS: "+">
 	| < MINUS: "-" >
-	| < MULTIPLY: "*" >  
+	| < MULTIPLY: "*" >
+	| < COMMA: "," >
+	| < EQUAL: "=" >
 	| < #DIGIT : ["0"-"9"] > 
 	| < #LETTER : ["a"-"z", "A"-"Z"] >	
-	| < IDENTIFIER : ["a"-"z","A"-"Z"] (["a"-"z","A"-"Z","0"-"9", "_"])* >  
+	| < IDENTIFIER : (< LETTER >)(< LETTER > | < DIGIT > | "_")* >
+	| < INTEGER_LITERAL : (< DIGIT >)+ >  
 }
 
 
