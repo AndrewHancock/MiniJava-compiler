@@ -1,5 +1,7 @@
 class Success2 
 {
+    /*Test main method.
+     */
     public static void main(String[] a) 
     {
         println(new TestClass.computeSomething(10))! 
@@ -7,6 +9,9 @@ class Success2
 }
 class TestClass 
 {
+    /**
+      * It's good to have comments.
+      */
     public int computeSomething(int num) 
     { 
         int num!	

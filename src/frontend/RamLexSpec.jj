@@ -13,16 +13,16 @@ PARSER_END(RamParser)
 tokens are constructed from the productions that are defined here. */
 SKIP : {
 
-	"\n" | "\t" | " "| < "//" (~["\n"])* "\n" | "\r" | "/*" ((~["*"])* "*" (~["/"]))* ((~["*"])* "*") "/"  >  
+	"\n" | "\t" | " " | "\r"   
 }
 
 
 /* Insert the regular expressions for comments here. Special tokens do not
 interact in the parsing process, but can be accessed from the parser. */
-/*SPECIAL_TOKEN: {
+SPECIAL_TOKEN: {
+	< COMMENT: "/*" ((~["*"])* "*" (~["/"]))* ((~["*"])* "*") "/"  > | < SHORT_COMMENT: "//" (~["\n"])* "\n" >
 
-
-}*/
+}
 
 
 /* For the regular expressions on the right, the token on the left 
