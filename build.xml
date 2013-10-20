@@ -1,10 +1,18 @@
 <project>
     <target name="clean">
         <delete dir="build"/>
+	<delete dir="src/frontend/generated"/>
     </target>
-    <target name="compile">
+    <target name = "lex">
         <mkdir dir="build/classes"/>
+	<mkdir dir="src/frontend/generated"/>
 	<javacc target="src/frontend/RamLexSpec.jj" outputdirectory="src/frontend/generated/" javacchome="lib"/> 
+        <javac includeantruntime="false" srcdir="src" destdir="build/classes"/>
+    </target>
+    <target name="parser">
+        <mkdir dir="build/classes"/>
+	<mkdir dir="src/frontend/generated"/>
+	<javacc target="src/frontend/RamGrammar.jj" outputdirectory="src/frontend/generated/" javacchome="lib"/> 
         <javac includeantruntime="false" srcdir="src" destdir="build/classes"/>
     </target>
     <target name="jar">
