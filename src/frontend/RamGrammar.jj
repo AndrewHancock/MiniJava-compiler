@@ -36,7 +36,7 @@ TOKEN : {
 	| < STRING : "String" >
 	| < RETURN : "return" >
 	| < INT : "int" >
-	| < BOOLEAN : "bool" >		
+	| < BOOL : "bool" >		
 	| < IF : "if" >
 	| < ELSE : "else" >
 	| < WHILE : "while" >
@@ -44,26 +44,32 @@ TOKEN : {
 	| < EXCLAMATION : "!" >
 	| < PRINT : "print" >
 	| < PRINTLN : "println" >
-	| < LEFT_BRACKET : "[" >
-	| < RIGHT_BRACKET : "]" >
+	| < LSQPAREN : "[" >
+	| < RSQPAREN : "]" >
 	| < DOT : "." >
 	| < LENGTH : "length" >
 	| < TRUE : "true" >
 	| < FALSE : "false" >
 	| < THIS : "this" >
 	| < NEW : "new" >
-	| < L_PAREN : "(" >
-	| < R_PAREN : ")" >
-	| < SEMI : ";" >	
+	| < LBRACE : "{" >
+	| < RBRACE : "}" >	  
+	| < LPAREN : "(" >
+	| < RPAREN : ")" >
+	| < SEMICOLON : ";" >	
 	| < AND : "and" >
 	| < OR : "or" >
-	| < LT: "lt" >
-	| < LTE: "lte" >	
+	| < LESSTHAN: "lt" >
+	| < LESSTHANEQUALS: "lte" >	
 	| < PLUS: "+">
+	| < PLUSEQUALS: "+=" >
 	| < MINUS: "-" >
-	| < MULTIPLY: "*" >
+	| < TIMES: "*" >
 	| < COMMA: "," >
 	| < EQUAL: "=" >
+	| < EQUALITY : "==" >	
+	| < ASSIGN: ":=" >
+	| < COLON: ":" > 
 	| < #DIGIT : ["0"-"9"] > 
 	| < #LETTER : ["a"-"z", "A"-"Z"] >	
 	| < IDENTIFIER : (< LETTER >)(< LETTER > | < DIGIT > | "_")* >
@@ -72,38 +78,39 @@ TOKEN : {
 
 
 
-// The following is a simple grammar that will allow you
-// to test the generated lexer. Do not modify it, we will
-// do so in Chapters 3 and 4.
 void Goal() :
 {}
-{
-  
-  /*( RamToken() )* */
-
-  ( RamToken() {System.out.println("Kind: " + RamParserConstants.tokenImage[token.kind] + " line " 
-  + token.beginLine + ", column " + token.beginColumn + " - line " + 
-  token.endLine + ", column " + token.endColumn + " : " + token.image);} )* 
-  <EOF>
-
-
-/*
-  ( RamToken() {System.out.println("Kind: " + token.kind + " line " 
-  + token.beginLine + ", column " + token.beginColumn + " - line " + 
-  token.endLine + ", column " + token.endColumn + " : " + token.image + 
-  " " + token.specialToken);} )* 
-  <EOF>
-*/
+{  
+  /* ( RamToken() )*  <EOF> */
+  Program() <EOF>
 }
 
 void RamToken():
 {}
 {
-  "class"  |  <IDENTIFIER> | "{" | "public" | "static" | "void" |
-  "main" | "(" | "String"  | "[" | "]" | ")" | "}" | "+=" | ";"
-  | "return" | "," | "int" | "bool" | "=" | "if" | "else" | "while"
-  | "print" | "println" | "and" | "or" | "lt" | "lte" | "+" | "-" | "*" | "." |
-  "length" | <INTEGER_LITERAL> | "true" | "false" | "this" | "new" |
-  "!" 
+  <CLASS>  |  <IDENTIFIER> | <LBRACE> | <PUBLIC> | 
+  <STATIC> | <VOID> | <MAIN> | <LPAREN> | 
+  <STRING> | <LSQPAREN> | <RSQPAREN> | <RPAREN> | 
+  <RBRACE> | <PLUSEQUALS> | <SEMICOLON> | <RETURN> | 
+  <COMMA> | <INT> | <BOOL> | <ASSIGN> |
+  <IF> | <ELSE> | <WHILE> | <FOREACH> | <COLON> | 
+  <PRINT> | <PRINTLN> | <AND> | <OR> | <LESSTHAN> | 
+  <LESSTHANEQUALS> | <EQUALITY> | <PLUS> | <MINUS> | 
+  <TIMES> | <DOT> | <LENGTH> | <INTEGER_LITERAL> | 
+  <TRUE> | <FALSE> | <THIS> | <NEW> | <EXCLAMATION>
 }
 
+void Program() :
+{}
+{
+  MainClass() ( ClassDecl() )*
+}
+
+void MainClass() :
+{}
+{
+  <CLASS> <IDENTIFIER> <LBRACE> <PUBLIC> <STATIC> 
+  <VOID> <MAIN> <LPAREN> <STRING> <LSQPAREN> 
+  <RSQPAREN> <IDENTIFIER> <RPAREN> <LBRACE> Statement() 
+  <RBRACE> <RBRACE>
+}
