@@ -1,0 +1,28 @@
+class ParsePass1
+{
+	public static void main(String[] args)
+	{	
+		int i!
+		int j!
+		int k!
+		
+		i = 1!
+		j = 2!
+		k = 3!
+		
+		println(i + j)!
+		j = k - i!
+		println(j - k)!
+		j = k * i!	
+		println(new Test().test(i, k))!
+	}
+}
+
+class Test
+{
+	public int test(int i, int k)
+	{		
+		return i + k!
+	}
+	
+}

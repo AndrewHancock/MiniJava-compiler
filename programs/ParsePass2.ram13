@@ -1,0 +1,31 @@
+class ParsePass2
+{
+	public static void main(String[] args)
+	{
+		Term term!
+		term = new Term()!
+		println(term.multiply(new Factor().add(2, 3), 3))!
+	}
+}
+
+class Term
+{	
+	public int add(int x, int y)
+	{
+		return x + y!
+	}
+	
+	public int substract(int x, int y)
+	{
+		return x - y!
+	}		
+}
+
+class Factor
+{
+	public int multiply(int x, int y)
+	{
+		return x * y!
+	}
+
+}

@@ -1,0 +1,56 @@
+class ParseFail1
+{
+	public static void main(String[] args)
+	{
+		Stack stack!
+		int temp!
+		stack = new Stack()!
+		
+		//Push returns an error code if the top exceeds the size.
+		
+		temp = stack.push(1)!
+		temp = stack.push(2)!
+		temp = stack.push(3)!
+		//3 * 2 + 1
+		println(stack.pop() * stack.pop() + stack.pop())!
+		println(temp)!
+	}
+}
+
+class Stack
+{
+	int top!
+	int[] stack!
+	
+	public int init(int maxSize)
+	{
+		stack = new int[maxSize]!
+		return 0!
+	}
+	
+	public int push(int value)
+	{	
+		int error!
+		top = top + 1!
+		stack[top] = value!
+		
+		if (;(top lt stack.length))
+			error = 1!		
+		else		
+			error = 0!	
+		//Cannot have a variable declaration after statements
+		ParseFail1 test;
+		
+		return error!
+	}
+	
+	//No error handling for poping an empty stack.
+	public int pop(int value)
+	{
+		int result!
+		result = stack[top]!		
+		top = top - 1!
+		
+		return result!
+	}
+}

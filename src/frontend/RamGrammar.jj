@@ -41,7 +41,7 @@ TOKEN : {
 	| < ELSE : "else" >
 	| < WHILE : "while" >
 	| < FOREACH : "foreach" >
-	| < EXCLAMATION : "!" >
+	| < EXCLAMATION : ";" >
 	| < PRINT : "print" >
 	| < PRINTLN : "println" >
 	| < LSQPAREN : "[" >
@@ -56,7 +56,7 @@ TOKEN : {
 	| < RBRACE : "}" >	  
 	| < LPAREN : "(" >
 	| < RPAREN : ")" >
-	| < SEMICOLON : ";" >	
+	| < SEMICOLON : "!" >	
 	| < AND : "and" >
 	| < OR : "or" >
 	| < LESSTHAN: "lt" >
@@ -109,9 +109,9 @@ void Program() :
 void MainClass() :
 {}
 {
-  <CLASS> <IDENTIFIER> <LBRACE> <PUBLIC> <STATIC> 
+   <CLASS> <IDENTIFIER> <LBRACE> <PUBLIC> <STATIC> 
   <VOID> <MAIN> <LPAREN> <STRING> <LSQPAREN> 
-  <RSQPAREN> <IDENTIFIER> <RPAREN> <LBRACE> Statement() 
+  <RSQPAREN> <IDENTIFIER> <RPAREN> <LBRACE>   (LOOKAHEAD(2) VarDecl())* (Statement())* 
   <RBRACE> <RBRACE>
 }
 
@@ -121,12 +121,12 @@ void Statement() :
   (< LBRACE > (Statement())* < RBRACE >)
 | < IF > <LPAREN > Exp() <RPAREN > Statement() < ELSE > Statement()
 | < WHILE > <LPAREN > Exp() < RPAREN > Statement()
-| < FOREACH > <LPAREN > Type() < COLON > <IDENTIFIER > <RPAREN > Statement()
-| < PRINT ><LPAREN > ExpList() < RPAREN ><SEMICOLON >
-| < PRINTLN ><LPAREN > ExpList() < RPAREN ><SEMICOLON >
-| < IDENTIFIER >< EQUAL > Exp() < SEMICOLON >
-| < IDENTIFIER >< PLUS >< EQUAL > Exp() < SEMICOLON >
-| < IDENTIFIER ><LSQPAREN > Exp() < RSQPAREN > <EQUAL > Exp() < SEMICOLON > 
+| < FOREACH > <LPAREN > Type() < COLON >< IDENTIFIER >< RPAREN > Statement()
+| < PRINT ><LPAREN > ExpList() < RPAREN >< SEMICOLON >
+| < PRINTLN ><LPAREN > ExpList() < RPAREN >< SEMICOLON >
+| LOOKAHEAD(2) < IDENTIFIER >< EQUAL > Exp() < SEMICOLON >
+| LOOKAHEAD(2) < IDENTIFIER >< PLUSEQUALS > Exp() < SEMICOLON >
+| LOOKAHEAD(2) < IDENTIFIER ><LSQPAREN > Exp() < RSQPAREN > < EQUAL > Exp() < SEMICOLON > 
 }
 
 void ClassDecl() :
@@ -139,20 +139,20 @@ void ClassDecl() :
 void Type() :
 {}
 {
-  ( < INT > <LSQPAREN > <RSQPAREN > )
+   LOOKAHEAD(2) < INT > <LSQPAREN > <RSQPAREN > 
 | < BOOL >
-| <INT >
+| LOOKAHEAD(2) <INT >
 | < IDENTIFIER >     	
 }
 void VarDecl() :
 {}
 {
-  < INT > <IDENTIFIER > <SEMICOLON >    
+  Type() <IDENTIFIER > <SEMICOLON >    
 }
 
 void FormalList() :
 {}
-{	Type() < IDENTIFIER > (FormalRest())*
+{	[Type() < IDENTIFIER > (FormalRest())*]
 }
 
 void FormalRest() :
@@ -164,7 +164,7 @@ void MethodDecl() :
 {}
 {
   < PUBLIC > Type() < IDENTIFIER > <LPAREN > FormalList() < RPAREN >
-  < LBRACE > (VarDecl())* Statement() < RETURN > Exp() < SEMICOLON > < RBRACE >     
+  < LBRACE > ( LOOKAHEAD(2) VarDecl())* (Statement())* < RETURN > Exp() < SEMICOLON > < RBRACE >     
 }
 
 void Exp() :
@@ -175,16 +175,16 @@ void Exp() :
 	| < FALSE > ExpPrime()
 	| < IDENTIFIER > ExpPrime()
 	| < THIS > ExpPrime()
-	| < NEW > < INT > <LSQPAREN > Exp() < RSQPAREN > ExpPrime()
-	| < NEW > < IDENTIFIER > < LPAREN > < RPAREN > ExpPrime()
-	| < SEMICOLON > Exp() ExpPrime()
+	| LOOKAHEAD(2) < NEW > < INT > <LSQPAREN > Exp() < RSQPAREN > ExpPrime()
+	| LOOKAHEAD(2) < NEW > < IDENTIFIER > < LPAREN > < RPAREN > ExpPrime()
+	| < EXCLAMATION > Exp() ExpPrime()
 	| < LPAREN > Exp() <RPAREN > ExpPrime()	
 }
 
 void ExpList() :
 {}
 {
-  Exp() (ExpRest())*}
+  [Exp() (ExpRest())*]}
   
 void ExpRest() :
 {}
@@ -195,10 +195,10 @@ void ExpRest() :
 
 void ExpPrime() :
 {}
-{
-  [<DOT >< LENGTH >]  | [Op() Exp() ExpPrime()]
-  | [< LSQPAREN > Exp() < RSQPAREN >]  
-  |  [<DOT >< IDENTIFIER ><LPAREN > ExpList() < RPAREN >)]
+{    [ Op() Exp() ExpPrime()
+  | < LSQPAREN > Exp() < RSQPAREN > ExpPrime()
+  | LOOKAHEAD(2) < DOT > < LENGTH > ExpPrime()  
+  | LOOKAHEAD(2) < DOT > < IDENTIFIER > <LPAREN > ExpList() < RPAREN > ExpPrime()]
 }
 
 void Op() :
