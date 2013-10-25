@@ -2,6 +2,14 @@ class ParseFail1
 {
 	public static void main(String[] args)
 	{
+		println(new Test().test())!
+	}
+}
+
+class Test
+{
+	public int test()
+	{
 		Stack stack!
 		int temp!
 		stack = new Stack()!
@@ -14,6 +22,8 @@ class ParseFail1
 		//3 * 2 + 1
 		println(stack.pop() * stack.pop() + stack.pop())!
 		println(temp)!
+		
+		return -1!
 	}
 }
 
@@ -39,7 +49,7 @@ class Stack
 		else		
 			error = 0!	
 		//Cannot have a variable declaration after statements
-		ParseFail1 test;
+		ParseFail1 test!
 		
 		return error!
 	}

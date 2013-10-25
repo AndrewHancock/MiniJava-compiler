@@ -1,5 +1,7 @@
 class ParseFail2
 {
+	/* Only one statement allowed in main, and no VarDecl's.
+	 */
 	public static void main(String[] args)
 	{
 		Term term!

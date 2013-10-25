@@ -2,10 +2,22 @@ class ParsePass2
 {
 	public static void main(String[] args)
 	{
+		println(new ParsePass2().test())!
+	}	
+}
+
+class Test
+{
+	int varDecl!		
+	public int test()
+	{
 		Term term!
+		varDecl = 5!		
 		term = new Term()!
-		println(term.multiply(new Factor().add(2, 3), 3))!
-	}
+		println(term.multiply(new Factor().add(2, 3), varDecl))!	
+		println(varDecl)!
+		return term.subtract(term.add(10, 20), term.multiply(99,100))!			
+	}	
 }
 
 class Term

@@ -2,8 +2,22 @@ class ParsePass3
 {
 	public static void main(String[] args)
 	{
+	//Awww yeah! Block statements are allowed in main!
+	{		
+		print(1)!
+		print(2)!
+		print(3)!
+		println(new Test().test())!
+	}
+	}
+}
+
+class Test
+{
+	public int test()
+	{
 		Stack stack!
-		int temp!
+		int temp!		
 		stack = new Stack()!
 		
 		//Push returns an error code if the top exceeds the size.
@@ -13,10 +27,38 @@ class ParsePass3
 		temp = stack.push(3)!
 		//3 * 2 + 1
 		println(stack.pop() * stack.pop() + stack.pop())!
-		println(temp)!
+		println(temp)!	
+		
+		//Fill the stack with 10 numbers
+		count = 1!
+		while(count lte 10)
+		{
+			/* A method call on it's own is an EXPRESSION, not a statement. (I have a decorative 
+			 * slash here: / But it cannot be at end-of-line
+			 * So we must assign the result to something.
+			 */
+			temp = stack.push(count)!
+			count = count + 1!
+		}
+		
+		/** Sure, there are more elegant ways of doing this.
+		  * A stack is not even required. It could be done with simple variables...
+		  * But a stack is cooler.
+		  */
+		  
+		while(;(count lte 0))
+		{
+			println(stack.pop())!
+			count = count - 1!
+		}
+		
+		println(stack.top())!
+		
+		//A negative number!
+		return -99!
 	}
+	
 }
-
 class Stack
 {
 	int top!

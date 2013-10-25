@@ -73,7 +73,7 @@ TOKEN : {
 	| < #DIGIT : ["0"-"9"] > 
 	| < #LETTER : ["a"-"z", "A"-"Z"] >	
 	| < IDENTIFIER : (< LETTER >)(< LETTER > | < DIGIT > | "_")* >
-	| < INTEGER_LITERAL : (< DIGIT >)+ >  
+	| < INTEGER_LITERAL : ((< MINUS >)?< DIGIT >)+ >  
 }
 
 
@@ -111,7 +111,7 @@ void MainClass() :
 {
    <CLASS> <IDENTIFIER> <LBRACE> <PUBLIC> <STATIC> 
   <VOID> <MAIN> <LPAREN> <STRING> <LSQPAREN> 
-  <RSQPAREN> <IDENTIFIER> <RPAREN> <LBRACE>   (LOOKAHEAD(2) VarDecl())* (Statement())* 
+  <RSQPAREN> <IDENTIFIER> <RPAREN> <LBRACE>  Statement() 
   <RBRACE> <RBRACE>
 }
 
@@ -139,7 +139,7 @@ void ClassDecl() :
 void Type() :
 {}
 {
-   LOOKAHEAD(2) < INT > <LSQPAREN > <RSQPAREN > 
+LOOKAHEAD(2) < INT > <LSQPAREN > <RSQPAREN > 
 | < BOOL >
 | LOOKAHEAD(2) <INT >
 | < IDENTIFIER >     	
