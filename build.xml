@@ -19,13 +19,13 @@
         <mkdir dir="build/jar"/>
         <jar destfile="build/jar/MiniJava.jar" basedir="build/classes">
             <manifest>
-                <attribute name="Main-Class" value="frontend.MainLexer"/>
+                <attribute name="Main-Class" value="frontend.MainParser"/>
             </manifest>
         </jar>
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-		<arg value="programs/ParseFail2.ram13"/>
+		<arg value="programs/ParsePass3.ram13"/>
 	</java>
     </target>
 </project>
