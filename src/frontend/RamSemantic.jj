@@ -1,0 +1,480 @@
+options {
+    JAVA_UNICODE_ESCAPE = true;
+    DEBUG_PARSER = true;
+}
+
+PARSER_BEGIN(RamParser)
+    package frontend.generated;
+    import syntaxtree.*;
+    public class RamParser {}
+PARSER_END(RamParser)
+
+
+// Insert a specification of a lexical analysis here. 
+
+SKIP : /* WHITE SPACE */
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| "\f"
+}
+
+SPECIAL_TOKEN : /* COMMENTS */
+{
+  <SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+| <FORMAL_COMMENT: "/**" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/">
+| <MULTI_LINE_COMMENT: "/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/">     // regex: http://regexpal.com/   /\*([^*])*\*(\*|([^*/]([^*])*\*))*/         */
+}
+
+TOKEN : 
+{
+  < LPAREN: "(" >
+| < RPAREN: ")" >
+| < LSQPAREN: "[" >
+| < RSQPAREN: "]" >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < SEMICOLON: ";" >
+| < COLON: ":" >
+| < COMMA: "," >
+| < DOT: "." >
+| < ASSIGN: "=" >
+| < LESSTHAN: "lt" >
+| < LESSTHANOREQ: "lte" >
+| < PLUSEQUALS: "+=" >
+| < EQUALITY: "==" >
+| < PLUS: "+" >
+| < MINUS: "-" >
+| < TIMES: "*" >
+| < AND : "and" >   
+| < OR : "or" >
+| < NOT : "!" >   
+| < BOOLEAN: "bool" >   
+| < CLASS: "class" >
+| < ELSE: "else" >
+| < FALSE: "false" >
+| < IF: "if" >
+| < WHILE: "while" >
+| < FOREACH: "foreach" >
+| < INTEGER: "int" >   
+| < LENGTH: "length" >
+| < MAIN: "main" >
+| < NEW: "new" >
+| < PUBLIC: "public" >
+| < RETURN: "return" >
+| < STATIC: "static" >
+| < STRING: "String" >
+| < THIS: "this" >
+| < TRUE: "true" >
+| < PRINT: "print" >
+| < PRINTLN: "println" >
+| < VOID: "void" >  
+| < INTEGER_LITERAL: ( ["1"-"9"] (["0"-"9"])* | "0" ) >  
+| < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>|"_")* > 
+| < #LETTER: ["a"-"z","A"-"Z"] >
+| < #DIGIT: ["0"-"9"] >  
+}
+
+
+/*
+void Goal() :
+{}
+{  
+    ( RamToken() )*  <EOF> 
+}
+
+void RamToken():
+{}
+{
+  <CLASS>  |  <IDENTIFIER> | <LBRACE> | <PUBLIC> | <STATIC> | <VOID> |
+  <MAIN> | <LPAREN> | <STRING> | <LSQPAREN> | <RSQPAREN> | <RPAREN> | <RBRACE> |
+  <PLUSEQUALS> | <SEMICOLON> | <RETURN> | <COMMA> | <INTEGER> | <BOOLEAN> | <ASSIGN> |
+  <IF> | <ELSE> | <WHILE> | <FOREACH> | <COLON> | <PRINT> | <PRINTLN> | <AND> |
+  <OR> | <LESSTHAN> | <LESSTHANOREQ> | <EQUALITY> | <PLUS> | <MINUS> | <TIMES> |
+  <DOT> | <LENGTH> | <INTEGER_LITERAL> | <TRUE> | <FALSE> | <THIS> | <NEW> |
+  <NOT>
+}
+*/
+
+Program Goal() :
+{
+    MainClass m; 
+    ClassDeclList cl = new ClassDeclList();
+    ClassDecl c;
+}
+{
+    m = MainClass() 
+    ( c = ClassDecl() { cl.addElement(c); } )*
+    <EOF>
+    { return new Program(m, cl); }
+}
+
+MainClass MainClass() :
+{
+    Identifier i1;
+    Identifier i2;
+    Statement s;
+}
+{
+    <CLASS> 
+    <IDENTIFIER> { i1 = new Identifier(token.image); }
+    <LBRACE> <PUBLIC> <STATIC> <VOID> <MAIN> <LPAREN> <STRING> <LSQPAREN> <RSQPAREN> 
+    <IDENTIFIER> { i2 = new Identifier(token.image); }
+    <RPAREN> <LBRACE> 
+    s = Statement() 
+    <RBRACE> <RBRACE>
+    { return new MainClass(i1, i2, s); }
+}
+
+ClassDecl ClassDecl() : 
+{
+    Identifier i;
+    VarDeclList vl = new VarDeclList();
+    MethodDeclList ml = new MethodDeclList();
+    VarDecl v;
+    MethodDecl m;
+}
+{
+    <CLASS> 
+    <IDENTIFIER> { i = new Identifier(token.image); }
+    <LBRACE> 
+    ( v = VarDecl() { vl.addElement(v); } )* 
+    ( m = MethodDecl() { ml.addElement(m); } )* 
+    <RBRACE> 
+    { return new ClassDeclSimple(i, vl, ml); }
+}
+
+VarDecl VarDecl() :
+{
+    Type t;
+    Identifier i;
+}
+{
+    t = Type() 
+    <IDENTIFIER> { i = new Identifier(token.image); }
+    <SEMICOLON>
+    { return new VarDecl(t, i); }
+}
+
+MethodDecl MethodDecl() :
+{
+    Type t;
+    Identifier i;
+    FormalList fl = new FormalList();
+    VarDeclList vl = new VarDeclList();
+    VarDecl v;
+    StatementList sl = new StatementList();
+    Statement s;
+    Exp e;
+}
+{
+    <PUBLIC> 
+    t = Type()
+    <IDENTIFIER> { i = new Identifier(token.image); }
+    <LPAREN> 
+    fl = FormalList()
+    <RPAREN> <LBRACE> 
+    ( LOOKAHEAD(2) v = VarDecl() { vl.addElement(v); } )* 
+    ( s = Statement() { sl.addElement(s); } )* 
+    <RETURN> 
+    e = Exp() 
+    <SEMICOLON> <RBRACE>    
+    { return new MethodDecl(t, i, fl, vl, sl, e); }
+}
+
+Formal Formal() :
+{ 
+    Type t; 
+    Identifier i;
+}
+{
+    t = Type() 
+    <IDENTIFIER> { i = new Identifier(token.image); }
+    { return new Formal(t, i); }
+}
+
+FormalList FormalList() :
+{ 
+    FormalList fl = new FormalList(); 
+    Type t; 
+    Identifier i;
+    Formal f;
+}
+{
+    [ 
+        t = Type()
+        <IDENTIFIER> { i = new Identifier(token.image); }
+        { fl.addElement(new Formal(t, i)); }
+        ( f = FormalRest() { fl.addElement(f); } )* 
+    ]
+    { return fl; }
+}
+
+Formal FormalRest() :
+{ 
+    Type t; 
+    Identifier i;
+}
+{
+    <COMMA> 
+    t = Type() 
+    <IDENTIFIER> { i = new Identifier(token.image); }
+    { return new Formal(t, i); }
+}
+
+Type Type() :
+{ 
+    Type t;
+    Identifier i;
+}
+{
+    LOOKAHEAD(3)
+    <INTEGER> <LSQPAREN> <RSQPAREN>
+    { return new IntArrayType(); }
+    |
+    <BOOLEAN> { return new BooleanType(); }
+    |
+    <INTEGER> { return new IntegerType(); }
+    |
+    i = <IDENTIFIER>  { new Identifier(token.image); }
+}
+
+Statement Statement() :
+{
+    StatementList sl = new StatementList();
+    Statement s1;
+    Exp e1;
+    Statement s2;
+    Exp e2;
+    Identifier i;
+}
+{
+    <LBRACE> 
+    ( s1 = Statement() { sl.addElement(s1); } )* 
+    <RBRACE> 
+    { return new Block(sl); }
+    | 
+    <IF> <LPAREN> 
+    e1 = Exp()
+    <RPAREN> 
+    s1 = Statement()
+    <ELSE> 
+    s2 = Statement()
+    { return new If(e1, s1, s2); }
+    | 
+    <WHILE> <LPAREN> 
+    e1 = Exp()
+    <RPAREN> 
+    s1 = Statement()
+    { return new While(e1, s1); } 
+    | 
+    <PRINT> <LPAREN> 
+    e1 = Exp() 
+    <RPAREN> <SEMICOLON> 
+    { return new Print(e1); } 
+    |
+    <PRINTLN> <LPAREN> 
+    e1 = Exp() 
+    <RPAREN> <SEMICOLON> 
+    { return new Print(e1); } 
+    | 
+    LOOKAHEAD(2)
+    <IDENTIFIER> { i = new Identifier(token.image); }
+    <LSQPAREN> 
+    e1 = Exp() 
+    <RSQPAREN> 
+    <ASSIGN> 
+    e2 = Exp() 
+    <SEMICOLON>
+    { return new ArrayAssign(i, e1, e2); }
+    |
+    <IDENTIFIER> { i = new Identifier(token.image); }    
+    <ASSIGN>     
+    e1 = Exp() 
+    <SEMICOLON>
+    { return new Assign(i, e1); }
+}
+
+Exp Exp() : 
+{
+    Exp e;
+} 
+{        
+    e = AndExp()
+    { return e; }
+}
+
+Exp AndExp() : 
+{
+    Exp e1, e2;
+} 
+{        
+    e1 = EqualityExp()
+    (
+        LOOKAHEAD(2)
+        <AND> 
+        e2 = EqualityExp()
+        { e1 = new And(e1, e2); }
+    )*
+
+    { return e1; }
+}
+
+Exp EqualityExp() : 
+{
+    Exp e;
+} 
+{        
+    e = RelationalExp()
+    { return e; }
+}
+
+Exp RelationalExp() : 
+{
+    Exp e1, e2;
+} 
+{
+    e1 = AdditiveExp()
+    (
+        LOOKAHEAD(2)
+        <LESSTHAN> 
+        e2 = AdditiveExp()
+        { e1 = new LessThan(e1, e2); }
+    )*
+
+    { return e1; }
+}
+
+Exp AdditiveExp() : 
+{
+    Exp e1, e2;
+} 
+{
+    e1 = MultiplicativeExp()
+    (
+        LOOKAHEAD(2)
+        <PLUS> e2 = MultiplicativeExp()
+        { e1 = new Plus(e1, e2); }
+        | 
+        <MINUS> e2 = MultiplicativeExp()
+        { e1 = new Minus(e1, e2); }
+    )*
+
+    { return e1; }
+}
+
+Exp MultiplicativeExp() : 
+{
+    Exp e1, e2;
+} 
+{
+    e1 = UnaryExp()
+    
+    (
+        LOOKAHEAD(2)
+        <TIMES> 
+        e2 = UnaryExp()
+        { e1 = new Times(e1, e2); }
+    )*
+
+    { return e1; }
+}
+
+Exp UnaryExp() : 
+{
+    Exp e;
+    boolean inNot = false;
+} 
+{
+    ( <NOT> { inNot = !inNot; } )*
+    e = SuffixExp()
+    { if (inNot) 
+        return new Not(e);
+      else
+        return e; }
+}
+
+Exp SuffixExp() :
+{
+    Exp e1;
+    Exp e2;
+    ExpList el;
+    Identifier i;
+}
+{
+    e1 = PrefixExp() 
+    (   
+        <LSQPAREN> 
+        e2 = Exp() 
+	{ return new ArrayLookup(e1, e2); }
+        <RSQPAREN>	
+	| 
+        LOOKAHEAD(2) 
+        <DOT> <IDENTIFIER> { i = new Identifier(token.image); }
+	<LPAREN> 
+        el = ExpList() 
+	<RPAREN>
+        { return new Call(e1, i, el); } 
+        | 
+        <DOT> <LENGTH> { return new ArrayLength(e1); }
+    )*
+    { return e1; }
+}
+
+Exp PrefixExp() :
+{
+    Identifier i;
+    Exp e;
+}
+{
+    <INTEGER_LITERAL> { return new IntegerLiteral(Integer.parseInt(token.image)); }
+    | 
+    <TRUE> { return new True(); }
+    |
+    <FALSE> { return new False(); }
+    | 
+    <IDENTIFIER> { return new IdentifierExp(token.image); }
+    |
+    <LPAREN>
+    e = Exp()
+    <RPAREN>
+    { return e; }
+    |
+    <THIS> { return new This(); }
+    |
+    LOOKAHEAD(2)
+    <NEW> <INTEGER> <LSQPAREN> 
+    e = Exp() 
+    <RSQPAREN>
+    { return new NewArray(e); }
+    | 
+    <NEW> 
+    <IDENTIFIER> { i = new Identifier(token.image); }
+    <LPAREN> <RPAREN> 
+    { return new NewObject(i); }
+}
+
+ExpList ExpList() :
+{ 
+    ExpList el = new ExpList(); 
+    Exp e;
+}
+{
+    [ 
+        e = Exp() { el.addElement(e); } 
+        ( e = ExpRest() { el.addElement(e); } )* 
+    ]
+    { return el; }
+}
+
+Exp ExpRest() :
+{
+    Exp e;
+}
+{
+    <COMMA> 
+    e = Exp()
+    { return e; }
+}
