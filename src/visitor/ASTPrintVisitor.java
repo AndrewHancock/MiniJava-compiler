@@ -225,6 +225,15 @@ public class ASTPrintVisitor implements Visitor {
 	n.e2.accept(this);
 	System.out.print(")");
     }
+    
+    // Exp e1,e2;
+    public void visit(LessThanOrEqual n) {
+    System.out.print("LessThanOrEqual(");
+    n.e1.accept(this);
+    System.out.print(", ");
+    n.e2.accept(this);
+    System.out.print(")");
+    }    
 
     // Exp e1,e2;
     public void visit(Plus n) {

@@ -216,6 +216,16 @@ public class PrettyPrintVisitor implements Visitor {
     n.e2.accept(this);
     System.out.print(")");
   }
+  
+  @Override
+  public void visit(LessThanOrEqual n)
+  {
+      System.out.print("(");
+      n.e1.accept(this);
+      System.out.print(" lte ");
+      n.e2.accept(this);
+      System.out.print(")");      
+  }  
 
   // Exp e1,e2;
   public void visit(Plus n) {
@@ -319,4 +329,5 @@ public class PrettyPrintVisitor implements Visitor {
   public void visit(Identifier n) {
     System.out.print(n.s);
   }
+
 }

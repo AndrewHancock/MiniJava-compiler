@@ -3,10 +3,10 @@ package syntaxtree;
 import java.util.Vector;
 
 public class VarDeclList {
-   private Vector list;
+   private Vector<VarDecl> list;
 
    public VarDeclList() {
-      list = new Vector();
+      list = new Vector<VarDecl>();
    }
 
    public void addElement(VarDecl n) {
@@ -14,7 +14,7 @@ public class VarDeclList {
    }
 
    public VarDecl elementAt(int i)  { 
-      return (VarDecl)list.elementAt(i); 
+      return list.elementAt(i); 
    }
 
    public int size() { 

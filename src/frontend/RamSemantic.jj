@@ -36,7 +36,7 @@ TOKEN :
 | < RSQPAREN: "]" >
 | < LBRACE: "{" >
 | < RBRACE: "}" >
-| < SEMICOLON: ";" >
+| < SEMICOLON: "!" >
 | < COLON: ":" >
 | < COMMA: "," >
 | < DOT: "." >
@@ -50,7 +50,7 @@ TOKEN :
 | < TIMES: "*" >
 | < AND : "and" >   
 | < OR : "or" >
-| < NOT : "!" >   
+| < NOT : ";" >   
 | < BOOLEAN: "bool" >   
 | < CLASS: "class" >
 | < ELSE: "else" >
@@ -71,7 +71,7 @@ TOKEN :
 | < PRINT: "print" >
 | < PRINTLN: "println" >
 | < VOID: "void" >  
-| < INTEGER_LITERAL: ( ["1"-"9"] (["0"-"9"])* | "0" ) >  
+| < INTEGER_LITERAL: ( ("-")? ["1"-"9"] (["0"-"9"])* | "0" ) >  
 | < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>|"_")* > 
 | < #LETTER: ["a"-"z","A"-"Z"] >
 | < #DIGIT: ["0"-"9"] >  
@@ -226,8 +226,6 @@ Formal FormalRest() :
 
 Type Type() :
 { 
-    Type t;
-    Identifier i;
 }
 {
     LOOKAHEAD(3)
@@ -238,7 +236,7 @@ Type Type() :
     |
     <INTEGER> { return new IntegerType(); }
     |
-    i = <IDENTIFIER>  { new Identifier(token.image); }
+    <IDENTIFIER>  { return new IdentifierType(token.image); }
 }
 
 Statement Statement() :
@@ -336,14 +334,10 @@ Exp RelationalExp() :
     Exp e1, e2;
 } 
 {
-    e1 = AdditiveExp()
-    (
-        LOOKAHEAD(2)
-        <LESSTHAN> 
-        e2 = AdditiveExp()
-        { e1 = new LessThan(e1, e2); }
-    )*
-
+    e1 = AdditiveExp()          (
+        ( LOOKAHEAD(2) <LESSTHAN> e2 = AdditiveExp() { e1 = new LessThan(e1, e2); }
+      	| LOOKAHEAD(2) <LESSTHANOREQ> e2 = AdditiveExp() { e1 = new LessThanOrEqual(e1, e2); })        
+      )*
     { return e1; }
 }
 
@@ -408,17 +402,12 @@ Exp SuffixExp() :
     (   
         <LSQPAREN> 
         e2 = Exp() 
-	{ return new ArrayLookup(e1, e2); }
-        <RSQPAREN>	
+        <RSQPAREN> { return new ArrayLookup(e1, e2); }	
 	| 
-        LOOKAHEAD(2) 
+    	LOOKAHEAD(2) 
         <DOT> <IDENTIFIER> { i = new Identifier(token.image); }
-	<LPAREN> 
-        el = ExpList() 
-	<RPAREN>
-        { return new Call(e1, i, el); } 
-        | 
-        <DOT> <LENGTH> { return new ArrayLength(e1); }
+		<LPAREN> el = ExpList() <RPAREN> { return new Call(e1, i, el); } 
+    | 	<DOT> <LENGTH> { return new ArrayLength(e1); }
     )*
     { return e1; }
 }
