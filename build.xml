@@ -31,7 +31,7 @@
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-		<arg value="programs/ParsePass3.ram13"/>
+		<arg value="programs/PythonPP.ram13"/>
 	</java>
     </target>
 </project>

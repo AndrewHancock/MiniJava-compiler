@@ -3,9 +3,9 @@ import visitor.Visitor;
 import visitor.TypeVisitor;
 
 public class Print extends Statement {
-  public Exp e;
+  public ExpList e;
 
-  public Print(Exp ae) {
+  public Print(ExpList ae) {
     e=ae; 
   }
 

@@ -171,11 +171,29 @@ public class PrettyPrintVisitor implements Visitor {
     System.out.print(") ");
     n.s.accept(this);
   }
+  
+  public void visit(ForEach n)
+  {
+      System.out.print("foreach(");
+      n.type.accept(this);
+      System.out.print(" ");
+      n.iterator.accept(this);
+      System.out.print(":");
+      n.source.accept(this);
+      System.out.println(")");
+      System.out.print("      ");      
+      n.statement.accept(this);
+  }
 
   // Exp e;
   public void visit(Print n) {
     System.out.print("System.out.println(");
-    n.e.accept(this);
+    n.e.elementAt(0).accept(this);
+    for(int i=1; i<n.e.size();i++)
+    {
+        System.out.print(", ");
+        n.e.elementAt(i).accept(this);
+    }
     System.out.print(");");
   }
   

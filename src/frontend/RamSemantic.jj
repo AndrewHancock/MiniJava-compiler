@@ -228,7 +228,7 @@ Type Type() :
 { 
 }
 {
-    LOOKAHEAD(3)
+    LOOKAHEAD(2)
     <INTEGER> <LSQPAREN> <RSQPAREN>
     { return new IntArrayType(); }
     |
@@ -241,12 +241,15 @@ Type Type() :
 
 Statement Statement() :
 {
+  	Type type;
     StatementList sl = new StatementList();
     Statement s1;
     Exp e1;
     Statement s2;
     Exp e2;
-    Identifier i;
+    Identifier i1, i2;
+	ExpList el1;
+    
 }
 {
     <LBRACE> 
@@ -267,32 +270,44 @@ Statement Statement() :
     <RPAREN> 
     s1 = Statement()
     { return new While(e1, s1); } 
+    |
+    < FOREACH ><LPAREN >
+    type = Type()
+    < IDENTIFIER > { i1 = new Identifier(token.image); }   < COLON > < IDENTIFIER > { i2 = new Identifier(token.image); }
+    <RPAREN >
+    s1 = Statement()
+    { return new ForEach(s1, type, i1, i2); }       
     | 
     <PRINT> <LPAREN> 
-    e1 = Exp() 
+    el1 = ExpList() 
     <RPAREN> <SEMICOLON> 
-    { return new Print(e1); } 
+    { return new Print(el1); } 
     |
     <PRINTLN> <LPAREN> 
-    e1 = Exp() 
+    el1 = ExpList()
     <RPAREN> <SEMICOLON> 
-    { return new Print(e1); } 
+    { return new Print(el1); } 
     | 
     LOOKAHEAD(2)
-    <IDENTIFIER> { i = new Identifier(token.image); }
+    <IDENTIFIER> { i1 = new Identifier(token.image); }
     <LSQPAREN> 
     e1 = Exp() 
     <RSQPAREN> 
     <ASSIGN> 
     e2 = Exp() 
     <SEMICOLON>
-    { return new ArrayAssign(i, e1, e2); }
+    { return new ArrayAssign(i1, e1, e2); }
     |
-    <IDENTIFIER> { i = new Identifier(token.image); }    
+    LOOKAHEAD(2)
+    <IDENTIFIER> { i1 = new Identifier(token.image); }    
     <ASSIGN>     
     e1 = Exp() 
     <SEMICOLON>
-    { return new Assign(i, e1); }
+    { return new Assign(i1, e1); }
+    |
+    < IDENTIFIER > { i1 = new Identifier(token.image); }
+    <PLUSEQUALS> e1 = Exp() < SEMICOLON >
+    { return new Assign(i1, new Plus(new IdentifierExp(i1.s), e1)); }
 }
 
 Exp Exp() : 

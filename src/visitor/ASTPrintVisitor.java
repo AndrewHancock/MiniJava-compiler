@@ -178,11 +178,27 @@ public class ASTPrintVisitor implements Visitor {
 	n.s.accept(this);
 	System.out.print(")");
     }
+    
+    public void visit(ForEach n)
+    {
+        System.out.print("ForEach(");
+        n.type.accept(this);
+        System.out.print(",");
+        n.iterator.accept(this);
+        System.out.print(",");
+        n.source.accept(this);
+        System.out.print(")");
+    }
 
     // Exp e;
     public void visit(Print n) {
 	System.out.print("Print(");
-	n.e.accept(this);
+    n.e.elementAt(0).accept(this);
+    for(int i=1; i<n.e.size();i++)
+    {
+        System.out.print(", ");
+        n.e.elementAt(i).accept(this);
+    }
 	System.out.print(")");
     }
   
