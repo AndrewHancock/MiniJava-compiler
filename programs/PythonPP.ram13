@@ -47,9 +47,10 @@ class TestRules
 	{
 		int j!
 		int[] array!
-		array[1] = 1!
-		array[2] = 2!
-		array[3] = 3!
+		array = new int[3]!
+		array[0] = 1!
+		array[1] = 2!
+		array[2] = 3!
 		
 		foreach(int value : array)
 			j += value!

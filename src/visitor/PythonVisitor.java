@@ -50,29 +50,29 @@ public class PythonVisitor implements Visitor
         out.append(s);
         out.append("\n");
     }
-    
+
     private void print(String s)
     {
         out.append(s);
     }
-    
+
     private int level = 0;
-    
+
     private void indent()
     {
-        for(int i = 0; i < level; i++)
+        for (int i = 0; i < level; i++)
             out.append("    ");
     }
-    
+
     @Override
     public void visit(Program n)
-    {        
+    {
         n.m.accept(this);
 
-        for(int i = 0; i < n.cl.size(); i++)
+        for (int i = 0; i < n.cl.size(); i++)
         {
             n.cl.elementAt(i).accept(this);
-        }        
+        }
     }
 
     @Override
@@ -80,10 +80,11 @@ public class PythonVisitor implements Visitor
     {
         println("def main() :");
         level++;
+        indent();
         n.s.accept(this);
         level--;
         println("");
-        
+
     }
 
     @Override
@@ -93,12 +94,12 @@ public class PythonVisitor implements Visitor
         n.i.accept(this);
         println(":");
         level++;
-        for(int i = 0; i < n.vl.size(); i++)
+        for (int i = 0; i < n.vl.size(); i++)
         {
             n.vl.elementAt(i).accept(this);
         }
-        
-        for(int i = 0; i < n.ml.size(); i++)
+
+        for (int i = 0; i < n.ml.size(); i++)
         {
             n.ml.elementAt(i).accept(this);
         }
@@ -108,14 +109,14 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(ClassDeclExtends n)
     {
-        //Not required for mini java
-        
+        // Not required for mini java
+
     }
 
     @Override
     public void visit(VarDecl n)
-    {
-        //Assignments will declare variables!
+    {       
+        
     }
 
     @Override
@@ -124,77 +125,77 @@ public class PythonVisitor implements Visitor
         indent();
         print("def ");
         n.i.accept(this);
-        print ("(");        
-        for(int i = 0; i < n.fl.size(); i++)
-        {            
-            if(i > 0)
-                print(", ");
+        print("(self");
+        for (int i = 0; i < n.fl.size(); i++)
+        {
+            print(", ");
             n.fl.elementAt(i).accept(this);
         }
-        println(")");
-        level++;        
-        for(int i = 0; i < n.sl.size(); i++)
-        {            
+        println("):");
+        level++;
+
+        for (int i = 0; i < n.sl.size(); i++)
+        {
             indent();
             n.sl.elementAt(i).accept(this);
             println("");
-        }          
+        }
         indent();
         print("return ");
         n.e.accept(this);
         println("");
         println("");
         println("");
-        
-        level--;        
+
+        level--;
     }
 
     @Override
     public void visit(Formal n)
     {
         // Unused
-        
+
     }
 
     @Override
     public void visit(IntArrayType n)
     {
         // Unused
-        
+
     }
 
     @Override
     public void visit(BooleanType n)
     {
-     // Unused
-        
+        // Unused
+
     }
 
     @Override
     public void visit(IntegerType n)
     {
-     // Unused
-        
+        // Unused
+
     }
 
     @Override
     public void visit(IdentifierType n)
     {
-     // TODO: Handle class declaration?
-        
+        // TODO: Handle class declaration?
+
     }
 
     @Override
     public void visit(Block n)
     {
         level++;
-        for(int i = 0; i < n.sl.size(); i++)
+        for (int i = 0; i < n.sl.size(); i++)
         {
-            indent(); 
+            indent();
             n.sl.elementAt(i).accept(this);
         }
         level--;
-        
+
     }
 
     @Override
@@ -242,15 +243,14 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(Print n)
     {
-        indent();
         print("print ");
-        
-        for(int i = 0; i < n.e.size(); i++)
+
+        for (int i = 0; i < n.e.size(); i++)
         {
-            if(i > 0)
+            if (i > 0)
                 print(", ");
-            n.e.elementAt(i).accept(this);            
-        }        
+            n.e.elementAt(i).accept(this);
+        }
         println("");
     }
 
@@ -258,14 +258,15 @@ public class PythonVisitor implements Visitor
     public void visit(PrintLn n)
     {
         print("print ");
-        
-        for(int i = 0; i < n.list.size(); i++)
+
+        for (int i = 0; i < n.list.size(); i++)
         {
-            if(i > 0)
+            if (i > 0)
                 print(", ");
-            n.list.elementAt(i).accept(this);            
-        }           
-        
+            n.list.elementAt(i).accept(this);
+        }
+        println("");
+
     }
 
     @Override
@@ -273,7 +274,7 @@ public class PythonVisitor implements Visitor
     {
         n.i.accept(this);
         print(" = ");
-        n.e.accept(this);        
+        n.e.accept(this);
     }
 
     @Override
@@ -283,7 +284,7 @@ public class PythonVisitor implements Visitor
         print("[");
         n.e1.accept(this);
         print("] = ");
-        n.e2.accept(this);        
+        n.e2.accept(this);
     }
 
     @Override
@@ -291,7 +292,7 @@ public class PythonVisitor implements Visitor
     {
         n.e1.accept(this);
         print(" and ");
-        n.e2.accept(this);        
+        n.e2.accept(this);
     }
 
     @Override
@@ -299,8 +300,8 @@ public class PythonVisitor implements Visitor
     {
         n.e1.accept(this);
         print(" or ");
-        n.e2.accept(this);  
-        
+        n.e2.accept(this);
+
     }
 
     @Override
@@ -308,7 +309,7 @@ public class PythonVisitor implements Visitor
     {
         n.e1.accept(this);
         print(" == ");
-        n.e2.accept(this);        
+        n.e2.accept(this);
     }
 
     @Override
@@ -316,8 +317,8 @@ public class PythonVisitor implements Visitor
     {
         n.e1.accept(this);
         print(" < ");
-        n.e2.accept(this);     
-        
+        n.e2.accept(this);
+
     }
 
     @Override
@@ -333,17 +334,17 @@ public class PythonVisitor implements Visitor
     {
         n.e1.accept(this);
         print(" + ");
-        n.e2.accept(this);     
-        
+        n.e2.accept(this);
+
     }
 
     @Override
     public void visit(PlusEquals n)
     {
-        
+
         n.id.accept(this);
         print(" += ");
-        n.e.accept(this);     
+        n.e.accept(this);
     }
 
     @Override
@@ -351,8 +352,8 @@ public class PythonVisitor implements Visitor
     {
         n.e1.accept(this);
         print(" - ");
-        n.e2.accept(this);     
-        
+        n.e2.accept(this);
+
     }
 
     @Override
@@ -360,8 +361,8 @@ public class PythonVisitor implements Visitor
     {
         n.e1.accept(this);
         print(" * ");
-        n.e2.accept(this);     
-        
+        n.e2.accept(this);
+
     }
 
     @Override
@@ -383,35 +384,37 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(Call n)
     {
+        n.e.accept(this);
+        print(".");
         n.i.accept(this);
         print("(");
-        for(int i = 0; i < n.el.size(); i++)
+        for (int i = 0; i < n.el.size(); i++)
         {
-            if(i > 0)
+            if (i > 0)
                 print(", ");
-            n.el.elementAt(i).accept( this);
+            n.el.elementAt(i).accept(this);
         }
         print(")");
-        
+
     }
 
     @Override
     public void visit(IntegerLiteral n)
     {
-        print(new Integer(n.i).toString());        
+        print(new Integer(n.i).toString());
     }
 
     @Override
     public void visit(True n)
     {
         print("true");
-        
+
     }
 
     @Override
     public void visit(False n)
     {
-        print("false");        
+        print("false");
     }
 
     @Override
@@ -419,40 +422,43 @@ public class PythonVisitor implements Visitor
     {
         print(n.s);
     }
-    
+
     @Override
     public void visit(This n)
     {
-        print("this");
-        
+
+        print("self");
+
     }
 
     @Override
     public void visit(NewArray n)
     {
-        //Not needed        
+        print("[0 for x in range(");
+        n.e.accept(this);
+        print(")]");
     }
 
     @Override
     public void visit(NewObject n)
     {
-        // TODO Auto-generated method stub
-        
+        n.i.accept(this);
+        print("()");
     }
 
     @Override
     public void visit(Not n)
     {
-        print("not");
-        n.e.accept(this);        
+        print("not ");
+        n.e.accept(this);
     }
 
     @Override
     public void visit(Identifier n)
     {
-        print(n.s);        
+        print(n.s);
     }
-    
+
     @Override
     public String toString()
     {
