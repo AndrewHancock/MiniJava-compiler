@@ -1,6 +1,6 @@
 options {
     JAVA_UNICODE_ESCAPE = true;
-    DEBUG_PARSER = true;
+   // DEBUG_PARSER = true;   
 }
 
 PARSER_BEGIN(RamParser)
@@ -44,7 +44,7 @@ TOKEN :
 | < LESSTHAN: "lt" >
 | < LESSTHANOREQ: "lte" >
 | < PLUSEQUALS: "+=" >
-| < EQUALITY: "==" >
+| < EQUALITY: "eq" >
 | < PLUS: "+" >
 | < MINUS: "-" >
 | < TIMES: "*" >
@@ -286,7 +286,7 @@ Statement Statement() :
     <PRINTLN> <LPAREN> 
     el1 = ExpList()
     <RPAREN> <SEMICOLON> 
-    { return new Print(el1); } 
+    { return new PrintLn(el1); } 
     | 
     LOOKAHEAD(2)
     <IDENTIFIER> { i1 = new Identifier(token.image); }
@@ -307,7 +307,7 @@ Statement Statement() :
     |
     < IDENTIFIER > { i1 = new Identifier(token.image); }
     <PLUSEQUALS> e1 = Exp() < SEMICOLON >
-    { return new Assign(i1, new Plus(new IdentifierExp(i1.s), e1)); }
+    { return new PlusEquals(i1, e1); }
 }
 
 Exp Exp() : 
@@ -315,8 +315,23 @@ Exp Exp() :
     Exp e;
 } 
 {        
-    e = AndExp()
+    e = OrExp()
     { return e; }
+}
+
+Exp OrExp() :
+{
+      Exp e1, e2;
+} 
+{        
+    e1 = AndExp()
+    (        
+        <OR> 
+        e2 = AndExp()
+        { e1 = new Or(e1, e2); }
+    )*
+
+    { return e1; }
 }
 
 Exp AndExp() : 
@@ -325,8 +340,7 @@ Exp AndExp() :
 } 
 {        
     e1 = EqualityExp()
-    (
-        LOOKAHEAD(2)
+    (        
         <AND> 
         e2 = EqualityExp()
         { e1 = new And(e1, e2); }
@@ -337,11 +351,16 @@ Exp AndExp() :
 
 Exp EqualityExp() : 
 {
-    Exp e;
+    Exp e1, e2;
 } 
 {        
-    e = RelationalExp()
-    { return e; }
+    e1 = RelationalExp()
+    (
+      LOOKAHEAD(2)
+      < EQUALITY >
+      e2 = EqualityExp()
+      { e1 = new Equality(e1, e2); }    )*
+    { return e1; }
 }
 
 Exp RelationalExp() : 
@@ -350,8 +369,9 @@ Exp RelationalExp() :
 } 
 {
     e1 = AdditiveExp()          (
-        ( LOOKAHEAD(2) <LESSTHAN> e2 = AdditiveExp() { e1 = new LessThan(e1, e2); }
-      	| LOOKAHEAD(2) <LESSTHANOREQ> e2 = AdditiveExp() { e1 = new LessThanOrEqual(e1, e2); })        
+        ( <LESSTHAN> e2 = AdditiveExp() { e1 = new LessThan(e1, e2); }
+      	| <LESSTHANOREQ> e2 = AdditiveExp() { e1 = new LessThanOrEqual(e1, e2); }
+      	)        
       )*
     { return e1; }
 }
@@ -362,8 +382,7 @@ Exp AdditiveExp() :
 } 
 {
     e1 = MultiplicativeExp()
-    (
-        LOOKAHEAD(2)
+    (        
         <PLUS> e2 = MultiplicativeExp()
         { e1 = new Plus(e1, e2); }
         | 
@@ -381,8 +400,7 @@ Exp MultiplicativeExp() :
 {
     e1 = UnaryExp()
     
-    (
-        LOOKAHEAD(2)
+    (        
         <TIMES> 
         e2 = UnaryExp()
         { e1 = new Times(e1, e2); }

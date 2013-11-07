@@ -187,7 +187,7 @@ public class PrettyPrintVisitor implements Visitor {
 
   // Exp e;
   public void visit(Print n) {
-    System.out.print("System.out.println(");
+    System.out.print("print(");
     n.e.elementAt(0).accept(this);
     for(int i=1; i<n.e.size();i++)
     {
@@ -196,6 +196,18 @@ public class PrettyPrintVisitor implements Visitor {
     }
     System.out.print(");");
   }
+  
+
+  public void visit(PrintLn n) {
+    System.out.print("println(");
+    n.list.elementAt(0).accept(this);
+    for(int i=1; i<n.list.size();i++)
+    {
+        System.out.print(", ");
+        n.list.elementAt(i).accept(this);
+    }
+    System.out.print(");");
+  }  
   
   // Identifier i;
   // Exp e;
@@ -221,16 +233,36 @@ public class PrettyPrintVisitor implements Visitor {
   public void visit(And n) {
     System.out.print("(");
     n.e1.accept(this);
-    System.out.print(" && ");
+    System.out.print(" and ");
     n.e2.accept(this);
     System.out.print(")");
   }
-
+  
+  @Override
+  public void visit(Or n)
+  {
+      System.out.print("(");
+      n.e1.accept(this);
+      System.out.print(" or ");
+      n.e2.accept(this);
+      System.out.print(")");      
+  }
+  
+  @Override
+  public void visit(Equality n)
+  {
+      System.out.print("(");
+      n.e1.accept(this);
+      System.out.print(" eq ");
+      n.e2.accept(this);
+      System.out.print(")");
+  }  
+  
   // Exp e1,e2;
   public void visit(LessThan n) {
     System.out.print("(");
     n.e1.accept(this);
-    System.out.print(" < ");
+    System.out.print(" lt ");
     n.e2.accept(this);
     System.out.print(")");
   }
@@ -347,5 +379,15 @@ public class PrettyPrintVisitor implements Visitor {
   public void visit(Identifier n) {
     System.out.print(n.s);
   }
+
+@Override
+public void visit(PlusEquals n)
+{
+    n.id.accept(this);
+    System.out.print(" += ");
+    n.e.accept(this);    
+}
+
+
 
 }

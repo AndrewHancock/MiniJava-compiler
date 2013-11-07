@@ -19,12 +19,16 @@ public interface Visitor {
   public void visit(While n);
   public void visit(ForEach n);
   public void visit(Print n);
+  public void visit(PrintLn n);
   public void visit(Assign n);
   public void visit(ArrayAssign n);
   public void visit(And n);
+  public void visit(Or n);
+  public void visit(Equality n);
   public void visit(LessThan n);
   public void visit(LessThanOrEqual n);
   public void visit(Plus n);
+  public void visit(PlusEquals n);
   public void visit(Minus n);
   public void visit(Times n);
   public void visit(ArrayLookup n);
