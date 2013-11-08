@@ -429,6 +429,7 @@ Exp SuffixExp() :
     Exp e2;
     ExpList el;
     Identifier i;
+    ExpList el2;
 }
 {
     e1 = PrefixExp() 
@@ -439,7 +440,7 @@ Exp SuffixExp() :
 	| 
     	LOOKAHEAD(2) 
         <DOT> <IDENTIFIER> { i = new Identifier(token.image); }
-		<LPAREN> el = ExpList() <RPAREN> { return new Call(e1, i, el); } 
+		<LPAREN> el = ExpList() <RPAREN> { e1 =  new Call(e1, i, el); } 
     | 	<DOT> <LENGTH> { return new ArrayLength(e1); }
     )*
     { return e1; }

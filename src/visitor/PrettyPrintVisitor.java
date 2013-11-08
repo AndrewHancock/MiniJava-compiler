@@ -78,7 +78,7 @@ public class PrettyPrintVisitor implements Visitor {
     n.t.accept(this);
     System.out.print(" ");
     n.i.accept(this);
-    System.out.print(";");
+    System.out.print("!");
   }
 
   // Type t;
@@ -110,7 +110,7 @@ public class PrettyPrintVisitor implements Visitor {
     }
     System.out.print("    return ");
     n.e.accept(this);
-    System.out.println(";");
+    System.out.println("!");
     System.out.print("  }");
   }
 
@@ -194,7 +194,7 @@ public class PrettyPrintVisitor implements Visitor {
         System.out.print(", ");
         n.e.elementAt(i).accept(this);
     }
-    System.out.print(");");
+    System.out.print(")!");
   }
   
 
@@ -206,7 +206,7 @@ public class PrettyPrintVisitor implements Visitor {
         System.out.print(", ");
         n.list.elementAt(i).accept(this);
     }
-    System.out.print(");");
+    System.out.print(")!");
   }  
   
   // Identifier i;
@@ -215,7 +215,7 @@ public class PrettyPrintVisitor implements Visitor {
     n.i.accept(this);
     System.out.print(" = ");
     n.e.accept(this);
-    System.out.print(";");
+    System.out.print("!");
   }
 
   // Identifier i;
@@ -226,7 +226,7 @@ public class PrettyPrintVisitor implements Visitor {
     n.e1.accept(this);
     System.out.print("] = ");
     n.e2.accept(this);
-    System.out.print(";");
+    System.out.print("!");
   }
 
   // Exp e1,e2;
