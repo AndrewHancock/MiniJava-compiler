@@ -20,7 +20,6 @@ public class PlusEquals extends Statement
     @Override
     public Type accept(TypeVisitor v)
     {
-        // TODO Auto-generated method stub
-        return null;
+        v.visit(this);
     }
 }

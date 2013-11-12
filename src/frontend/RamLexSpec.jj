@@ -99,11 +99,11 @@ void Goal() :
 void RamToken():
 {}
 {
-  "class"  |  <IDENTIFIER> | "{" | "public" | "static" | "void" |
+  "class"  | "{" | "public" | "static" | "void" |
   "main" | "(" | "String"  | "[" | "]" | ")" | "}" | "+=" | ";"
   | "return" | "," | "int" | "bool" | "=" | "if" | "else" | "while"
   | "print" | "println" | "and" | "or" | "lt" | "lte" | "+" | "-" | "*" | "." |
-  "length" | <INTEGER_LITERAL> | "true" | "false" | "this" | "new" |
+  "length" | "true" | "false" | "this" | "new" | <INTEGER_LITERAL> | <IDENTIFIER>
   "!" 
 }
 

@@ -22,7 +22,6 @@ public interface TypeVisitor {
     public Type visit(ArrayAssign n);
     public Type visit(And n);
     public Type visit(LessThan n);
-    public Type visit(LessThanOrEqual n);
     public Type visit(Plus n);
     public Type visit(Minus n);
     public Type visit(Times n);

@@ -31,7 +31,7 @@
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-		<arg value="programs/PythonTest1.ram13"/>
+		<arg value="programs/PythonTest3.ram13"/>
 	</java>
     </target>
 </project>

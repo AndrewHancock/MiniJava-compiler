@@ -26,8 +26,7 @@ public class ForEach extends Statement
     @Override
     public Type accept(TypeVisitor v)
     {
-        //return v.visit(this);
-        return null;
+        return v.visit(this);        
     }
 
 }
