@@ -21,7 +21,7 @@ public class PrintLn extends Statement
     @Override
     public Type accept(TypeVisitor v)
     {
-        return v.visit(this)
+        return v.visit(this);
     }
 
 }

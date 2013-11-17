@@ -10,4 +10,10 @@ public class BooleanType extends Type {
   public Type accept(TypeVisitor v) {
     return v.visit(this);
   }
+  
+  @Override
+  public String toString()  
+  {
+      return "syntaxtree.BooleanType";
+  }
 }

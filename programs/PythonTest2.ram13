@@ -12,9 +12,7 @@ class ObjectTester
 	{
 		println(this.testMath())!
 		return 0!
-	}
-	
-	
+	}	
 	
 	public int testMath()
 	{

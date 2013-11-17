@@ -22,8 +22,7 @@ public class Equality extends Exp
     @Override
     public Type accept(TypeVisitor v)    
     {
-
-        return null;
+        return v.visit(this);
     }
 
 }

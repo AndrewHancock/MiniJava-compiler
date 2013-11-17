@@ -22,7 +22,7 @@ public class Or extends Exp
     @Override
     public Type accept(TypeVisitor v)
     {
-        v.visit(this);
+        return v.visit(this);
     }
 
 }

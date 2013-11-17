@@ -175,8 +175,6 @@ public class PrettyPrintVisitor implements Visitor {
   public void visit(ForEach n)
   {
       System.out.print("foreach(");
-      n.type.accept(this);
-      System.out.print(" ");
       n.iterator.accept(this);
       System.out.print(":");
       n.source.accept(this);

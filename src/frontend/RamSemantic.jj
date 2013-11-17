@@ -241,13 +241,14 @@ Type Type() :
 
 Statement Statement() :
 {
-  	Type type;
+  	VarDecl varDecl;
     StatementList sl = new StatementList();
     Statement s1;
     Exp e1;
     Statement s2;
     Exp e2;
-    Identifier i1, i2;
+    Identifier i1;
+    IdentifierType i2;
 	ExpList el1;
     
 }
@@ -272,11 +273,10 @@ Statement Statement() :
     { return new While(e1, s1); } 
     |
     < FOREACH ><LPAREN >
-    type = Type()
-    < IDENTIFIER > { i1 = new Identifier(token.image); }   < COLON > < IDENTIFIER > { i2 = new Identifier(token.image); }
+    varDecl = VarDecl()       < COLON > < IDENTIFIER > { i2 = new IdentifierType(token.image); }
     <RPAREN >
     s1 = Statement()
-    { return new ForEach(s1, type, i1, i2); }       
+    { return new ForEach(s1, varDecl, i2); }       
     | 
     <PRINT> <LPAREN> 
     el1 = ExpList() 

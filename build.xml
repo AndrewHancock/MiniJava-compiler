@@ -15,7 +15,7 @@
 	<javacc target="src/frontend/RamGrammar.jj" outputdirectory="src/frontend/generated/" javacchome="lib"/> 
         <javac includeantruntime="false" srcdir="src" destdir="build/classes"/>
     </target>
-    <target name="pythonpp">
+    <target name="semantic">
         <mkdir dir="build/classes"/>
 	<mkdir dir="src/frontend/generated"/>
 	<javacc target="src/frontend/RamSemantic.jj" outputdirectory="src/frontend/generated/" javacchome="lib"/> 
@@ -25,13 +25,13 @@
         <mkdir dir="build/jar"/>
         <jar destfile="build/jar/MiniJava.jar" basedir="build/classes">
             <manifest>
-                <attribute name="Main-Class" value="frontend.MainAST"/>
+                <attribute name="Main-Class" value="frontend.MainSemanticAnalyzer"/>
             </manifest>
         </jar>
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-		<arg value="programs/PythonTest3.ram13"/>
+		<arg value="programs/LinearSearch.ram13"/>
 	</java>
     </target>
 </project>

@@ -20,6 +20,6 @@ public class PlusEquals extends Statement
     @Override
     public Type accept(TypeVisitor v)
     {
-        v.visit(this);
+        return v.visit(this);
     }
 }

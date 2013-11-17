@@ -6,13 +6,12 @@ import visitor.Visitor;
 public class ForEach extends Statement
 {
     public Statement statement;
-    public Type type;
-    public Identifier iterator, source;
+    public VarDecl iterator;
+    public IdentifierType source;
     
-    public ForEach(Statement statement, Type type, Identifier iterator, Identifier source)
+    public ForEach(Statement statement, VarDecl iterator, IdentifierType source)
     {
-        this.statement = statement;
-        this.type = type;
+        this.statement = statement;        
         this.iterator = iterator;
         this.source = source;        
     }
