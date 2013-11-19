@@ -15,8 +15,8 @@ class TestClass
     public int computeSomething(int num) 
     { 
         int num!	
-	int returnVal!
-	num = 5, returnVal = 5!
+		int returnVal!
+		num = 5, returnVal = 5!
         if (num lt 42)
             return = num * 1024!
         else

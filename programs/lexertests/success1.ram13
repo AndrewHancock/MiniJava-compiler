@@ -2,7 +2,7 @@ class Success1
 {
     public static void main(String[] a) 
     {
-	int variable = 5!
+		int variable = 5!
         println(variable)! 
     }
 }
