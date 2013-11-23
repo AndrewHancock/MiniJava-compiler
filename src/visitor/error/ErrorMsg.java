@@ -8,5 +8,10 @@ public class ErrorMsg
         anyErrors = true;
         System.out.println(msg);
     }
+    
+    public boolean getHasErrors()
+    {
+        return anyErrors;
+    }
 
 }

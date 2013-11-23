@@ -1,11 +1,22 @@
 package visitor;
 
+import symboltable.RamClass;
+import symboltable.RamMethod;
+import symboltable.Table;
 import syntaxtree.*;
 
 public class PythonVisitor implements Visitor
 {
     private StringBuilder out = new StringBuilder();
     private String programName;
+    private RamClass currClass;
+    private RamMethod currMethod;
+    private Table symbolTable;
+    
+    public PythonVisitor(Table symbolTable)
+    {
+        this.symbolTable = symbolTable;
+    }
 
     private void println(String s)
     {
@@ -29,6 +40,7 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(Program n)
     {
+        println("import sys");
         programName = n.m.i1.s;
         n.m.accept(this);
 
@@ -53,20 +65,18 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(ClassDeclSimple n)
     {
+        currClass = symbolTable.getClass(n.i.s);
         print("class ");
         n.i.accept(this);
         println(":");
         level++;
-        for (int i = 0; i < n.vl.size(); i++)
-        {
-            n.vl.elementAt(i).accept(this);
-        }
-
+        
         for (int i = 0; i < n.ml.size(); i++)
         {
             n.ml.elementAt(i).accept(this);
         }
         level--;
+        currClass = null;
     }
 
     @Override
@@ -89,6 +99,7 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(MethodDecl n)
     {
+        currMethod = symbolTable.getMethod(n.i.s, currClass.getId());
         indent();
         print("def ");
         n.i.accept(this);
@@ -120,6 +131,7 @@ public class PythonVisitor implements Visitor
         println("");
         println("");
         level--;
+        currMethod = null;
     }
 
     @Override
@@ -215,14 +227,17 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(Print n)
     {
-        print("print ");      
+        print("sys.stdout.write(");
+      
         for (int i = 0; i < n.e.size(); i++)
         {
             if (i > 0)
-                print(", ");
-            n.e.elementAt(i).accept(this);            
+                print("+ ");
+            print("str(");
+            n.e.elementAt(i).accept(this);
+            print(")");
         }
-        println(",");
+        println(")");
     }
 
     @Override
@@ -243,6 +258,8 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(Assign n)
     {
+        if(currMethod.getVar(n.i.s) == null && currClass.getVar(n.i.s) != null)
+            print("self.");
         n.i.accept(this);
         print(" = ");
         n.e.accept(this);
@@ -251,6 +268,8 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(ArrayAssign n)
     {
+        if(currMethod.getVar(n.i.s) == null && currClass.getVar(n.i.s) != null)
+            print("self.");
         n.i.accept(this);
         print("[");
         n.e1.accept(this);
@@ -312,7 +331,8 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(PlusEquals n)
     {
-
+        if(currMethod.getVar(n.id.s) == null && currClass.getVar(n.id.s) != null)
+            print("self.");
         n.id.accept(this);
         print(" += ");
         n.e.accept(this);
@@ -355,7 +375,7 @@ public class PythonVisitor implements Visitor
 
     @Override
     public void visit(Call n)
-    {
+    {        
         n.e.accept(this);
         print(".");
         n.i.accept(this);
@@ -390,16 +410,16 @@ public class PythonVisitor implements Visitor
 
     @Override
     public void visit(IdentifierExp n)
-    {
+    {   
+        if(currMethod.getVar(n.s) == null && currClass.getVar(n.s) != null)
+            print("self.");
         print(n.s);
     }
 
     @Override
     public void visit(This n)
     {
-
         print("self");
-
     }
 
     @Override
