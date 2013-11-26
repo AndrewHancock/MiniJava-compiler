@@ -58,6 +58,11 @@ public class RamMethod
             return null;
     }
     
+    public int getNumberOfParams()
+    {
+        return params.size();
+    }
+    
     public boolean addParam(String id, Type type)
     {
         if(params.contains(id))

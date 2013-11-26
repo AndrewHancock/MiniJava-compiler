@@ -69,8 +69,7 @@ public class PythonVisitor implements Visitor
         print("class ");
         n.i.accept(this);
         println(":");
-        level++;
-        
+        level++;        
         for (int i = 0; i < n.ml.size(); i++)
         {
             n.ml.elementAt(i).accept(this);
@@ -88,12 +87,7 @@ public class PythonVisitor implements Visitor
 
     @Override
     public void visit(VarDecl n)
-    {       
-        if(!(n.t instanceof IntArrayType))
-        {
-            n.i.accept(this);
-            n.t.accept(this);            
-        }                
+    {
     }
 
     @Override
@@ -110,14 +104,7 @@ public class PythonVisitor implements Visitor
             n.fl.elementAt(i).accept(this);
         }
         println("):");
-        level++;
-        
-        for (int i = 0; i < n.vl.size(); i++)
-        {
-            indent();
-            n.vl.elementAt(i).accept(this);
-            println("");
-        }
+        level++;        
 
         for (int i = 0; i < n.sl.size(); i++)
         {
@@ -142,8 +129,7 @@ public class PythonVisitor implements Visitor
 
     @Override
     public void visit(IntArrayType n)
-    {
-        //Handled in NewArray
+    {     
     }
 
     @Override
@@ -237,7 +223,7 @@ public class PythonVisitor implements Visitor
             n.e.elementAt(i).accept(this);
             print(")");
         }
-        println(")");
+        print(")");
     }
 
     @Override
@@ -251,7 +237,7 @@ public class PythonVisitor implements Visitor
                 print(", ");
             n.list.elementAt(i).accept(this);
         }
-        println("");
+        print("");
 
     }
 
@@ -370,7 +356,7 @@ public class PythonVisitor implements Visitor
     {        
         print("len(");
         n.e.accept(this);
-        println(")");
+        print(")");
     }
 
     @Override
@@ -387,7 +373,6 @@ public class PythonVisitor implements Visitor
             n.el.elementAt(i).accept(this);
         }
         print(")");
-
     }
 
     @Override
