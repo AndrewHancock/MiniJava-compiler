@@ -270,36 +270,31 @@ public class DepthFirstVisitor implements Visitor
 
     @Override
     public void visit(PrintLn n)
-    {
-        // TODO Auto-generated method stub
+    {    
 
     }
 
     @Override
     public void visit(Or n)
-    {
-        // TODO Auto-generated method stub
+    {    
 
     }
 
     @Override
     public void visit(Equality n)
-    {
-        // TODO Auto-generated method stub
+    {    
 
     }
 
     @Override
     public void visit(LessThanOrEqual n)
-    {
-        // TODO Auto-generated method stub
+    {    
 
     }
 
     @Override
     public void visit(PlusEquals n)
-    {
-        // TODO Auto-generated method stub
+    {    
 
     }
 }

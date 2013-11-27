@@ -31,7 +31,7 @@
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-		<arg value="programs/semantictests/InstanceTest.ram13"/>
+		<arg value="programs/semantictests/BinarySearchTree.ram13"/>
 	</java>
     </target>
 </project>

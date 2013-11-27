@@ -17,7 +17,7 @@ public class PythonVisitor implements Visitor
     {
         this.symbolTable = symbolTable;
     }
-
+    
     private void println(String s)
     {
         out.append(s);
@@ -35,6 +35,14 @@ public class PythonVisitor implements Visitor
     {
         for (int i = 0; i < level; i++)
             out.append("    ");
+    }
+    
+    private void prependSelf(String id)
+    {
+        // BuildSymbolTabelVisitor ensures that is only defined in 
+        // a class, as a method param, or in the method.
+        if(currClass.containsVar(id))
+            print("self.");
     }
 
     @Override
@@ -244,8 +252,7 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(Assign n)
     {
-        if(currMethod.getVar(n.i.s) == null && currClass.getVar(n.i.s) != null)
-            print("self.");
+        prependSelf(n.i.s);
         n.i.accept(this);
         print(" = ");
         n.e.accept(this);
@@ -254,8 +261,7 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(ArrayAssign n)
     {
-        if(currMethod.getVar(n.i.s) == null && currClass.getVar(n.i.s) != null)
-            print("self.");
+        prependSelf(n.i.s);
         n.i.accept(this);
         print("[");
         n.e1.accept(this);
@@ -317,8 +323,7 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(PlusEquals n)
     {
-        if(currMethod.getVar(n.id.s) == null && currClass.getVar(n.id.s) != null)
-            print("self.");
+        prependSelf(n.id.s);
         n.id.accept(this);
         print(" += ");
         n.e.accept(this);
@@ -396,8 +401,7 @@ public class PythonVisitor implements Visitor
     @Override
     public void visit(IdentifierExp n)
     {   
-        if(currMethod.getVar(n.s) == null && currClass.getVar(n.s) != null)
-            print("self.");
+        prependSelf(n.s);
         print(n.s);
     }
 
