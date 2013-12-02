@@ -6,6 +6,7 @@ public class RamVariable
 {
     private String id;
     private Type type;
+    private int memoryOffset;
     
     public RamVariable(String id, Type type)
     {
@@ -21,6 +22,16 @@ public class RamVariable
     public Type type()
     {
         return type;
+    }
+    
+    public void setMemoryOffset(int offset)
+    {
+        memoryOffset = offset; 
+    }
+    
+    public int getMemoryOffset()
+    {
+        return memoryOffset;
     }
     
     @Override

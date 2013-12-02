@@ -12,6 +12,7 @@ public class RamMethod
     private String id;
     private Type returnType;
     private HashMap<String, RamVariable> locals;
+    private String methodLabel;
     
     //This list holds references to ids which are also in the locals map.
     // This allows access them by index.
@@ -37,6 +38,8 @@ public class RamMethod
     
     public RamVariable getVar(String id)
     {
+        if(params.contains(id)) // Do not return params
+            return null;
         return locals.get(id);
     }
     
@@ -77,6 +80,15 @@ public class RamMethod
         return locals.get(params.get(i));
     }
     
+    public int getParamIndex(String id)
+    {
+        for(int i = 0; i < params.size(); i++)
+            if(params.get(i).equals(id))
+                return i;
+        
+        throw new RuntimeException("Invalid parameter.");
+    }
+    
     @Override
     public String toString()
     {
@@ -93,5 +105,15 @@ public class RamMethod
                 result += "\t\t\t\t\t" +local + "\n";
         }
         return result;
+    }
+    
+    public void setMethodLabel(String label)
+    {
+        this.methodLabel = label;
+    }
+    
+    public String getMethodLabel()
+    {
+        return methodLabel;
     }
 }

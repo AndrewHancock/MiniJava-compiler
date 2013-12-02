@@ -31,13 +31,13 @@
         <mkdir dir="build/jar"/>
         <jar destfile="build/jar/MiniJava.jar" basedir="build/classes">
             <manifest>
-                <attribute name="Main-Class" value="RamCompiler"/>
+                <attribute name="Main-Class" value="backend/RamCompiler"/>
             </manifest>
         </jar>
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-		<arg value="programs/mips/Not2.ram"/>
+		<arg value="programs/mips/MethodCall.ram"/>
 	</java>
     </target>
 </project>
