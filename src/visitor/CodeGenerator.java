@@ -1,19 +1,23 @@
 package visitor;
 import syntaxtree.*;
 import symboltable.*;
+import visitor.error.ErrorMsg;
 
 public class CodeGenerator extends DepthFirstVisitor
 {
 
+    private ErrorMsg errorMsg = new ErrorMsg();
     private java.io.PrintStream out;
     private Table symTable;
     private RamClass currClass;
     private RamMethod currMethod;
+    private TypeCheckExpVisitor typeCheckExpVisitor;
 
     public CodeGenerator(java.io.PrintStream o, Table st)
     {
         out = o;
         symTable = st;
+        typeCheckExpVisitor = new TypeCheckExpVisitor(errorMsg, symTable);
     }
 
     private void emit(String s)
@@ -30,6 +34,13 @@ public class CodeGenerator extends DepthFirstVisitor
     {
         out.println("\t" + "#" + s);
     }
+    
+    private TypeCheckExpVisitor getExpVisitor()
+    {
+        typeCheckExpVisitor.currClass = currClass;
+        typeCheckExpVisitor.currMethod = currMethod;
+        return typeCheckExpVisitor;
+    }    
 
     // MainClass m;
     // ClassDeclList cl;
@@ -95,34 +106,39 @@ public class CodeGenerator extends DepthFirstVisitor
 
     public void visit(Print n)
     {
-        emitComment("We must save the value of $a0 before print and resotre it after");
-        emit("move $t0, $a0     # Save $a0 into $t0");
         for (Exp exp : n.e)
         {
             exp.accept(this);
+            emitComment("We must save the value of $a0 before print and restore it after");
+            emit("move $t0, $a0     # Save $a0 into $t0");
             emit("move $a0,$v0      # Move value to $a0");
             emit("li $v0, 1         # Load system_call code 1, print_int");
-            emit("syscall");                        
+            emit("syscall");
+            emitComment("Restore $a0 from $t0");
+            emit("move $a0, $t0 ");
         }
-        emitComment("Restore $a0 from $t0");
-        emit("move $a0, $t0 ");
+
     }
 
     public void visit(PrintLn n)
     {
-        emitComment("We must save the value of $a0 before print and resotre it after");
-        emit("move $t0, $a0     # Save $a0 into $t0");
         for (Exp exp : n.list)
         {
-            exp.accept(this);            
+            exp.accept(this);
+            emitComment("We must save the value of $a0 before print and restore it after");
+            emit("move $t0, $a0     # Save $a0 into $t0");            
             emit("move $a0,$v0      # Move value to $a0");
-            emit("li $v0, 1         # Load system_call code 1, print_int");
+            emit("li $v0, 1         # Load system_call 1, print_int");
             emit("syscall");
 
             emit("li $v0, 4         # Load system_call 4, print_string");
             emit("la $a0, space     # Load address of newline label");
             emit("syscall");
-        }        
+            emitComment("Restore $a0 from $t0");
+            emit("move $a0, $t0");            
+        }
+        emitComment("We must save the value of $a0 before print and restore it after");
+        emit("move $t0, $a0     # Save $a0 into $t0");
         emit("li $v0, 4           # Load system_call 4, print_string");
         emit("la $a0, newline     # Load address of newline label");
         emit("syscall");
@@ -264,10 +280,10 @@ public class CodeGenerator extends DepthFirstVisitor
         emit("lw $t0, ($sp)     # Restore left value from stack int $t0");
         emit("addi $sp, 4       # Pop stack");
         emit("blt $t0, $v0, lt_islt_" + localLtCounter);
-        emit("li $v0, 0         # Values are not equal, load false to $v0");
+        emit("li $v0, 0         # Value is not less than, load false to $v0");
         emit("j ltdone_" + localLtCounter);
         emitLabel("lt_islt_" + localLtCounter);
-        emit("li $v0, 1         # Values are equal, load true to $v0");
+        emit("li $v0, 1         # Value is less than, load true to $v0");
         emitLabel("ltdone_" + localLtCounter);
     }
 
@@ -293,6 +309,12 @@ public class CodeGenerator extends DepthFirstVisitor
     public void visit(ClassDeclSimple n)
     {
         currClass = symTable.getClass(n.i.s);
+        for (int i = 0; i < n.vl.size(); i++)
+        {
+            RamVariable var = currClass.getVar(n.vl.elementAt(i).i.s);
+            var.setMemoryOffset(i * 4);
+        }
+        
         for (int i = 0; i < n.ml.size(); i++)
             n.ml.elementAt(i).accept(this);
         currClass = null;
@@ -300,13 +322,13 @@ public class CodeGenerator extends DepthFirstVisitor
 
     public void visit(MethodDecl n)
     {
-        String label = "method_" + n.i;
+        String label = currClass.getId() + "." + n.i;
         emitLabel(label);
 
         // We must store the method label with the method object so we can use
         // it in Call
         currMethod = symTable.getMethod(n.i.s, currClass.getId());
-        currMethod.setMethodLabel(label);
+
 
         emitComment("Prologue of method -- " + n.i.s);
         emit("subu $sp, $sp, 32           # Push new stack frame of 32 bytes");
@@ -341,22 +363,35 @@ public class CodeGenerator extends DepthFirstVisitor
     }
 
     public void visit(Call n)
-    {
+    {   
+        // This call may include another call, so it must appear before we save input parameters.
+        // It also loads the address of the caller instance into $v0
+        n.e.accept(this); 
+
+        // Do not move object instance pointer to $a0 until AFTER
+        // $a0 has been saved AND parameters have been assigned.
+        // Failure to do so causes 2 problems respectively:
+        //  1) We will not restore the "this" pointer correctly after the call.
+        //  2) We will not load instance variables from the current "this"
+        // To avoid this, we save object instance pointer to $t2. It will be moved to $a0 after params are set.
+        emit("move $t2, $v0      # Move object instance pointer to $t2");   
+        
         emitComment("Saving input parameters before call to " + n.i.s);        
         emit("sw $a3,    ($fp)         #Store parameter 4");
         emit("sw $a2,  -4($fp)         #Store parameter 3");
         emit("sw $a1,  -8($fp)         #Store parameter 2");
         emit("sw $a0, -12($fp)         #Store parameter 1");
 
+          
         emitComment("Storing outgoing parameters for call to " + n.i.s);
         int stackUsed = 0;
         // Loop backwards, so stack is in the correct order
         for (int i = n.el.size() - 1; i >= 0; i--)
         {
             n.el.elementAt(i).accept(this);
-            if (i < 4)
+            if (i < 3)
             {
-                emit("move $a" + i + ", $v0       # Move result of expression into $a" + i);
+                emit("move $a" + (i + 1) + ", $v0       # Move result of expression into $a" + (i + 1));
             }
             else
             {
@@ -365,8 +400,35 @@ public class CodeGenerator extends DepthFirstVisitor
                 emit("sw   $v0, ($sp)               # Store value of $v0 onto stack");
             }
         }
+        String label = null;
+        if(n.e instanceof This)
+            label = currClass.getId();
+        else if(n.e instanceof IdentifierExp)
+        {
+            IdentifierExp idExp = ((IdentifierExp)n.e);
+            RamVariable callVar = currMethod.getVar(idExp.s);
+            if(callVar == null)
+                callVar = currMethod.getParam(idExp.s);
+            if(callVar == null)
+                callVar = currClass.getVar(idExp.s);
+
+            label = ((IdentifierType)callVar.type()).s;
+        }
+        else if(n.e instanceof Call)
+        {
+            Call callCall = ((Call)n.e);
+            label = ((IdentifierType)callCall.e.accept(getExpVisitor())).s;
+        }
+        else
+            label = ((IdentifierType)n.e.accept(getExpVisitor())).s; 
+            
+        label += "." + n.i.s;
         
-        emit("jal method_" + n.i.s + "   # Jump to method label");
+
+        emit("move $a0, $t2      # Move object instance pointer from $t2 to $a0");        
+        
+        
+        emit("jal " + label + "   # Jump to method label");
         
         
         emit("addi $sp, $sp, " + stackUsed + " #   Pop stack used for parameters");
@@ -383,19 +445,26 @@ public class CodeGenerator extends DepthFirstVisitor
         if (currMethod != null)
         {
             RamVariable var = currMethod.getVar(n.s);
+            RamVariable classVar = currClass.getVar(n.s);
             if (var != null)
             {
-                emit("lw $v0, -" + var.getMemoryOffset() + "($fp)      # Load variable " + n.s
+                emit("lw $v0, -" + var.getMemoryOffset() + "($fp)      # Load local variable " + n.s
                         + " into $v0");
+            }
+            else if (classVar != null)
+            {
+                emit("lw $v0, " + classVar.getMemoryOffset() + "($a0)      # Load instance variable " + n.s
+                        + " into $v0");
+                
             }
             else
             {
                 var = currMethod.getParam(n.s);
                 int paramIndex = currMethod.getParamIndex(n.s);
-                if (paramIndex < 4)
-                    emit("move $v0, $a" + paramIndex + "     # Move parameter from register to $v0");
+                if (paramIndex < 3)
+                    emit("move $v0, $a" + (paramIndex + 1) + "     # Move parameter from register to $v0");
                 else
-                    emit("lw $v0, " + (4 + (paramIndex - 4) * 4)
+                    emit("lw $v0, " + (4 + (paramIndex - 3) * 4)
                             + "($fp)        # Loading parameter from stack");
             }
         }
@@ -408,7 +477,13 @@ public class CodeGenerator extends DepthFirstVisitor
             RamVariable var = currMethod.getVar(n.s);
             if (var != null)
             {
-                emit("subu $t0, $fp, " + var.getMemoryOffset() + "   # Load address of variable into $t0");
+                emit("subu $t0, $fp, " + var.getMemoryOffset() + "   # Load address of local variable " + n.s + " into $t0");
+            }            
+            else
+            {
+                var = currClass.getVar(n.s);
+                emit("add $t0, $a0, " + var.getMemoryOffset() + "    # Load address of instance variable " + n.s + " into $t0");
+                
             }
         }
 
@@ -416,9 +491,51 @@ public class CodeGenerator extends DepthFirstVisitor
     
     public void visit(Assign n)
     {
-        n.e.accept(this);
-        n.i.accept(this);
-        emit("sw $v0, ($t0)         # Store results of assignment into the address of $t0");
+        n.e.accept(this);        
+        RamVariable var = currMethod.getVar(n.i.s);        
+        if(var == null)
+        {
+            var = currClass.getVar(n.i.s);
+        }
+        int paramIndex = currMethod.getParamIndex(n.i.s);
         
+        
+        if(var != null || paramIndex >= 3)
+        {            
+            n.i.accept(this);            
+            emit("sw $v0, ($t0)         # Store results of assignment into the address of $t0");
+        }
+        else if (paramIndex >= 0) // We are assigning to a parameter
+        {
+            int regIndex = paramIndex + 1;
+            emit("move $v0, $a" + regIndex + "       # Assign $v0 to param register $a"+ regIndex );
+        }     
+
+    }
+    
+    private void emitAllocateHeap(int size)
+    {
+        emit("move $t0, $a0     # Save $a0");
+        emit("li $v0, 9     # load system_call 9 ");
+        emit("li $a0, " + size + "    # size of heap to be allocated");
+        emit("syscall");        
+    }
+    
+    public void visit(NewObject n)
+    {
+        RamClass newClass = symTable.getClass(n.i.s);
+        int objectSize = newClass.getVarCount() * 4;
+        
+       // if(objectSize == 0)
+       //     objectSize = 4;
+        
+        emitComment("Allocate new object");
+        emitAllocateHeap(objectSize);   
+        emit("move $a0, $t0    # Restore $a0");
+    }
+    
+    public void visit(This n)
+    {
+        emit("move $v0, $a0    # Move address of this object into $v0");        
     }
 }
