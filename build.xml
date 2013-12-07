@@ -37,7 +37,7 @@
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-		<arg value="programs/mips/MethodCall.ram"/>
+		<arg value="programs/MipsTest.ram"/>
 	</java>
     </target>
 </project>

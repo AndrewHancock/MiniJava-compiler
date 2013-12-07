@@ -363,25 +363,16 @@ public class CodeGenerator extends DepthFirstVisitor
     }
 
     public void visit(Call n)
-    {   
-        // This call may include another call, so it must appear before we save input parameters.
-        // It also loads the address of the caller instance into $v0
-        n.e.accept(this); 
-
-        // Do not move object instance pointer to $a0 until AFTER
-        // $a0 has been saved AND parameters have been assigned.
-        // Failure to do so causes 2 problems respectively:
-        //  1) We will not restore the "this" pointer correctly after the call.
-        //  2) We will not load instance variables from the current "this"
-        // To avoid this, we save object instance pointer to $t2. It will be moved to $a0 after params are set.
-        emit("move $t2, $v0      # Move object instance pointer to $t2");   
-        
+    {          
         emitComment("Saving input parameters before call to " + n.i.s);        
         emit("sw $a3,    ($fp)         #Store parameter 4");
         emit("sw $a2,  -4($fp)         #Store parameter 3");
         emit("sw $a1,  -8($fp)         #Store parameter 2");
-        emit("sw $a0, -12($fp)         #Store parameter 1");
+        emit("sw $a0, -12($fp)         #Store this");
 
+        n.e.accept(this);
+        emit("subu $sp, $sp, 4     # Push stack to save address of callee object");
+        emit("sw $v0, ($sp)        # Save result of expression of call to stack");
           
         emitComment("Storing outgoing parameters for call to " + n.i.s);
         int stackUsed = 0;
@@ -422,16 +413,13 @@ public class CodeGenerator extends DepthFirstVisitor
         else
             label = ((IdentifierType)n.e.accept(getExpVisitor())).s; 
             
-        label += "." + n.i.s;
-        
-
-        emit("move $a0, $t2      # Move object instance pointer from $t2 to $a0");        
-        
+        label += "." + n.i.s;        
+        emit("lw $a0," + stackUsed + "($sp)      # load callee expression address from stack");
         
         emit("jal " + label + "   # Jump to method label");
         
         
-        emit("addi $sp, $sp, " + stackUsed + " #   Pop stack used for parameters");
+        emit("addi $sp, $sp, " + (stackUsed + 4) + " #   Pop stack used for parameters"); // Extra four for callee object address
 
         emitComment("restoring input parameters after call to " + n.i.s);
         emit("lw $a3,    ($fp)         # Restore parameter 4");
@@ -475,15 +463,23 @@ public class CodeGenerator extends DepthFirstVisitor
         if (currMethod != null)
         {
             RamVariable var = currMethod.getVar(n.s);
+            RamVariable classVar = currClass.getVar(n.s);
             if (var != null)
             {
                 emit("subu $t0, $fp, " + var.getMemoryOffset() + "   # Load address of local variable " + n.s + " into $t0");
             }            
-            else
+            else if (classVar != null)
             {
                 var = currClass.getVar(n.s);
                 emit("add $t0, $a0, " + var.getMemoryOffset() + "    # Load address of instance variable " + n.s + " into $t0");
                 
+            }
+            else // It is a parameter
+            {
+                var = currMethod.getParam(n.s);
+                int paramIndex = currMethod.getParamIndex(n.s);
+                if (paramIndex > 2)  // We only handle stack parameters here. Caller must handle register params, since they have no address              
+                    emit("add $t0, $fp, " + (4 + (paramIndex - 3) * 4) + "  # Load address of parameter from stack");
             }
         }
 
@@ -500,17 +496,57 @@ public class CodeGenerator extends DepthFirstVisitor
         int paramIndex = currMethod.getParamIndex(n.i.s);
         
         
-        if(var != null || paramIndex >= 3)
+        if(var != null || paramIndex > 2)
         {            
             n.i.accept(this);            
             emit("sw $v0, ($t0)         # Store results of assignment into the address of $t0");
         }
-        else if (paramIndex >= 0) // We are assigning to a parameter
+        else if (paramIndex >= 0) // We are assigning to a register parameter
         {
             int regIndex = paramIndex + 1;
             emit("move $v0, $a" + regIndex + "       # Assign $v0 to param register $a"+ regIndex );
         }     
 
+    }
+    
+    public void visit(PlusEquals n)
+    {
+        n.e.accept(this);        
+        RamVariable var = currMethod.getVar(n.id.s);        
+        if(var == null)
+        {
+            var = currClass.getVar(n.id.s);
+        }
+        int paramIndex = currMethod.getParamIndex(n.id.s);
+        
+        
+        if(var != null || paramIndex > 2) 
+        {            
+            n.id.accept(this);          
+            emit("lw $t1, ($t0)         # Load contents of address $t0 into $t1");
+            emit("add $v0, $v0, $t1     # Add the results of the rhs with contents of the address $t0 and store in $t1");
+            emit("sw $v0, ($t0)         # Store results of assignment into the address of $t0");
+        }
+        else if (paramIndex >= 0) // We are assigning to a register parameter
+        {
+            String regString = "$a" + (paramIndex + 1);
+            emit("add " + regString + ",$v0, " + regString + "       # Add $v0 to param register " + regString );
+        }    
+        
+    }
+    
+    int globalWhileCounter;
+    public void visit(While n)
+    {
+        int localWhileCounter = globalWhileCounter++;
+        emitComment("Beginning of while loop");
+        emitLabel("while_start_" + localWhileCounter);
+        n.e.accept(this);        
+        emit("beq $v0, $0, while_end_" + localWhileCounter);        
+        n.s.accept(this);
+        emit("j while_start_" + localWhileCounter + "   # Jump to while test condition");
+        emitLabel("while_end_" + localWhileCounter);
+        
     }
     
     private void emitAllocateHeap(int size)
