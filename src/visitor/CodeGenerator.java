@@ -1,6 +1,42 @@
 package visitor;
-import syntaxtree.*;
-import symboltable.*;
+import symboltable.RamClass;
+import symboltable.RamMethod;
+import symboltable.RamVariable;
+import symboltable.Table;
+import syntaxtree.And;
+import syntaxtree.ArrayAssign;
+import syntaxtree.ArrayLength;
+import syntaxtree.ArrayLookup;
+import syntaxtree.Assign;
+import syntaxtree.Call;
+import syntaxtree.ClassDeclSimple;
+import syntaxtree.Equality;
+import syntaxtree.Exp;
+import syntaxtree.False;
+import syntaxtree.ForEach;
+import syntaxtree.Identifier;
+import syntaxtree.IdentifierExp;
+import syntaxtree.IdentifierType;
+import syntaxtree.If;
+import syntaxtree.IntegerLiteral;
+import syntaxtree.LessThan;
+import syntaxtree.LessThanOrEqual;
+import syntaxtree.MainClass;
+import syntaxtree.MethodDecl;
+import syntaxtree.Minus;
+import syntaxtree.NewArray;
+import syntaxtree.NewObject;
+import syntaxtree.Not;
+import syntaxtree.Or;
+import syntaxtree.Plus;
+import syntaxtree.PlusEquals;
+import syntaxtree.Print;
+import syntaxtree.PrintLn;
+import syntaxtree.Program;
+import syntaxtree.This;
+import syntaxtree.Times;
+import syntaxtree.True;
+import syntaxtree.While;
 import visitor.error.ErrorMsg;
 
 public class CodeGenerator extends DepthFirstVisitor
@@ -336,15 +372,17 @@ public class CodeGenerator extends DepthFirstVisitor
         emit("sw $fp, 0($sp)              # Save old frame pointer at $sp");
         emit("addiu $fp, $sp, 28          # Current frame pointer to top of stack frame");
 
-        int localStackSize = n.vl.size() * 4;
+        int localStackSize = currMethod.getNumberOfVars() * 4;
         emitComment("Allocating stack space for local variables");
         emit("subu $sp, $sp, " + localStackSize + "      # Push stack space for locals");
 
+        
+        int varCounter = 0;
         // Assign an offset to $fp for each local variable
-        for (int i = n.vl.size() - 1 ; i >= 0; i--)
-        {
-            RamVariable var = currMethod.getVar(n.vl.elementAt(i).i.s);
-            var.setMemoryOffset(32 + i * 4);
+        for(RamVariable var : currMethod.getVarIterable())
+        {            
+            var.setMemoryOffset(32 + varCounter * 4);
+            varCounter++;
         }
 
         for (int i = 0; i < n.sl.size(); i++)
@@ -504,9 +542,8 @@ public class CodeGenerator extends DepthFirstVisitor
         else if (paramIndex >= 0) // We are assigning to a register parameter
         {
             int regIndex = paramIndex + 1;
-            emit("move $v0, $a" + regIndex + "       # Assign $v0 to param register $a"+ regIndex );
-        }     
-
+            emit("move $a" + regIndex + ", $v0    # Assign $v0 to param register $a"+ regIndex );
+        }   
     }
     
     public void visit(PlusEquals n)
@@ -549,29 +586,125 @@ public class CodeGenerator extends DepthFirstVisitor
         
     }
     
-    private void emitAllocateHeap(int size)
-    {
-        emit("move $t0, $a0     # Save $a0");
-        emit("li $v0, 9     # load system_call 9 ");
-        emit("li $a0, " + size + "    # size of heap to be allocated");
-        emit("syscall");        
-    }
-    
     public void visit(NewObject n)
     {
         RamClass newClass = symTable.getClass(n.i.s);
         int objectSize = newClass.getVarCount() * 4;
         
-       // if(objectSize == 0)
-       //     objectSize = 4;
-        
-        emitComment("Allocate new object");
-        emitAllocateHeap(objectSize);   
+        emitComment("Allocate new object");        
+        emit("move $t0, $a0     # Save $a0");
+        emit("li $v0, 9     # load system_call 9 ");
+        emit("li $a0, " + objectSize + "    # size of heap to be allocated");
+        emit("syscall");             
         emit("move $a0, $t0    # Restore $a0");
+    }
+    
+    public void visit(NewArray n)
+    {
+        emitComment("Allocate new array");
+        n.e.accept(this);           
+        emit("move $t2, $v0      # Save the length of the array to $t2 so it can be stored after allocation");
+        emit("li $t1, 4          # Load 4 into a temp register so we can multiply by it");
+        emit("move $t0, $a0      # Save $a0");       
+        emit("mul $a0, $v0, $t1  # Multiply the size of the array by 4 to compute bytes. Store results in $a0");        
+        emit("add $a0, $a0, $t1  # Add 4 to the value of $a0 to account for length. Store result in $a0");
+        emit("li $v0, 9          # Load system_call 9");   
+        emit("syscall");
+        emit("sw $t2, ($v0)      # Store the length saved in $t2 into the newly allocated location at $v0");
+        emit("move $a0, $t0      # Restore $a0");        
+    }
+    
+    public void visit(ArrayLength n)
+    {
+        emitComment("Array length lookup");
+        n.e.accept(this);
+        emit("lw $v0, ($v0)   # Load the contents of the memory address of the first word in the array");        
+    }
+    
+    public void visit(ArrayAssign n)
+    {
+        emitComment("Array assignment to " + n.i.s);
+        n.e1.accept(this);
+        emit("move $t1, $v0      # Save array index into $t1");
+        emit("li $t2, 4          # Load 4 into $t2 for multiplication");
+        emit("mul $t1, $v0, $t2  # Multiply index by 4 and store results back to $t1");
+        emit("add $t1, $t1, $t2  # Add 4 to $t1 to account for length byte, and store back to $t1");
+        n.e2.accept(this);        
+        
+        RamVariable var = currMethod.getVar(n.i.s);        
+        if(var == null)
+        {
+            var = currClass.getVar(n.i.s);
+        }
+        int paramIndex = currMethod.getParamIndex(n.i.s);
+        
+        
+        if(var != null || paramIndex > 2)
+        {            
+            n.i.accept(this);
+            emit("lw $t0, ($t0)    # Load contents of address at $t0 (the arrays)");
+        }
+        else if (paramIndex >= 0) // We are assigning to a register parameter
+        {
+            int regIndex = paramIndex + 1;
+            emit("move $t0, $a" + regIndex + "  # Move array address from param register $a"+ regIndex + " to $t0");
+        }   
+        emit("add $t0, $t0, $t1     # Add offset of array index into address at $t0");
+        emit("sw $v0, ($t0)         # Store results of assignment into the address of $t0");        
+    }
+    
+    public void visit(ArrayLookup n)
+    {
+        emitComment("Array lookup");
+        n.e1.accept(this);        
+        emit("subu $sp, $sp, 4  # push stack");
+        emit("sw $v0, ($sp)     # Store array base pointer onto stack");
+        n.e2.accept(this);
+        emit("move $t0, $v0     # Save index to $t0");
+        emit ("lw $v0, ($sp)    # Restore base pointer from stack");
+        emit("addi $sp, $sp, 4  # pop stack");
+        emit("li $t1, 4         # load 4 into $t1 for multiplication");
+        emit("mul $t0, $t0, $t1 # Multiply the index by 4 and store the result in $t0");
+        emit("add $t0, $t0, $t1 # Add 4 to $t0 to account for length byte");
+        emit("add $v0, $v0, $t0 # Add computed offset at $t0 to $v0");
+        emit("lw $v0, ($v0)     # Load the value from the address of $v0 into $v0");
     }
     
     public void visit(This n)
     {
         emit("move $v0, $a0    # Move address of this object into $v0");        
+    }
+    
+    private int globalForEachCounter;
+    public void visit(ForEach n)
+    {
+        RamVariable var = currMethod.getVar(n.iterator.s);
+        
+        emitComment("Start of foreach");
+        n.source.accept(this); // Load the value (which is an address) of the source array into $v0
+        emit("lw $t0, ($v0)     # Load the contents of the address contained in $v0, which is the length of the array, int $t0");                
+        emit("addi $v0, $v0, 4  # Added four bytes to the memory address in $v0, moving it to the first element in the array");
+        emit("move $t1, $0      # Initialize the counter in $t1 as zero");
+        emit("subu $sp, $sp, 12 # Push three words onto the stack (length, current element, count)");
+
+        int localForEachCounter = globalForEachCounter++;
+        emitLabel("foreach_start_" + localForEachCounter);
+        emit("bge $t1, $t0, foreach_done_" + localForEachCounter + " # Bracch to done if counter is greater than or equal to length ");
+        emit("lw $t2, ($v0)    # Load value of array element from the address of $v0 into $t2");
+        emit("sw $t2, -" + var.getMemoryOffset() + "($fp)  # Store value of array into local variable at the $fp offset");
+        emit("sw $v0, 4($sp)   # Store the address at $v0, the current element of the array to $sp offset by one word");
+        emit("sw $t0, ($sp)    # store the length of the array at the base of $sp");        
+        emit("sw $t1, 8($sp)   # store the counter variable at $sp offset by two words");        
+        
+        n.statement.accept(this);
+        
+        emit("lw $v0, 4($sp)   # Load address of array into $v0");
+        emit("lw $t0, ($sp)    # Load length of the array into $t0");
+        emit("lw $t1, 8($sp)   # Load counter into $t1");        
+        emit("addi $v0, $v0, 4 # Add 4 to the address of the current element so it points to the next element");
+        emit("addi $t1, $t1, 1 # Add one to the counter");
+        emit("j foreach_start_" + localForEachCounter + " #Unconditional jump to beginning of loop");
+        emitLabel("foreach_done_" + localForEachCounter);
+        emit("addi $sp, 12    # Pop three words off the stack");
     }
 }

@@ -1,10 +1,9 @@
 package symboltable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import syntaxtree.Type;
 
 public class RamMethod
@@ -12,17 +11,18 @@ public class RamMethod
     private String id;
     private Type returnType;
     private HashMap<String, RamVariable> locals;    
-    
+    private HashMap<String, RamVariable> params;
     //This list holds references to ids which are also in the locals map.
     // This allows access them by index.
-    private List<String> params;
+    private List<String> paramArrayList;
     
     public RamMethod(String id, Type type)
     {
         this.id = id;
         returnType = type;
         locals = new HashMap<String,RamVariable>();
-        params = new ArrayList<String>();        
+        params = new HashMap<String, RamVariable>();
+        paramArrayList = new ArrayList<String>();        
     }
     
     public String getId()
@@ -37,8 +37,6 @@ public class RamMethod
     
     public RamVariable getVar(String id)
     {
-        if(params.contains(id)) // Do not return params
-            return null;
         return locals.get(id);
     }
     
@@ -49,40 +47,46 @@ public class RamMethod
         else
             locals.put(id, new RamVariable(id, type));
         return true;
+    }    
+    
+    public int getNumberOfVars()
+    {
+        return locals.size();
     }
     
-    public RamVariable getParam(String id)
+    public Collection<RamVariable> getVarIterable()
     {
-        // Make sure the id is actually a param and not a local
-        if(params.contains(id))
-            return locals.get(id); 
-        else
-            return null;
+        return locals.values();
+    }
+
+    public RamVariable getParam(String id)
+    {         
+        return params.get(id);
     }
     
     public int getNumberOfParams()
     {
-        return params.size();
+        return paramArrayList.size();
     }
     
     public boolean addParam(String id, Type type)
     {
-        if(params.contains(id))
+        if(params.containsKey(id))
             return false;        
-        params.add(id);
-        locals.put(id, new RamVariable(id, type));
+        paramArrayList.add(id);
+        params.put(id, new RamVariable(id, type));
         return true;
     }
     
     public RamVariable getParamAt(int i)
     {
-        return locals.get(params.get(i));
+        return params.get(paramArrayList.get(i));
     }
     
     public int getParamIndex(String id)
     {
-        for(int i = 0; i < params.size(); i++)
-            if(params.get(i).equals(id))
+        for(int i = 0; i < paramArrayList.size(); i++)
+            if(paramArrayList.get(i).equals(id))
                 return i;
         
         return -1; // Indicates this is not a parameter
@@ -93,14 +97,14 @@ public class RamMethod
     {
         String result = "\t\t\tclass " + returnType + " " + id + ":\n";
         result += "\t\t\t\tParams:\n";
-        for(String id : params)
+        for(String id : paramArrayList)
         {
             result += "\t\t\t\t\t" + locals.get(id) + "\n";
         }
         result += "\t\t\t\tLocals:\n";
         for(RamVariable local : locals.values())
         {
-            if(!params.contains(local.id()))
+            if(!paramArrayList.contains(local.id()))
                 result += "\t\t\t\t\t" +local + "\n";
         }
         return result;
