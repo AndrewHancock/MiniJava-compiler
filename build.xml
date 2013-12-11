@@ -37,7 +37,7 @@
     </target>
     <target name="run">
         <java jar="build/jar/MiniJava.jar" fork="true">
-		<arg value="programs/MipsTest.ram"/>
+		<arg value="programs/codegen/BinarySearchTree.ram"/>
 	</java>
     </target>
 </project>
