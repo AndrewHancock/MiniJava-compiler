@@ -39,7 +39,7 @@ import syntaxtree.True;
 import syntaxtree.While;
 import visitor.error.ErrorMsg;
 
-public class CodeGenerator extends DepthFirstVisitor
+public class MipsCodeGenerator extends DepthFirstVisitor
 {
 
     private ErrorMsg errorMsg = new ErrorMsg();
@@ -49,7 +49,7 @@ public class CodeGenerator extends DepthFirstVisitor
     private RamMethod currMethod;
     private TypeCheckExpVisitor typeCheckExpVisitor;
 
-    public CodeGenerator(java.io.PrintStream o, Table st)
+    public MipsCodeGenerator(java.io.PrintStream o, Table st)
     {
         out = o;
         symTable = st;

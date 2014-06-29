@@ -99,7 +99,7 @@ public class RamMethod
         result += "\t\t\t\tParams:\n";
         for(String id : paramArrayList)
         {
-            result += "\t\t\t\t\t" + locals.get(id) + "\n";
+            result += "\t\t\t\t\t" + params.get(id) + "\n";
         }
         result += "\t\t\t\tLocals:\n";
         for(RamVariable local : locals.values())
