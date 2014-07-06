@@ -11,9 +11,10 @@ import syntaxtree.ArrayAssign;
 import syntaxtree.ArrayLookup;
 import syntaxtree.Assign;
 import syntaxtree.Call;
-import syntaxtree.ClassDecl;
 import syntaxtree.ClassDeclSimple;
+import syntaxtree.Equality;
 import syntaxtree.False;
+import syntaxtree.ForEach;
 import syntaxtree.Identifier;
 import syntaxtree.IdentifierExp;
 import syntaxtree.If;
@@ -274,6 +275,28 @@ public class X86CodeGenerator extends DepthFirstVisitor
     	emit("pushl %eax");    	
     }
     
+    private int equalCounter;
+    public void visit(Equality e)    
+    {
+    	e.e1.accept(this);
+    	e.e2.accept(this);
+    	int equalCounter = ++this.equalCounter;
+    	String isDoneLabel = "equality_done_" + equalCounter;
+    	String isEqualLabel = "equaliy_is_equal_" + equalCounter;
+    	
+    	emit("pop %eax	# Result of left of eq expression");
+    	emit("pop %ebx  # Result of right of eq expression");
+    	emit("cmp %eax, %ebx # Compare the results");
+    	emit("je " + isEqualLabel);
+    	emitComment("Not equal case");
+    	emit("push $0   # Push false");
+    	emit("jmp " + isDoneLabel);
+    	emitComment("Equal case");
+    	emitLabel(isEqualLabel);
+    	emit("push $1");
+    	emitLabel(isDoneLabel);
+    }
+    
     private int lessThanCounter;
     @Override
     public void visit(LessThan l)
@@ -487,8 +510,8 @@ public class X86CodeGenerator extends DepthFirstVisitor
 	    	emit("addl $4, %esp    # Clear stack from malloc call ");
 	    	emit("pushl %eax");
     	}
-    	else
-    		emit ("pushl $0");
+    	else    		
+    		emit ("pushl $0      # Place holder address for zero sized objects");
     }
     
     @Override
@@ -559,6 +582,18 @@ public class X86CodeGenerator extends DepthFirstVisitor
     	e.s.accept(this);
     	emit("jmp " + testLabel);
     	emitLabel(doneLabel);
+    }
+    
+    int forEachCounter;
+    @Override
+    public void visit(ForEach e)
+    {
+    	int forEachCounter = ++this.forEachCounter;
+    	e.iterator.accept(this);
+    	emitComment("Load size for counter");
+    	//emit("pop "
+    	
+    	
     }
     
 }
