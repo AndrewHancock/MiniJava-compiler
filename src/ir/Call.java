@@ -7,10 +7,10 @@ import java.util.List;
 public class Call implements Operation
 {	
 	String id;
-	List<Alias> parameters;
-	Alias dest;
+	List<Value> parameters;
+	Value dest;
 	
-	public Call(String id, List<Alias> parameters, Alias dest)
+	public Call(String id, List<Value> parameters, Value dest)
 	{
 		this.id = id;
 		this.parameters = parameters;
@@ -22,12 +22,12 @@ public class Call implements Operation
 		return id;
 	}
 	
-	public List<Alias> getParameters()
+	public List<Value> getParameters()
 	{
 		return parameters;
 	}
 	
-	public Alias getDest()
+	public Value getDest()
 	{
 		return dest;
 	}

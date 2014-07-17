@@ -2,11 +2,11 @@ package ir;
 
 import ir.visitor.IrVisitor;
 
-public class Temporary implements Alias
+public class Temporary implements Value
 {	
 	private String id;
 	public Temporary(String id) { this.id = id; }
-	@Override
+	
 	public String getName()
 	{
 		return id;

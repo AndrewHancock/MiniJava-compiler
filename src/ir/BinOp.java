@@ -2,7 +2,7 @@ package ir;
 
 import ir.visitor.IrVisitor;
 
-public class BinOp
+public class BinOp implements Operation
 {
 	public enum Op
 	{
@@ -16,11 +16,11 @@ public class BinOp
 	}
 	private Op op;
 
-	private Alias dest;
-	private Alias src1;
-	private Alias src2;
+	private Value dest;
+	private Value src1;
+	private Value src2;
 	
-	public BinOp(Op op, Alias dest, Alias src1, Alias src2)
+	public BinOp(Op op, Value dest, Value src1, Value src2)
 	{
 		this.op = op;
 		this.dest = dest;
@@ -33,20 +33,21 @@ public class BinOp
 		return op;
 	}
 	
-	public Alias getDest()
+	public Value getDest()
 	{
 		return dest;
 	}
 	
-	public Alias getSrc1()
+	public Value getSrc1()
 	{
 		return src1;
 	}
 	
-	public Alias getSrc2()
+	public Value getSrc2()
 	{
 		return src2;
 	}
+	
 	public void accept(IrVisitor visitor)
 	{
 		visitor.visit(this);
