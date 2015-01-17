@@ -25,6 +25,11 @@ public class RecordDeclaration extends Declaration
 		return fields.get(i);
 	}
 	
+	public int getFieldCount()
+	{
+		return fields.size();
+	}
+	
 	@Override
 	public void accept(IrVisitor visitor)
 	{

@@ -5,16 +5,23 @@ import ir.visitor.IrVisitor;
 public class Temporary implements Value
 {	
 	private String id;
-	public Temporary(String id) { this.id = id; }
+	private int offset;
+	public Temporary(String id, int offset) { this.id = id; this.offset = offset; }
 	
-	public String getName()
+	public String getId()
 	{
 		return id;
 	}
+	
+	public int getOffset()
+	{
+		return offset;
+	}
+	
 	@Override
 	public void accept(IrVisitor visitor)
 	{
-		// TODO Auto-generated method stub
+		visitor.visit(this);
 		
 	}
 

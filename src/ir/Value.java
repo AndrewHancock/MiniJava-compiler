@@ -4,5 +4,5 @@ import ir.visitor.IrVisitor;
 
 public interface Value
 {	
-	void accept(IrVisitor visitor);
+	void accept(IrVisitor visitor);	
 }

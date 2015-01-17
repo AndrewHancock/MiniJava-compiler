@@ -4,7 +4,7 @@ import ir.visitor.IrVisitor;
 
 import java.util.List;
 
-public class Call implements Operation
+public class Call implements Value
 {	
 	String id;
 	List<Value> parameters;

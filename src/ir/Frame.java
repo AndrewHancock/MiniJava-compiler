@@ -11,7 +11,7 @@ public class Frame extends Declaration
 	private List<Identifier> locals;
 	private BasicBlock startBlock = new BasicBlock();
 	
-	private TempAllocator allocator = new TempAllocator();
+	private TempAllocator allocator = new TempAllocator();	
 	
 		
 	public Frame(String namespace, String id, int paramSize, int localSize, BasicBlock startBlock)
@@ -67,8 +67,6 @@ public class Frame extends Declaration
 	public void accept(IrVisitor visitor)
 	{
 		visitor.visit(this);
-	}
-	
-	
+	}	
 
 }

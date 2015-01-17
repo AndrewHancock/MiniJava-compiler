@@ -18,5 +18,10 @@ public class NewArray implements Value
 	{
 		visitor.visit(this);
 	}
+	
+	public Value getSize()
+	{
+		return size;
+	}
 
 }

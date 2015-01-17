@@ -11,7 +11,7 @@ public class BasicBlock
 	
 	List<CodePoint> codePoints = new ArrayList<CodePoint>();	
 	
-	List<BasicBlock> children = new ArrayList<BasicBlock>();
+	BasicBlock child;
 	
 	public void addOperation(Operation op)
 	{
@@ -26,6 +26,28 @@ public class BasicBlock
 	
 	public void accept(IrVisitor visitor)
 	{
-		visitor.visit(this);		
+		visitor.visit(this);
+		if(child != null)
+			visitor.visit(child);
+	}
+	
+	public BasicBlock getChild()
+	{
+		return child;
+	}
+	
+	public void setChild(BasicBlock child)
+	{
+		this.child = child;
+	}
+	
+	public BasicBlock getParent()
+	{
+		return parent;		
+	}
+	
+	public void setParent(BasicBlock b)
+	{
+		this.parent = parent;
 	}
 }

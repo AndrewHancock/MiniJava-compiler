@@ -1,10 +1,11 @@
 package ir;
 
-import java.util.Stack;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TempAllocator
-{
-	private Stack<Temporary> temps = new Stack<Temporary>();
+{	
+	private ArrayList<Temporary> temps = new ArrayList<Temporary>();
 	
 	int tempCounter = 0;
 	private String getNewTempName()
@@ -14,14 +15,19 @@ public class TempAllocator
 	
 	public Temporary GetTemporary()
 	{
-		if(! temps.empty())
-			return temps.pop();
-		else
-			return new Temporary(getNewTempName());
+		Temporary newTemp = new Temporary(getNewTempName(), tempCounter);
+		temps.add(newTemp);
+		return newTemp;
+		
 	}
 	
-	public void returnTemporart(Temporary temp)
+	public int getTemporaryCount()
 	{
-		temps.push(temp);
+		return temps.size();
+	}
+	
+	public List<Temporary> getTemporaries()
+	{
+		return temps;
 	}
 }

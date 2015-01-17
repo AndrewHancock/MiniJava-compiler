@@ -1,13 +1,19 @@
 package ir.backend;
 
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.List;
 
+import syntaxtree.MethodDecl;
 import ir.ArrayAccess;
+import ir.ArrayAssignment;
 import ir.Assignment;
+import ir.ConditionalBasicBlock;
+import ir.DataType;
 import ir.IntegerLiteral;
 import ir.NewArray;
 import ir.RecordAccess;
+import ir.RecordAssignment;
 import ir.RecordDeclaration;
 import ir.Value;
 import ir.BasicBlock;
@@ -81,6 +87,8 @@ public class X86CodeGenerator implements IrVisitor
 		emit("pushl %ebp");
 		emit("movl %esp, %ebp");
 		currentFrame = f;
+		int localSize = f.getLocals().size() + f.getTempAllocator().getTemporaryCount();
+		emit("subl $" + (localSize * 4) + " , %esp   #Reserve spsace for locals and temporaries.");		
 		f.getStartingBlock().accept(this);
 		emit("movl %ebp, %esp");
 		emit("leave");
@@ -113,21 +121,26 @@ public class X86CodeGenerator implements IrVisitor
 		case SUBTRACT:
 			return "subl";
 		default:
-			throw new RuntimeException("Unrecognized op.");
+			return null;
 		}
 	}
 
 	public void visit(BinOp b)
 	{
+		
 		if(!(b.getSrc1() instanceof Temporary))
 			b.getSrc1().accept(this);
 		if(!(b.getSrc2() instanceof Temporary))
 			b.getSrc2().accept(this);
 		
 		emit("popl %ebx");
-		emit("popl %eax");		
-		emit(getOpOpcode(b.getOp()) + " %ebx, %eax");
-		emit("pushl %eax");
+		emit("popl %eax");
+		BinOp.Op op = b.getOp();
+		if(op != null)
+		{
+			emit(getOpOpcode(b.getOp()) + " %ebx, %eax");
+			emit("pushl %eax");
+		}
 	}
 
 	@Override
@@ -174,7 +187,7 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		int result = -1;
 		for (int i = 0; i < ids.size(); i++)
-			if (ids.get(i).getName().equals(id))
+			if (ids.get(i).getId().equals(id))
 				result = i;
 		return result;
 	}
@@ -182,13 +195,13 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Identifier i)
 	{
-		int paramIndex = getIndexById(currentFrame.getParams(), i.getName());
+		int paramIndex = getIndexById(currentFrame.getParams(), i.getId());
 		if (paramIndex > 0)
 		{
 			emit("push " + (4 * paramIndex + 12) + "(%ebp)");
 		}
 
-		int localIndex = getIndexById(currentFrame.getLocals(), i.getName());
+		int localIndex = getIndexById(currentFrame.getLocals(), i.getId());
 		if (localIndex > 0)
 		{
 			emit("push -" + (4 * localIndex) + "(%ebp)");
@@ -204,40 +217,87 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Temporary t)
 	{
-		// TODO Auto-generated method stub
 		
-	}
-
+		
+		
+	}	
+	
 	@Override
 	public void visit(ArrayAccess a)
-	{
-		// TODO Auto-generated method stub
-		
+	{		
+		emitComment("Access an array element");
+		a.getReference().accept(this);
+		emit("popl %esi   #Load array reference");
+		a.getIndex().accept(this);
+		emit("popl %eax   #Load array index");
+		emit("incl %eax   #Skip the size word at the beginning");
+		emit("push (%esi, %eax, $4)    # Store contents of value at offset onto stack");
 	}
+	
+	
 
 	@Override
 	public void visit(NewArray n)
 	{
-		// TODO Auto-generated method stub
-		
+		emitComment("Allocate new array");
+		n.getSize().accept(this);
+		emit("pop %eax");
+		emit("mull $4, %eax");
+		emit("push %eax");
+		emit("call _malloc");
+		emit("push %eax");		
+	}	
+	
+
+	@Override
+	public void visit(ArrayAssignment a)
+	{
+		emitComment("Assign to an array element");
+		a.getSrc().accept(this);
+		a.getDest().accept(this);
+		a.getDestIndex().accept(this);
+		emit("popl %eax   #Load array index");
+		emit("popl %esi   #Load array reference");		
+		emit("incl %eax   #Skip the size word at the beginning");
+		emit("pushl (%esi, %eax, $4)    # Store contents of value at offset onto stack");		
 	}
 
+	private HashMap<String, RecordDeclaration> recordMap = new HashMap<String, RecordDeclaration>();
 	@Override
 	public void visit(RecordDeclaration r)
 	{
-		// TODO Auto-generated method stub
-		
+		recordMap.put(r.getNamespace() + r.getId(), r);		
 	}
 
 	@Override
 	public void visit(RecordAccess r)
-	{
-		// TODO Auto-generated method stub
+	{	
+		//Assume 4 bytes for now
+		int offset = r.getIndex() * 4;
+		
+		r.accept(this);
+		emit("pop %esi");
+		emit("push " + offset + "(%esi)");		
+	}
+
+	@Override
+	public void visit(RecordAssignment r)
+	{		
 		
 	}
 
 	@Override
 	public void visit(Assignment assignment)
+	{
+		assignment.getDest().accept(this);
+		emit("pop %eax");
+		assignment.getSrc().accept(this);
+		emit("pop %ebx");
+		emit("movl %ebx, (%eax)");
+	}
+
+	@Override
+	public void visit(ConditionalBasicBlock b)
 	{
 		// TODO Auto-generated method stub
 		

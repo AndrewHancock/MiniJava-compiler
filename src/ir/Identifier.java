@@ -7,7 +7,7 @@ public class Identifier implements Value
 	private String id;
 	public Identifier(String id) { this.id = id; }	
 	
-	public String getName()
+	public String getId()
 	{
 		return id;
 	}

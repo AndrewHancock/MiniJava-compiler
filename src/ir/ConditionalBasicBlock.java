@@ -1,8 +1,30 @@
 package ir;
 
-public class CoditionalBasicBlock extends BasicBlock
+public class ConditionalBasicBlock extends BasicBlock
 {
-	BasicBlock condition = new BasicBlock();
-	BasicBlock trueBlock = new BasicBlock();
-	BasicBlock falseBlock = new BasicBlock();
+	BasicBlock condition;
+	BasicBlock trueBlock;
+	BasicBlock falseBlock;
+	
+	public ConditionalBasicBlock(BasicBlock condition, BasicBlock trueBlock, BasicBlock falseBlock)
+	{
+		this.condition = condition;
+		this.trueBlock = trueBlock;
+		this.falseBlock = falseBlock;		
+	}
+	
+	public BasicBlock getCondition()
+	{
+		return condition;
+	}
+	
+	public BasicBlock getTrueBlock()
+	{
+		return trueBlock;
+	}
+	
+	public BasicBlock getFalseBlock()
+	{
+		return falseBlock;
+	}
 }

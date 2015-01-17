@@ -1,8 +1,7 @@
 package ir;
 
 public class ArrayAssignment extends Assignment 
-{
-
+{	
 	private Value destIndex;
 	public ArrayAssignment(Value src, Value dest, Value destIndex)
 	{
