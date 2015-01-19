@@ -1,0 +1,26 @@
+class InstanceAndMethodVarTest
+{
+	public static void main(String[] args)
+	{
+		println(new Test().test())!
+	}
+}
+
+class Test
+{
+	int i!
+	public int test()
+	{
+		i = 5!			
+		println(i)!
+		return this.printAndReturnInstanceVar()! // We cannot refer to this.i in print so we call a method			 
+	}
+	
+	
+	public int printAndReturnInstanceVar()
+	{
+		i = 10!
+		println(i)!
+		return i!
+	}
+}
