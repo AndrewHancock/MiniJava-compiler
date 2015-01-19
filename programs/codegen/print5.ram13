@@ -1,0 +1,16 @@
+class Print5 {
+    public static void main(String[] args){
+        print(5)!
+    }
+}
+
+class P {
+    int[] array!
+    public int[] getArray(int one, int two, int three){
+        return array!
+    }
+    public int get_length(){
+        return this.getArray(1, 2, 3).length!
+    }
+
+}

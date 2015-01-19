@@ -1,0 +1,240 @@
+class BinarySearchTree
+{
+	public static void main(String[] args)
+	{
+		println(new BinarySearchTest().test())!
+	}
+}
+
+class BinarySearchTest
+{
+	public int printBool(bool value)
+	{
+		if(value)
+			println(1)!
+		else
+			println(0)!
+			return 0!
+	}
+	
+	public int test()
+	{
+		Tree tree!
+		bool found!
+		int result!		
+		tree = new Tree()!	
+		result = tree.init()!
+		
+		//This will create a balanced binary tree of depth 3
+		result = tree.insert(8)!
+		result = tree.insert(4)!
+		result = tree.insert(12)!
+		result = tree.insert(6)!
+		result = tree.insert(2)!
+		result = tree.insert(10)!
+		result = tree.insert(14)!
+		result = tree.insert(3)!
+		result = tree.insert(1)!
+		result = tree.insert(7)!
+		result = tree.insert(5)!
+		result = tree.insert(9)!
+		result = tree.insert(11)!
+		result = tree.insert(15)!
+		result = tree.insert(13)!				
+		
+		//eight values should be found, three values should not
+		result = this.printBool(tree.search(8))!
+		result = this.printBool(tree.search(4))!
+		result = this.printBool(tree.search(12))!
+		result = this.printBool(tree.search(2))!
+		result = this.printBool(tree.search(10))!
+		result = this.printBool(tree.search(13))!
+		result = this.printBool(tree.search(5))!
+		result = this.printBool(tree.search(1))!
+		result = this.printBool(tree.search(100))!
+		result = this.printBool(tree.search(16))!
+		result = this.printBool(tree.search(21))!
+		
+		//Infix print tree - one per line
+		result = tree.infix_print()!
+		
+
+		return result!
+	}
+}
+
+class Node
+{
+	int value!
+	Node left!
+	Node right!	
+	
+	public int setValue(int newValue)
+	{
+		value = newValue!
+		return 0!
+	}
+	
+	public int setLeft(Node newLeft)
+	{
+		left = newLeft!
+		return 0!
+	}
+	
+	public int setRight(Node newRight)
+	{
+		right = newRight!
+		return 0!
+	}
+	
+	public int getValue()
+	{
+		return value!
+	}
+	
+	public Node getLeft()
+	{
+		return left!
+	}
+	
+	public Node getRight()
+	{
+		return right!
+	}
+}
+
+/** We have no way to have "null" references. 
+  * A special sentinel node will be used instead.
+  */
+class Tree
+{
+	Node root!
+	Node sentinel!
+	
+	public int init()
+	{
+		int result!
+		sentinel = new Node()!
+		result = sentinel.setValue(0)!	
+		result = sentinel.setLeft(sentinel)!
+		result = sentinel.setRight(sentinel)!
+		root = sentinel!
+		
+		return 0!
+	}
+	
+	public Node getNewNode()
+	{
+		int tmp!
+		Node newNode!
+		newNode = new Node()!
+		tmp = newNode.setLeft(sentinel)!
+		tmp = newNode.setRight(sentinel)!
+		return newNode!
+	}
+	
+	public int recursiveInsert(Node currentNode, int newValue)
+	{
+		int tmp!
+		Node tempNode!
+		if(newValue lt currentNode.getValue())
+		{
+			if(currentNode.getLeft().getValue() eq sentinel.getValue())
+			{
+				tempNode = this.getNewNode()!
+				tmp = tempNode.setValue(newValue)!
+				tmp = currentNode.setLeft(tempNode)!
+			}
+			else
+				tmp = this.recursiveInsert(currentNode.getLeft(), newValue)!
+		}
+		else
+		{
+			if(currentNode.getRight().getValue() eq sentinel.getValue())
+			{
+				tempNode = this.getNewNode()!
+				tmp = tempNode.setValue(newValue)!
+				tmp = currentNode.setRight(tempNode)!
+			}
+			else
+				tmp = this.recursiveInsert(currentNode.getRight(), newValue)!		
+		}		
+		return 0!
+	}
+	
+	public int insert(int newValue)
+	{
+		int tmp!
+		if(root.getValue() eq sentinel.getValue())
+		{
+			root = this.getNewNode()!
+			tmp = root.setValue(newValue)!
+		}
+		else
+			tmp = this.recursiveInsert(root, newValue)!
+		return 0!		
+	}
+	
+	public bool recursiveSearch(Node currentNode, int searchValue)
+	{		
+		bool result!
+		result = false!
+		
+		if(currentNode.getValue() eq sentinel.getValue())
+			result = false!
+		else
+		{
+		
+			if(searchValue lt currentNode.getValue())
+			{
+				result = this.recursiveSearch(currentNode.getLeft(), searchValue)!
+			}
+			else
+			{
+				if(currentNode.getValue() eq searchValue)
+					result = true!
+				else
+					result = this.recursiveSearch(currentNode.getRight(), searchValue)!		
+			}			
+		}
+		return result!
+	}
+	
+	public bool search(int searchValue)
+	{
+		bool result!
+		result = false!
+		
+		if(root.getValue() eq sentinel.getValue())
+			result = false!
+		else
+			result = this.recursiveSearch(root, searchValue)!
+		return result!
+	}
+	
+	public int recursive_print(Node currentNode)
+	{		
+		int result!		
+		
+		if(currentNode.getValue() eq sentinel.getValue())
+			result = 0!
+		else
+		{		
+			result = this.recursive_print(currentNode.getLeft())!
+			println(currentNode.getValue())!
+			result = this.recursive_print(currentNode.getRight())!
+		}
+		return result!
+	}
+	
+	public int infix_print()
+	{
+		int result!		
+		
+		if(root.getValue() eq sentinel.getValue())
+			result = 0!
+		else
+			result = this.recursive_print(root)!
+		return result!
+	}
+}
