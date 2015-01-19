@@ -1,5 +1,7 @@
 package visitor;
 
+import java.io.PrintStream;
+
 import symboltable.RamClass;
 import symboltable.RamMethod;
 import symboltable.Table;
@@ -7,26 +9,26 @@ import syntaxtree.*;
 
 public class PythonVisitor implements Visitor
 {
-    private StringBuilder out = new StringBuilder();
+    private PrintStream ps;
     private String programName;
     private RamClass currClass;
     private RamMethod currMethod;
     private Table symbolTable;
     
-    public PythonVisitor(Table symbolTable)
+    public PythonVisitor(PrintStream ps, Table symbolTable)
     {
+    	this.ps = ps;
         this.symbolTable = symbolTable;
     }
     
     private void println(String s)
     {
-        out.append(s);
-        out.append("\n");
+        ps.println(s);        
     }
 
     private void print(String s)
     {
-        out.append(s);
+        ps.print(s);
     }
 
     private int level = 0;
@@ -34,7 +36,7 @@ public class PythonVisitor implements Visitor
     private void indent()
     {
         for (int i = 0; i < level; i++)
-            out.append("    ");
+            ps.print("    ");
     }
     
     private void prependSelf(String id)
@@ -56,6 +58,7 @@ public class PythonVisitor implements Visitor
         {
             n.cl.elementAt(i).accept(this);
         }
+        println("main()");
     }
 
     @Override
@@ -436,12 +439,6 @@ public class PythonVisitor implements Visitor
     public void visit(Identifier n)
     {
         print(n.s);
-    }
-
-    @Override
-    public String toString()
-    {
-        return out.toString();
     }
     
     public String getName()
