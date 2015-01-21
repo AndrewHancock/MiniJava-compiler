@@ -5,11 +5,11 @@ and mips (SPIM) as target architecture.
 
 Usage
 =====
-'usage: RamCompiler
+`usage: RamCompiler
  -f,--format <arg>   Output format. Valid options: x86, python, mips
  -h,--help           print usage
  -i,--input <arg>    input file.
- -o,--output <arg>   output file.'   
+ -o,--output <arg>   output file.`  
  
 If the output file option is ommited the generated code will be written to standard output.
  
