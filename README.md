@@ -1,10 +1,11 @@
 Minijava Compiler
 =================
-Compile a class-specific variant of MiniJava to a variety of target formats. Largely follows the approaching from Andrew Appel's "Modern Compiler Implementation in Java." Supports x86, python 
-and mips (SPIM) as target architecture.
+A compiler for a variant of "MiniJava." Supports x86 (AT&T Syntax), python and MIPS (SPIM) as target architecture.
 
 Usage
 =====
+The compiler is invoked from the command line. 
+
 	usage: RamCompiler
 	 -f,--format <arg>   Output format. Valid options: x86, python, mips
 	 -h,--help           print usage
@@ -23,3 +24,5 @@ Build
 =====
 The MiniJava compiler is a Maven project. With Maven and the JDK installed executate the following:  
 `mvn clean install`  
+For some IDEs, such as Eclipse, you may need to copy the generated source code from the directory target/generated-sources/javacc/frontend/generated
+to src/main/java/frontend/generated when re-generating the grammar sources.
