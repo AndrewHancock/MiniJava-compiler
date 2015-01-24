@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.List;
 
+import symboltable.Table;
 import syntaxtree.MethodDecl;
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
@@ -28,11 +29,11 @@ import ir.visitor.IrVisitor;
 
 public class X86CodeGenerator implements IrVisitor
 {
-	private PrintStream out;
-
+	private PrintStream out;	
+	
 	public X86CodeGenerator(PrintStream out)
-	{
-		this.out = out;
+	{		
+		this.out = out;		
 	}
 
 	private void emit(String text)
@@ -150,7 +151,8 @@ public class X86CodeGenerator implements IrVisitor
 		{
 			param.accept(this);
 		}
-
+		
+		emit("call " + call.getId());
 		int paramSize = call.getParameters().size() * 4;
 		if (paramSize > 0)
 			emit("addl $" + paramSize + ", %esp   # Clean up parameters from call");
