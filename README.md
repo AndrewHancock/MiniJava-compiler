@@ -1,16 +1,28 @@
 Minijava Compiler
 =================
-Compile a class-specific variant of MiniJava to x86. Largely follows the approaching from Andrew Appel's "Modern Compiler Implementation in Java." 
+A compiler for a variant of "MiniJava." Supports x86 (AT&T Syntax), python and MIPS (SPIM) as target architecture.
 
 Usage
 =====
-The compiler is distributed as a Maven project. With Maven and the JDK properly configurated, simply execute the following from the root folder of the project:  
-`java -cp target/minijava-compiler-1.jar compiler/RamCompiler `  
+The compiler is invoked from the command line. 
 
-This will produce a file of the same name with an additional .s extension. This file can be assembled using GNU asm. Gcc can be used to assembl the output, for example (on Windows with MinGW):  
-'gcc -o BinarySearch.exe programs/codegen/BinarySearchTree.ram.s`
+	usage: RamCompiler
+	 -f,--format <arg>   Output format. Valid options: x86, python, mips
+	 -h,--help           print usage
+	 -i,--input <arg>    input file.
+	 -o,--output <arg>   output file.  
+ 
+If the output file option is ommited the generated code will be written to standard output.
+ 
+For example, to compile the "BinarySearchTree.ram" test program into x86 format:  
+`$ java -cp target/minijava-compiler-1.jar compiler/RamCompiler -i programs/codegen/BinarySearchTree.ram -o test.s -f x86`  
+  
+To compile the same program for python and pipe the results to a python interpreter:
+`$ java -cp target/minijava-compiler-1.jar compiler/RamCompiler -i programs/codegen/BinarySearchTree.ram -f python | python`  
 
 Build
 =====
-The MiniJava compiler is a Maven project. With Maven and the JDK installed, simply executate the following:  
+The MiniJava compiler is a Maven project. With Maven and the JDK installed executate the following:  
 `mvn clean install`  
+For some IDEs, such as Eclipse, you may need to copy the generated source code from the directory target/generated-sources/javacc/frontend/generated
+to src/main/java/frontend/generated when re-generating the grammar sources.
