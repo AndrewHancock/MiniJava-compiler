@@ -1,4 +1,4 @@
-package ir;
+package ir.cfgraph;
 
 public class ConditionalBasicBlock extends BasicBlock
 {

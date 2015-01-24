@@ -22,19 +22,19 @@ import syntaxtree.Plus;
 import syntaxtree.Print;
 import syntaxtree.PrintLn;
 import syntaxtree.Times;
-import ir.ArrayAssignment;
-import ir.Assignment;
-import ir.BinOp;
-import ir.BinOp.Op;
-import ir.ConditionalBasicBlock;
-import ir.DataType;
-import ir.Declaration;
-import ir.Identifier;
-import ir.RecordDeclaration;
-import ir.Value;
-import ir.BasicBlock;
-import ir.Frame;
-import ir.SysCall;
+import ir.cfgraph.BasicBlock;
+import ir.cfgraph.ConditionalBasicBlock;
+import ir.ops.ArrayAssignment;
+import ir.ops.Assignment;
+import ir.ops.BinOp;
+import ir.ops.DataType;
+import ir.ops.Declaration;
+import ir.ops.Frame;
+import ir.ops.Identifier;
+import ir.ops.RecordDeclaration;
+import ir.ops.SysCall;
+import ir.ops.Value;
+import ir.ops.BinOp.Op;
 import ir.Temporary;
 
 public class IrGenerator extends DepthFirstVisitor
@@ -98,7 +98,7 @@ public class IrGenerator extends DepthFirstVisitor
 	@Override
 	public void visit(IntegerLiteral l)
 	{
-		currentOperand = new ir.IntegerLiteral(l.i);
+		currentOperand = new ir.ops.IntegerLiteral(l.i);
 	}	
 	
 	
@@ -160,7 +160,7 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(NewArray a)
 	{
 		a.e.accept(this);		
-		ir.NewArray newArray = new ir.NewArray(DataType.INT, currentOperand);
+		ir.ops.NewArray newArray = new ir.ops.NewArray(DataType.INT, currentOperand);
 		currentOperand = newArray;
 	}
 	
@@ -215,7 +215,7 @@ public class IrGenerator extends DepthFirstVisitor
 		}
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
-		ir.Call call = new ir.Call(c.i.s, params, currentOperand);
+		ir.ops.Call call = new ir.ops.Call(c.i.s, params, currentOperand);
 		currentBlock.addOperation(new Assignment(call, currentOperand));
 	}
 	
@@ -243,10 +243,10 @@ public class IrGenerator extends DepthFirstVisitor
 		currentBlock.addOperation(new BinOp(Op.OR, currentFrame.getTempAllocator().GetTemporary(), src1, src2));
 		
 		BasicBlock trueBlock = new BasicBlock();
-		trueBlock.addOperation(new Assignment(currentOperand, new ir.IntegerLiteral(1)));
+		trueBlock.addOperation(new Assignment(currentOperand, new ir.ops.IntegerLiteral(1)));
 		
 		BasicBlock falseBlock = new BasicBlock();
-		trueBlock.addOperation(new Assignment(currentOperand, new ir.IntegerLiteral(0)));
+		trueBlock.addOperation(new Assignment(currentOperand, new ir.ops.IntegerLiteral(0)));
 		
 		currentBlock.setChild(new ConditionalBasicBlock(condition,  trueBlock, falseBlock ));
 		currentBlock.getChild().setParent(currentBlock);

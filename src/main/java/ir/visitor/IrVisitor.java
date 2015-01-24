@@ -1,22 +1,22 @@
 package ir.visitor;
 
-import ir.ArrayAccess;
-import ir.ArrayAssignment;
-import ir.Assignment;
-import ir.Call;
-import ir.BasicBlock;
-import ir.BinOp;
-import ir.CodePoint;
-import ir.ConditionalBasicBlock;
-import ir.Frame;
-import ir.Identifier;
-import ir.IntegerLiteral;
-import ir.NewArray;
-import ir.RecordAccess;
-import ir.RecordAssignment;
-import ir.RecordDeclaration;
-import ir.SysCall;
 import ir.Temporary;
+import ir.cfgraph.BasicBlock;
+import ir.cfgraph.CodePoint;
+import ir.cfgraph.ConditionalBasicBlock;
+import ir.ops.ArrayAccess;
+import ir.ops.ArrayAssignment;
+import ir.ops.Assignment;
+import ir.ops.BinOp;
+import ir.ops.Call;
+import ir.ops.Frame;
+import ir.ops.Identifier;
+import ir.ops.IntegerLiteral;
+import ir.ops.NewArray;
+import ir.ops.RecordAccess;
+import ir.ops.RecordAssignment;
+import ir.ops.RecordDeclaration;
+import ir.ops.SysCall;
 
 public interface IrVisitor
 {

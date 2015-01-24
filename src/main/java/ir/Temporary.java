@@ -1,5 +1,6 @@
 package ir;
 
+import ir.ops.Value;
 import ir.visitor.IrVisitor;
 
 public class Temporary implements Value

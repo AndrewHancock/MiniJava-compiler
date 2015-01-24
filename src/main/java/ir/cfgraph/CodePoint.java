@@ -1,5 +1,6 @@
-package ir;
+package ir.cfgraph;
 
+import ir.ops.Operation;
 import ir.visitor.IrVisitor;
 
 public class CodePoint

@@ -1,4 +1,4 @@
-package ir;
+package ir.ops;
 
 import ir.visitor.IrVisitor;
 
