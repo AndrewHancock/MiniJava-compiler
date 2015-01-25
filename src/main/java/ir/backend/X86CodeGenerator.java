@@ -11,13 +11,12 @@ import ir.Temporary;
 import ir.cfgraph.BasicBlock;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.ConditionalBasicBlock;
+import ir.cfgraph.Frame;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
-import ir.ops.Frame;
-import ir.ops.Identifier;
 import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
@@ -221,19 +220,19 @@ public class X86CodeGenerator implements IrVisitor
 		
 	}
 
-	@Override
-	public void visit(Identifier i)
-	{	
-		int currentStackOffset = getIdentifierStackOffset(i.getId());		
-		emit("lea " + (currentStackOffset != 0 ? currentStackOffset : "") +"(%ebp), %eax");
-		emit("push %eax");
-	}
+	private boolean rValue = true;
 	
 	@Override
 	public void visit(IdentifierExp i)
 	{
-		int currentStackOffset = getIdentifierStackOffset(i.getId());		
-		emit("pushl " + (currentStackOffset != 0 ? currentStackOffset : "") +"(%ebp)");
+		int currentStackOffset = getIdentifierStackOffset(i.getId());
+		if(rValue)
+			emit("pushl " + (currentStackOffset != 0 ? currentStackOffset : "") +"(%ebp)");
+		else
+		{
+			emit("lea " + (currentStackOffset != 0 ? currentStackOffset : "") +"(%ebp), %eax");
+			emit("pushl %eax");
+		}
 	}
 
 	@Override
@@ -316,9 +315,12 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Assignment assignment)
 	{
+		rValue = true;
 		assignment.getSrc().accept(this);
+		rValue = false;
 		assignment.getDest().accept(this);
-		emit("pop %eax");		
+		emit("pop %eax");
+		emit("pop %ebx");
 		emit("movl %ebx, (%eax)");
 	}
 

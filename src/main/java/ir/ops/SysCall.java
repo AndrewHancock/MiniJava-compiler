@@ -7,9 +7,9 @@ import java.util.List;
 public class SysCall extends Call
 {
 
-	public SysCall(String id, List<Value> parameters, Value dest)
+	public SysCall(String id, List<Value> parameters)
 	{
-		super(id, parameters, dest);
+		super(id, parameters);
 	}
 
 	@Override

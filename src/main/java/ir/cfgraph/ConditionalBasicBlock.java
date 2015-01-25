@@ -2,6 +2,7 @@ package ir.cfgraph;
 
 public class ConditionalBasicBlock extends BasicBlock
 {
+	BasicBlock parent;
 	BasicBlock condition;
 	BasicBlock trueBlock;
 	BasicBlock falseBlock;

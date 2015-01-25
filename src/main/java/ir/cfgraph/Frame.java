@@ -1,7 +1,8 @@
-package ir.ops;
+package ir.cfgraph;
 
 import ir.TempAllocator;
-import ir.cfgraph.BasicBlock;
+import ir.ops.Declaration;
+import ir.ops.IdentifierExp;
 import ir.visitor.IrVisitor;
 
 import java.util.ArrayList;

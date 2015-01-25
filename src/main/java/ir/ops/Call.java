@@ -7,14 +7,12 @@ import java.util.List;
 public class Call implements Value
 {	
 	String id;
-	List<Value> parameters;
-	Value dest;
+	List<Value> parameters;	
 	
-	public Call(String id, List<Value> parameters, Value dest)
+	public Call(String id, List<Value> parameters)
 	{
 		this.id = id;
-		this.parameters = parameters;
-		this.dest = dest;
+		this.parameters = parameters;		
 	}
 	
 	public String getId()
@@ -25,11 +23,6 @@ public class Call implements Value
 	public List<Value> getParameters()
 	{
 		return parameters;
-	}
-	
-	public Value getDest()
-	{
-		return dest;
 	}
 	
 	@Override

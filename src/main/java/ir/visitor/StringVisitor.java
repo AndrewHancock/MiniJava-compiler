@@ -6,13 +6,12 @@ import ir.Temporary;
 import ir.cfgraph.BasicBlock;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.ConditionalBasicBlock;
+import ir.cfgraph.Frame;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
-import ir.ops.Frame;
-import ir.ops.Identifier;
 import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
@@ -76,11 +75,7 @@ public class StringVisitor implements IrVisitor
 
 	@Override
 	public void visit(BinOp b)
-	{
-		b.getDest().accept(this);
-		
-		out.print(" := ");
-		
+	{		
 		String op;
 		switch(b.getOp())
 		{
@@ -104,6 +99,9 @@ public class StringVisitor implements IrVisitor
 			break;
 		case OR:
 			op = " | ";
+			break;
+		case LTE:
+			op = " <= ";
 			break;
 		default:
 			throw new RuntimeException("Unrecognized operation.");		
@@ -162,13 +160,6 @@ public class StringVisitor implements IrVisitor
 	public void visit(Temporary t)
 	{
 		out.print(t.getId());
-		
-	}
-
-	@Override
-	public void visit(IdentifierExp i)
-	{
-		out.print(i.getId());
 		
 	}
 
@@ -248,7 +239,7 @@ public class StringVisitor implements IrVisitor
 	}
 
 	@Override
-	public void visit(Identifier i)
+	public void visit(IdentifierExp i)
 	{
 		out.print(i.getId());
 		
