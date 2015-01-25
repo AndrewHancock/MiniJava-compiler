@@ -1,11 +1,13 @@
 package ir;
 
+import ir.ops.IdentifierExp;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class TempAllocator
 {	
-	private ArrayList<Temporary> temps = new ArrayList<Temporary>();
+	private ArrayList<IdentifierExp> temps = new ArrayList<IdentifierExp>();
 	
 	int tempCounter = 0;
 	private String getNewTempName()
@@ -13,9 +15,9 @@ public class TempAllocator
 		return "t" + ++tempCounter;
 	}
 	
-	public Temporary GetTemporary()
+	public IdentifierExp GetTemporary()
 	{
-		Temporary newTemp = new Temporary(getNewTempName(), tempCounter);
+		IdentifierExp newTemp = new IdentifierExp(getNewTempName());
 		temps.add(newTemp);
 		return newTemp;
 		
@@ -26,7 +28,7 @@ public class TempAllocator
 		return temps.size();
 	}
 	
-	public List<Temporary> getTemporaries()
+	public List<IdentifierExp> getTemporaries()
 	{
 		return temps;
 	}

@@ -10,10 +10,11 @@ import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.Frame;
-import ir.ops.Identifier;
+import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
 import ir.ops.RecordAccess;
+import ir.ops.RecordAllocation;
 import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
 import ir.ops.SysCall;
@@ -29,7 +30,7 @@ public interface IrVisitor
 	void visit(Assignment assignment);
 	void visit(SysCall s);
 	void visit(Temporary t);
-	void visit(Identifier i);
+	void visit(IdentifierExp i);
 	void visit(IntegerLiteral l);
 	void visit(ArrayAccess a);
 	void visit(ArrayAssignment a);
@@ -37,4 +38,5 @@ public interface IrVisitor
 	void visit(RecordDeclaration r);
 	void visit(RecordAccess r);
 	void visit(RecordAssignment r);
+	void visit(RecordAllocation a);
 }

@@ -12,10 +12,11 @@ import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.Frame;
-import ir.ops.Identifier;
+import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
 import ir.ops.RecordAccess;
+import ir.ops.RecordAllocation;
 import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
 import ir.ops.SysCall;
@@ -35,18 +36,18 @@ public class StringVisitor implements IrVisitor
 	{
 		out.println("\n.namespace " + f.getNamespace() + " " + f.getId() + ":");
 		out.println("Locals: ");
-		for( Identifier value : f.getLocals())
+		for( IdentifierExp value : f.getLocals())
 		{
 			out.println("\t" + value.getId());
 		}
 		out.println("Params: " + f.getParams().size());
-		for(Identifier param : f.getParams())
+		for(IdentifierExp param : f.getParams())
 		{
 			out.println("\t" + param.getId());	
 		}
 		
 		out.println("Temporaries: " + f.getTempAllocator().getTemporaryCount());
-		for(Temporary temp : f.getTempAllocator().getTemporaries())
+		for(IdentifierExp temp : f.getTemporaries())
 		{
 			out.println("\t" + temp.getId());
 		}
@@ -164,7 +165,7 @@ public class StringVisitor implements IrVisitor
 	}
 
 	@Override
-	public void visit(Identifier i)
+	public void visit(IdentifierExp i)
 	{
 		out.print(i.getId());
 		
@@ -235,6 +236,13 @@ public class StringVisitor implements IrVisitor
 		out.print(label + "_true");
 		b.getTrueBlock().accept(this);
 		
+		
+	}
+
+	@Override
+	public void visit(RecordAllocation a)
+	{
+		out.print("new " + a.getTypeId());
 		
 	}
 }

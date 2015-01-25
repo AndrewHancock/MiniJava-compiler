@@ -2,6 +2,7 @@ package visitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
 
@@ -10,27 +11,30 @@ import syntaxtree.And;
 import syntaxtree.ArrayAssign;
 import syntaxtree.Assign;
 import syntaxtree.Call;
-import syntaxtree.ClassDecl;
 import syntaxtree.ClassDeclSimple;
+import syntaxtree.Formal;
 import syntaxtree.IntegerLiteral;
 import syntaxtree.MainClass;
 import syntaxtree.MethodDecl;
 import syntaxtree.Minus;
 import syntaxtree.NewArray;
+import syntaxtree.NewObject;
 import syntaxtree.Or;
 import syntaxtree.Plus;
 import syntaxtree.Print;
 import syntaxtree.PrintLn;
+import syntaxtree.This;
 import syntaxtree.Times;
+import syntaxtree.VarDecl;
 import ir.cfgraph.BasicBlock;
 import ir.cfgraph.ConditionalBasicBlock;
 import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.DataType;
-import ir.ops.Declaration;
 import ir.ops.Frame;
-import ir.ops.Identifier;
+import ir.ops.IdentifierExp;
+import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
 import ir.ops.SysCall;
 import ir.ops.Value;
@@ -46,22 +50,29 @@ public class IrGenerator extends DepthFirstVisitor
 		this.table = symTable;
 	}
 	
+	private final String currentNamespace = "minijava";
 	private Frame currentFrame;
 	private BasicBlock currentBlock;
 	private Stack<Temporary> temps = new Stack<Temporary>();
-	private Collection<Declaration> declarationList = new ArrayList<Declaration>();
+	private Collection<Frame> frameList = new ArrayList<Frame>();
+	private Collection<RecordDeclaration> recordList = new ArrayList<RecordDeclaration>();
 	
-	public Collection<Declaration> getDeclarationList()
+	public Collection<Frame> getFrameList()
 	{
-		return declarationList;
+		return frameList;
 	}	
+	
+	public Collection<RecordDeclaration> getRecordList()
+	{
+		return recordList;
+	}
 	
 	public void visit(MainClass m)
 	{
 		currentBlock = new BasicBlock();		
 		
 		currentFrame = new Frame("", "main", 0, 0, currentBlock );
-		declarationList.add(currentFrame);
+		frameList.add(currentFrame);
 		m.s.accept(this);				
 	}
 	
@@ -83,9 +94,6 @@ public class IrGenerator extends DepthFirstVisitor
 		List<Value> parameters = new ArrayList<Value>();
 		for(int i = 0; i < p.list.size(); i++)
 		{
-			Temporary temp = currentFrame.getTempAllocator().GetTemporary();
-			parameters.add(temp);
-			temps.push(temp);
 			p.list.elementAt(i).accept(this);
 		}		
 		
@@ -109,7 +117,7 @@ public class IrGenerator extends DepthFirstVisitor
 		p.e2.accept(this);
 		Value rightOperand = currentOperand;
 		
-		Temporary dest = currentFrame.getTempAllocator().GetTemporary(); 
+		IdentifierExp dest = currentFrame.getTempAllocator().GetTemporary(); 
 		currentBlock.addOperation(new BinOp(Op.ADD, dest, leftOperand, rightOperand));		
 		currentOperand = dest;
 	}
@@ -121,7 +129,7 @@ public class IrGenerator extends DepthFirstVisitor
 		t.e2.accept(this);
 		Value rightOperand = currentOperand;
 		
-		Temporary dest = currentFrame.getTempAllocator().GetTemporary(); 
+		IdentifierExp dest = currentFrame.getTempAllocator().GetTemporary(); 
 		currentBlock.addOperation(new BinOp(Op.MULT, dest, leftOperand, rightOperand));		
 		currentOperand = dest;
 	}
@@ -133,21 +141,20 @@ public class IrGenerator extends DepthFirstVisitor
 		m.e2.accept(this);
 		Value rightOperand = currentOperand;
 		
-		Temporary dest = currentFrame.getTempAllocator().GetTemporary(); 
+		IdentifierExp dest = currentFrame.getTempAllocator().GetTemporary(); 
 		currentBlock.addOperation(new BinOp(Op.SUBTRACT, dest, leftOperand, rightOperand));		
 		currentOperand = dest;	
 	}
 	
-	private String currentNamespace;
+	
 	private String currentClassName; 
 	public void visit (ClassDeclSimple c)
 	{
-		currentNamespace = "minijava";
 		currentClassName = c.i.s;
 		RecordDeclaration declaration = new RecordDeclaration(currentNamespace, currentClassName);
 		for(int i = 0; i < c.vl.size(); i ++)
 			declaration.addField(DataType.INT);
-		declarationList.add(declaration);	
+		recordList.add(declaration);	
 		
 		for(int i = 0; i < c.ml.size(); i++)
 		{
@@ -168,7 +175,7 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(Assign a)
 	{
 		a.e.accept(this);
-		currentBlock.addOperation(new Assignment(currentOperand, new Identifier(a.i.s)));		
+		currentBlock.addOperation(new Assignment(currentOperand, new IdentifierExp(a.i.s)));		
 	}
 
 	@Override
@@ -178,24 +185,32 @@ public class IrGenerator extends DepthFirstVisitor
 		Value sourceOperand = currentOperand;
 		a.e1.accept(this);
 		Value index = currentOperand;
-		currentBlock.addOperation(new ArrayAssignment(sourceOperand, new Identifier(a.i.s), index));		
+		currentBlock.addOperation(new ArrayAssignment(sourceOperand, new IdentifierExp(a.i.s), index));		
 	}
 	
 	@Override
 	public void visit(MethodDecl d)
-	{
+	{		
 		currentBlock = new BasicBlock();
 		currentFrame = new Frame(currentNamespace, d.i.s, d.fl.size(), d.vl.size(), currentBlock );
-		declarationList.add(currentFrame);
+		frameList.add(currentFrame);
+		
+		currentLocals.clear();
+		
+		// For any method declaration, "this" is implicit
+		currentFrame.getParams().add(new IdentifierExp("this"));
+		currentLocals.put("this", new IdentifierExp("this"));		
 		
 		for(int i = 0; i < d.vl.size(); i++)
-		{
-			currentFrame.getLocals().add(new Identifier(d.vl.elementAt(i).i.s));			
+		{			
+			currentFrame.getLocals().add(new IdentifierExp(d.vl.elementAt(i).i.s));
+			d.vl.elementAt(i).accept(this);
 		}
 		
 		for(int i = 0; i < d.fl.size(); i++)
 		{
-			currentFrame.getLocals().add(new Identifier(d.fl.elementAt(i).i.s));			
+			currentFrame.getParams().add(new IdentifierExp(d.fl.elementAt(i).i.s));
+			d.fl.elementAt(i).accept(this);
 		}		
 		
 		for(int i = 0; i < d.sl.size(); i++)
@@ -207,7 +222,11 @@ public class IrGenerator extends DepthFirstVisitor
 	@Override 
 	public void visit(Call c)
 	{
-		ArrayList<Value> params = new ArrayList<Value>(c.el.size());
+		ArrayList<Value> params = new ArrayList<Value>(c.el.size() + 1);		
+		
+		c.e.accept(this);
+		params.add(currentOperand);
+		
 		for(int i = 0; i < c.el.size(); i ++)
 		{
 			c.el.elementAt(i).accept(this);
@@ -227,7 +246,7 @@ public class IrGenerator extends DepthFirstVisitor
 		a.e2.accept(this);
 		Value src2 = currentOperand;
 		
-		Temporary temp = currentFrame.getTempAllocator().GetTemporary();
+		IdentifierExp temp = currentFrame.getTempAllocator().GetTemporary();
 		currentBlock.addOperation(new BinOp(Op.AND, temp, src1, src2));
 	}
 	
@@ -250,8 +269,36 @@ public class IrGenerator extends DepthFirstVisitor
 		
 		currentBlock.setChild(new ConditionalBasicBlock(condition,  trueBlock, falseBlock ));
 		currentBlock.getChild().setParent(currentBlock);
-		currentBlock = currentBlock.getChild();		
-		
-		
+		currentBlock = currentBlock.getChild();
 	}
+
+	@Override
+	public void visit(NewObject n)
+	{	
+		currentOperand = currentFrame.getTempAllocator().GetTemporary();
+		currentBlock.addOperation(new Assignment(new RecordAllocation(currentNamespace, n.i.s), currentOperand));		
+	}
+	
+	HashMap<String, Value> currentLocals = new HashMap<String, Value>(); 
+	public void visit(VarDecl v)
+	{
+		currentLocals.put(v.i.s, new IdentifierExp(v.i.s));		
+	}
+	
+	public void visit(Formal f)
+	{
+		currentLocals.put(f.i.s, new IdentifierExp(f.i.s));
+	}
+	
+	@Override
+	public void visit(syntaxtree.IdentifierExp e)
+	{
+		currentOperand = currentLocals.get(e.s);
+	}
+	
+	public void visit(This t)
+	{
+		currentOperand = currentLocals.get("this");
+	}
+	
 }

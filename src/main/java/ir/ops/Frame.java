@@ -9,8 +9,8 @@ import java.util.List;
 
 public class Frame extends Declaration
 {
-	private List<Identifier> parameters;
-	private List<Identifier> locals;
+	private List<IdentifierExp> parameters;
+	private List<IdentifierExp> locals;	
 	private BasicBlock startBlock = new BasicBlock();
 	
 	private TempAllocator allocator = new TempAllocator();	
@@ -20,38 +20,43 @@ public class Frame extends Declaration
 	{
 		super(namespace, id);
 		
-		locals = new ArrayList<Identifier>(localSize);
-		parameters = new ArrayList<Identifier>(paramSize);		
+		locals = new ArrayList<IdentifierExp>(localSize);
+		parameters = new ArrayList<IdentifierExp>(paramSize);		
 		this.startBlock = startBlock;
 	}
 	
 	
-	public Identifier getParam(int index)
+	public IdentifierExp getParam(int index)
 	{
 		return parameters.get(1);
 	}
 	
-	public void setParam(int index, Identifier param)
+	public void setParam(int index, IdentifierExp param)
 	{
 		parameters.set(index, param);
 	}
 	
-	public List<Identifier> getParams()
+	public List<IdentifierExp> getParams()
 	{
 		return parameters;
 	}
 	
-	public List<Identifier> getLocals()
+	public List<IdentifierExp> getLocals()
 	{
 		return locals;
 	}
 	
-	public Identifier getLocal(int index)
+	public List<IdentifierExp> getTemporaries()
+	{
+		return allocator.getTemporaries();
+	}
+	
+	public IdentifierExp getLocal(int index)
 	{
 		return locals.get(index);
 	}
 	
-	public void setLocal(int index, Identifier local)
+	public void setLocal(int index, IdentifierExp local)
 	{
 		locals.add(index, local);
 	}

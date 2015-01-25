@@ -1,6 +1,7 @@
 package ir.backend;
 
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -15,12 +16,12 @@ import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
-import ir.ops.DataType;
 import ir.ops.Frame;
-import ir.ops.Identifier;
+import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
 import ir.ops.RecordAccess;
+import ir.ops.RecordAllocation;
 import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
 import ir.ops.SysCall;
@@ -30,15 +31,18 @@ import ir.visitor.IrVisitor;
 public class X86CodeGenerator implements IrVisitor
 {
 	private PrintStream out;	
+	private HashMap<String, RecordDeclaration> recordMap = new HashMap<String, RecordDeclaration>();
 	
-	public X86CodeGenerator(PrintStream out)
+	public X86CodeGenerator(PrintStream out, Collection<RecordDeclaration> recordTypes)
 	{		
 		this.out = out;		
+		for(RecordDeclaration recordDecl : recordTypes)
+			recordMap.put(recordDecl.getNamespace() + recordDecl.getId(), recordDecl);
 	}
 
 	private void emit(String text)
 	{
-		out.println(text);
+		out.println("\t" +text);
 	}
 
 	private void emitLabel(String text)
@@ -48,7 +52,7 @@ public class X86CodeGenerator implements IrVisitor
 
 	private void emitComment(String text)
 	{
-		out.println("#" + text);
+		out.println("\t" + "#" + text);
 	}
 
 	private void initFile(String startFrameId)
@@ -185,7 +189,7 @@ public class X86CodeGenerator implements IrVisitor
 
 	}
 
-	private int getIndexById(List<Identifier> ids, String id)
+	private int getIdByIndex(List<IdentifierExp> ids, String id)
 	{
 		int result = -1;
 		for (int i = 0; i < ids.size(); i++)
@@ -194,20 +198,28 @@ public class X86CodeGenerator implements IrVisitor
 		return result;
 	}
 
+	
 	@Override
-	public void visit(Identifier i)
+	public void visit(IdentifierExp i)
 	{
-		int paramIndex = getIndexById(currentFrame.getParams(), i.getId());
-		if (paramIndex > 0)
+		int currentStackOffset = 0;
+		int paramIndex;
+		int localIndex;
+		int tempIndex;
+		if ((paramIndex = getIdByIndex(currentFrame.getParams(), i.getId()))>= 0)
 		{
-			emit("push " + (4 * paramIndex + 12) + "(%ebp)");
-		}
-
-		int localIndex = getIndexById(currentFrame.getLocals(), i.getId());
-		if (localIndex > 0)
+			currentStackOffset = 4 * paramIndex + 12;
+		}		
+		else if ((localIndex = getIdByIndex(currentFrame.getLocals(), i.getId())) >= 0)
 		{
-			emit("push -" + (4 * localIndex) + "(%ebp)");
+			currentStackOffset = -(4 * localIndex);
+		}			 
+		else if((tempIndex = getIdByIndex(currentFrame.getTemporaries(), i.getId())) >= 0)
+		{
+			currentStackOffset = -(tempIndex * 4 + currentFrame.getLocals().size() * 4);
 		}
+		
+		emit("pushl " + (currentStackOffset != 0 ? currentStackOffset : ""));
 	}
 
 	@Override
@@ -263,12 +275,11 @@ public class X86CodeGenerator implements IrVisitor
 		emit("incl %eax   #Skip the size word at the beginning");
 		emit("pushl (%esi, %eax, $4)    # Store contents of value at offset onto stack");		
 	}
-
-	private HashMap<String, RecordDeclaration> recordMap = new HashMap<String, RecordDeclaration>();
+	
 	@Override
 	public void visit(RecordDeclaration r)
 	{
-		recordMap.put(r.getNamespace() + r.getId(), r);		
+		recordMap.put(r.getNamespace() + r.getId(), r);
 	}
 
 	@Override
@@ -291,10 +302,9 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Assignment assignment)
 	{
-		assignment.getDest().accept(this);
-		emit("pop %eax");
 		assignment.getSrc().accept(this);
-		emit("pop %ebx");
+		assignment.getDest().accept(this);
+		emit("pop %eax");		
 		emit("movl %ebx, (%eax)");
 	}
 
@@ -303,5 +313,20 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public void visit(RecordAllocation a)
+	{
+		RecordDeclaration decl = recordMap.get(a.getNamespace() + a.getTypeId());
+		if(decl.getFieldCount() > 0)
+		{
+			emit("push $" + (decl.getFieldCount() * 4) + "     # Push object size onto stack");
+			emit("call _malloc");		
+			emit("$addl $4, %esp");
+			emit("$push %eax");
+		}
+		else
+			emit("push $0      # Push placeholder address onto stack");
 	}
 }
