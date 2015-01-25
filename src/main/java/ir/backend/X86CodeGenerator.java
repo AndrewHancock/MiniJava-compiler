@@ -17,6 +17,7 @@ import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.Frame;
+import ir.ops.Identifier;
 import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
@@ -197,29 +198,42 @@ public class X86CodeGenerator implements IrVisitor
 				result = i;
 		return result;
 	}
+	
+	private int getIdentifierStackOffset(String id)
+	{
+		int paramIndex;
+		int localIndex;
+		int tempIndex;
+		if ((paramIndex = getIdByIndex(currentFrame.getParams(), id))>= 0)
+		{
+			return 4 * paramIndex + 12;
+		}		
+		else if ((localIndex = getIdByIndex(currentFrame.getLocals(), id)) >= 0)
+		{
+			return  -(4 * localIndex);
+		}			 
+		else if((tempIndex = getIdByIndex(currentFrame.getTemporaries(), id)) >= 0)
+		{
+			return -(tempIndex * 4 + currentFrame.getLocals().size() * 4);
+		}
+		else
+			return -1;
+		
+	}
 
+	@Override
+	public void visit(Identifier i)
+	{	
+		int currentStackOffset = getIdentifierStackOffset(i.getId());		
+		emit("lea " + (currentStackOffset != 0 ? currentStackOffset : "") +"(%ebp), %eax");
+		emit("push %eax");
+	}
 	
 	@Override
 	public void visit(IdentifierExp i)
 	{
-		int currentStackOffset = 0;
-		int paramIndex;
-		int localIndex;
-		int tempIndex;
-		if ((paramIndex = getIdByIndex(currentFrame.getParams(), i.getId()))>= 0)
-		{
-			currentStackOffset = 4 * paramIndex + 12;
-		}		
-		else if ((localIndex = getIdByIndex(currentFrame.getLocals(), i.getId())) >= 0)
-		{
-			currentStackOffset = -(4 * localIndex);
-		}			 
-		else if((tempIndex = getIdByIndex(currentFrame.getTemporaries(), i.getId())) >= 0)
-		{
-			currentStackOffset = -(tempIndex * 4 + currentFrame.getLocals().size() * 4);
-		}
-		
-		emit("pushl " + (currentStackOffset != 0 ? currentStackOffset : ""));
+		int currentStackOffset = getIdentifierStackOffset(i.getId());		
+		emit("pushl " + (currentStackOffset != 0 ? currentStackOffset : "") +"(%ebp)");
 	}
 
 	@Override
@@ -329,4 +343,6 @@ public class X86CodeGenerator implements IrVisitor
 		else
 			emit("push $0      # Push placeholder address onto stack");
 	}
+
+
 }

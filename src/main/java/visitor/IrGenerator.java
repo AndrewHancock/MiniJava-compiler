@@ -33,6 +33,7 @@ import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.DataType;
 import ir.ops.Frame;
+import ir.ops.Identifier;
 import ir.ops.IdentifierExp;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
@@ -175,7 +176,7 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(Assign a)
 	{
 		a.e.accept(this);
-		currentBlock.addOperation(new Assignment(currentOperand, new IdentifierExp(a.i.s)));		
+		currentBlock.addOperation(new Assignment(currentOperand, new Identifier(a.i.s)));		
 	}
 
 	@Override
@@ -185,7 +186,7 @@ public class IrGenerator extends DepthFirstVisitor
 		Value sourceOperand = currentOperand;
 		a.e1.accept(this);
 		Value index = currentOperand;
-		currentBlock.addOperation(new ArrayAssignment(sourceOperand, new IdentifierExp(a.i.s), index));		
+		currentBlock.addOperation(new ArrayAssignment(sourceOperand, new Identifier(a.i.s), index));		
 	}
 	
 	@Override

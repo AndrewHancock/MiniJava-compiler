@@ -10,6 +10,7 @@ import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.Frame;
+import ir.ops.Identifier;
 import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
@@ -30,6 +31,7 @@ public interface IrVisitor
 	void visit(Assignment assignment);
 	void visit(SysCall s);
 	void visit(Temporary t);
+	void visit(Identifier i);
 	void visit(IdentifierExp i);
 	void visit(IntegerLiteral l);
 	void visit(ArrayAccess a);

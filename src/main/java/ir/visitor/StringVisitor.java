@@ -12,6 +12,7 @@ import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.Frame;
+import ir.ops.Identifier;
 import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
@@ -243,6 +244,13 @@ public class StringVisitor implements IrVisitor
 	public void visit(RecordAllocation a)
 	{
 		out.print("new " + a.getTypeId());
+		
+	}
+
+	@Override
+	public void visit(Identifier i)
+	{
+		out.print(i.getId());
 		
 	}
 }
