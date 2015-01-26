@@ -12,12 +12,12 @@ public class Frame extends Declaration
 {
 	private List<IdentifierExp> parameters;
 	private List<IdentifierExp> locals;	
-	private BasicBlock startBlock = new BasicBlock();
+	private Block startBlock = new BasicBlock();
 	
 	private TempAllocator allocator = new TempAllocator();	
 	
 		
-	public Frame(String namespace, String id, int paramSize, int localSize, BasicBlock startBlock)
+	public Frame(String namespace, String id, int paramSize, int localSize, Block startBlock)
 	{
 		super(namespace, id);
 		
@@ -67,7 +67,7 @@ public class Frame extends Declaration
 		return allocator;
 	}
 	
-	public BasicBlock getStartingBlock()
+	public Block getStartingBlock()
 	{
 		return startBlock;
 	}

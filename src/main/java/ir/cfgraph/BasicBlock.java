@@ -4,15 +4,30 @@ import ir.ops.Operation;
 import ir.visitor.IrVisitor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class BasicBlock
+public class BasicBlock implements Block
 {
-	BasicBlock parent;
+	private Collection<Block> parents = new ArrayList<Block>();
+	protected Block successor;	
+	private List<CodePoint> codePoints = new ArrayList<CodePoint>();
 	
-	List<CodePoint> codePoints = new ArrayList<CodePoint>();	
+	public BasicBlock()
+	{
+		
+	}
 	
-	BasicBlock child;
+	public BasicBlock(Block parent)
+	{
+		parents.add(parent);
+	}
+	
+	public BasicBlock(Block parent, Block successor)
+	{
+		parents.add(parent);
+		this.successor = successor;
+	}	
 	
 	public void addOperation(Operation op)
 	{
@@ -28,27 +43,25 @@ public class BasicBlock
 	public void accept(IrVisitor visitor)
 	{
 		visitor.visit(this);
-		if(child != null)
-			visitor.visit(child);
 	}
 	
-	public BasicBlock getChild()
+	public Block getSuccessor()
 	{
-		return child;
+		return successor;
 	}
 	
-	public void setChild(BasicBlock child)
+	public void setSuccessor(Block successor)
 	{
-		this.child = child;
+		this.successor = successor;
 	}
 	
-	public BasicBlock getParent()
+	public Collection<Block> getParent()
 	{
-		return parent;		
+		return parents;		
 	}
 	
-	public void setParent(BasicBlock b)
+	public void addParent(Block parent)
 	{
-		this.parent = parent;
+		parents.add(parent);
 	}
 }

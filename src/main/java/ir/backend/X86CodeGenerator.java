@@ -10,7 +10,7 @@ import syntaxtree.MethodDecl;
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
 import ir.cfgraph.CodePoint;
-import ir.cfgraph.ConditionalBasicBlock;
+import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAssignment;
@@ -24,6 +24,7 @@ import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
+import ir.ops.Return;
 import ir.ops.SysCall;
 import ir.ops.Value;
 import ir.visitor.IrVisitor;
@@ -325,7 +326,7 @@ public class X86CodeGenerator implements IrVisitor
 	}
 
 	@Override
-	public void visit(ConditionalBasicBlock b)
+	public void visit(Conditional b)
 	{
 		// TODO Auto-generated method stub
 		
@@ -344,6 +345,12 @@ public class X86CodeGenerator implements IrVisitor
 		}
 		else
 			emit("push $0      # Push placeholder address onto stack");
+	}
+
+	@Override
+	public void visit(Return r)
+	{
+		
 	}
 
 

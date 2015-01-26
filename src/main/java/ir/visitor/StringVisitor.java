@@ -4,8 +4,9 @@ import java.io.PrintStream;
 
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
+import ir.cfgraph.Block;
 import ir.cfgraph.CodePoint;
-import ir.cfgraph.ConditionalBasicBlock;
+import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAssignment;
@@ -19,6 +20,7 @@ import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
+import ir.ops.Return;
 import ir.ops.SysCall;
 import ir.ops.Value;
 
@@ -51,7 +53,13 @@ public class StringVisitor implements IrVisitor
 		{
 			out.println("\t" + temp.getId());
 		}
-		f.getStartingBlock().accept(this);
+		Block currentBlock = f.getStartingBlock();
+		do
+		{
+			currentBlock.accept(this);			
+		}
+		while((currentBlock = currentBlock.getSuccessor()) != null);
+		
 	}
 
 	@Override
@@ -59,10 +67,7 @@ public class StringVisitor implements IrVisitor
 	{
 		out.println("Basic Block:");
 		for(CodePoint c : b.getCodePoints())		
-			c.accept(this);	
-		
-		if(b.getChild() != null)
-			b.getChild().accept(this);
+			c.accept(this);
 	}
 
 	@Override
@@ -216,18 +221,16 @@ public class StringVisitor implements IrVisitor
 
 	private int conditionCounter = 0;
 	@Override
-	public void visit(ConditionalBasicBlock b)
+	public void visit(Conditional b)
 	{
 		int c = conditionCounter++;
 		String label = "condiition_" + c;
-		out.print(label + ":") ;
-		for(CodePoint cp : b.getCodePoints())
-			cp.accept(this);
-		out.print(label + "_false:");
+		out.print(label + ":\n") ;
+		b.getConditionBlock().accept(this);
+		out.print(label + "_false:\n");
 		b.getFalseBlock().accept(this);
-		out.print(label + "_true");
-		b.getTrueBlock().accept(this);
-		
+		out.print(label + "_true:\n");
+		b.getTrueBlock().accept(this);		
 		
 	}
 
@@ -243,5 +246,13 @@ public class StringVisitor implements IrVisitor
 	{
 		out.print(i.getId());
 		
+	}
+
+	@Override
+	public void visit(Return r)
+	{
+		out.print("return ");
+		r.getSource().accept(this);
+		out.println("");
 	}
 }

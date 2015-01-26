@@ -29,7 +29,8 @@ import syntaxtree.This;
 import syntaxtree.Times;
 import syntaxtree.VarDecl;
 import ir.cfgraph.BasicBlock;
-import ir.cfgraph.ConditionalBasicBlock;
+import ir.cfgraph.Block;
+import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
 import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
@@ -38,6 +39,7 @@ import ir.ops.DataType;
 import ir.ops.IdentifierExp;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
+import ir.ops.Return;
 import ir.ops.SysCall;
 import ir.ops.Value;
 import ir.ops.BinOp.Op;
@@ -218,6 +220,7 @@ public class IrGenerator extends DepthFirstVisitor
 			d.sl.elementAt(i).accept(this);
 		
 		d.e.accept(this);
+		currentBlock.addOperation(new Return(currentOperand));
 	}
 	
 	@Override 
@@ -259,19 +262,8 @@ public class IrGenerator extends DepthFirstVisitor
 		a.e2.accept(this);
 		Value src2 = currentOperand;
 		
-		BasicBlock condition = new BasicBlock();
-		currentOperand =  currentFrame.getTempAllocator().GetTemporary();
-		currentBlock.addOperation(new Assignment(new BinOp(Op.OR, src1, src2), currentOperand));
-		
-		BasicBlock trueBlock = new BasicBlock();
-		trueBlock.addOperation(new Assignment(currentOperand, new ir.ops.IntegerLiteral(1)));
-		
-		BasicBlock falseBlock = new BasicBlock();
-		trueBlock.addOperation(new Assignment(currentOperand, new ir.ops.IntegerLiteral(0)));
-		
-		currentBlock.setChild(new ConditionalBasicBlock(condition,  trueBlock, falseBlock ));
-		currentBlock.getChild().setParent(currentBlock);
-		currentBlock = currentBlock.getChild();
+		currentOperand = currentFrame.getTempAllocator().GetTemporary();
+		currentBlock.addOperation(new Assignment(currentOperand, new BinOp(Op.OR, src1, src2)));
 	}
 
 	@Override
@@ -305,7 +297,19 @@ public class IrGenerator extends DepthFirstVisitor
 	
 	public void visit(If i)
 	{
+		
+		Conditional block = new Conditional(currentBlock);
+		
+		// First, evaluate the condition
+		currentBlock = block.getConditionBlock();
 		i.e.accept(this);
+		
+		currentBlock = block.getTrueBlock();
+		i.s1.accept(this);
+		currentBlock = block.getFalseBlock();
+		i.s2.accept(this);
+		// Hack - A "Conditional" is not the same as a "BasicBlock"
+		currentBlock = (BasicBlock)block.getSuccessor();
 	}
 	
 	public void visit(LessThanOrEqual l)
@@ -317,8 +321,8 @@ public class IrGenerator extends DepthFirstVisitor
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
 		currentBlock.addOperation(new Assignment(new BinOp(Op.LTE, leftOperand, rightOperand), currentOperand));
-		
-		
 	}
+	
+	
 	
 }
