@@ -20,6 +20,7 @@ import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
+import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.SysCall;
 import ir.ops.Value;
@@ -93,20 +94,11 @@ public class StringVisitor implements IrVisitor
 		case MULT:
 			op = " * ";
 			break;
-		case EQ:
-			op = " == ";
-			break;
-		case NOT:
-			op = " != ";		
-			break;
 		case AND:
 			op = " & ";
 			break;
 		case OR:
 			op = " | ";
-			break;
-		case LTE:
-			op = " <= ";
 			break;
 		default:
 			throw new RuntimeException("Unrecognized operation.");		
@@ -226,7 +218,11 @@ public class StringVisitor implements IrVisitor
 		int c = conditionCounter++;
 		String label = "condiition_" + c;
 		out.print(label + ":\n") ;
-		b.getConditionBlock().accept(this);
+		out.print("if ");
+		b.getTest().accept(this);
+		out.println(":");
+		
+		
 		out.print(label + "_false:\n");
 		b.getFalseBlock().accept(this);
 		out.print(label + "_true:\n");
@@ -254,5 +250,26 @@ public class StringVisitor implements IrVisitor
 		out.print("return ");
 		r.getSource().accept(this);
 		out.println("");
+	}
+
+	@Override
+	public void visit(RelationalOp r)
+	{
+
+		String op;
+		switch(r.getOp())
+		{
+		case LTE:
+			op = " <= "; 
+			break;
+		default:
+			throw new RuntimeException("Unrecognized operation.");		
+		}
+		
+		r.getSrc1().accept(this);
+		out.print(op);
+		
+		if(r.getSrc2() != null)
+			r.getSrc2().accept(this);		
 	}
 }

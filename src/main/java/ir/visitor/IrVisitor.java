@@ -17,6 +17,7 @@ import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
+import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.SysCall;
 
@@ -41,4 +42,5 @@ public interface IrVisitor
 	void visit(RecordAssignment r);
 	void visit(RecordAllocation a);
 	void visit(Return r);
+	void visit(RelationalOp r);
 }

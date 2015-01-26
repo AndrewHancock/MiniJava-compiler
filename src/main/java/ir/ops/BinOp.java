@@ -10,10 +10,7 @@ public class BinOp implements Value
 		SUBTRACT,
 		MULT,
 		AND,
-		OR,
-		NOT,
-		EQ,
-		LTE
+		OR
 	}
 	private Op op;	
 	private Value src1;

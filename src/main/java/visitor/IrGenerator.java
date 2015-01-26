@@ -39,6 +39,7 @@ import ir.ops.DataType;
 import ir.ops.IdentifierExp;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
+import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.SysCall;
 import ir.ops.Value;
@@ -98,6 +99,7 @@ public class IrGenerator extends DepthFirstVisitor
 		for(int i = 0; i < p.list.size(); i++)
 		{
 			p.list.elementAt(i).accept(this);
+			parameters.add(currentOperand);
 		}		
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
@@ -297,12 +299,9 @@ public class IrGenerator extends DepthFirstVisitor
 	
 	public void visit(If i)
 	{
-		
-		Conditional block = new Conditional(currentBlock);
-		
-		// First, evaluate the condition
-		currentBlock = block.getConditionBlock();
 		i.e.accept(this);
+		
+		Conditional block = new Conditional(currentBlock, currentOperand);
 		
 		currentBlock = block.getTrueBlock();
 		i.s1.accept(this);
@@ -320,7 +319,7 @@ public class IrGenerator extends DepthFirstVisitor
 		Value rightOperand = currentOperand;
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
-		currentBlock.addOperation(new Assignment(new BinOp(Op.LTE, leftOperand, rightOperand), currentOperand));
+		currentBlock.addOperation(new Assignment(new RelationalOp(RelationalOp.Op.LTE, leftOperand, rightOperand), currentOperand));
 	}
 	
 	

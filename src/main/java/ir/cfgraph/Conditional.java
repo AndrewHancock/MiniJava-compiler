@@ -1,21 +1,28 @@
 package ir.cfgraph;
 
+import ir.ops.RelationalOp;
+import ir.ops.Value;
 import ir.visitor.IrVisitor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class Conditional implements Block
 {	
-	private BasicBlock conditionBlock;
+	private Collection<Block> parents = new ArrayList<Block>();
+	private Block successor;
+	private Value test;
 	private BasicBlock trueBlock;
 	private BasicBlock falseBlock;	
 	
-	public Conditional(BasicBlock parent)
+	public Conditional(BasicBlock parent, Value test)
 	{
+		parents.add(parent);
 		parent.setSuccessor(this);
-		conditionBlock = new BasicBlock(parent, new BasicBlock());
-		this.trueBlock = new BasicBlock(parent, conditionBlock.getSuccessor());
-		this.falseBlock = new BasicBlock(parent, conditionBlock.getSuccessor());		
+		successor = new BasicBlock();
+		this.trueBlock = new BasicBlock(parent, successor);
+		this.falseBlock = new BasicBlock(parent, successor);
+		this.test = test;
 	}
 	
 	public BasicBlock getTrueBlock()
@@ -30,17 +37,17 @@ public class Conditional implements Block
 
 	public Collection<Block> getParents()
 	{
-		return conditionBlock.getParent();
+		return parents;
 	}
 
 	public Block getSuccessor()
 	{
-		return conditionBlock.getSuccessor();
+		return successor;
 	}
 	
-	public BasicBlock getConditionBlock()
+	public Value getTest()
 	{
-		return conditionBlock;
+		return test;
 	}
 
 	@Override

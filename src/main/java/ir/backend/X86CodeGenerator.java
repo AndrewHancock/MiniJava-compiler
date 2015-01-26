@@ -9,6 +9,7 @@ import symboltable.Table;
 import syntaxtree.MethodDecl;
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
+import ir.cfgraph.Block;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
@@ -16,6 +17,7 @@ import ir.ops.ArrayAccess;
 import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
+import ir.ops.BinOp.Op;
 import ir.ops.Call;
 import ir.ops.IdentifierExp;
 import ir.ops.IntegerLiteral;
@@ -24,6 +26,7 @@ import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
+import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.SysCall;
 import ir.ops.Value;
@@ -45,6 +48,12 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		out.println("\t" +text);
 	}
+	
+	private void emit(String text, String comment)
+	{
+		out.println("\t" +text + "\t" + "# " + comment);
+	}
+	
 
 	private void emitLabel(String text)
 	{
@@ -94,12 +103,20 @@ public class X86CodeGenerator implements IrVisitor
 		emit("movl %esp, %ebp");
 		currentFrame = f;
 		int localSize = f.getLocals().size() + f.getTempAllocator().getTemporaryCount();
-		emit("subl $" + (localSize * 4) + " , %esp   #Reserve spsace for locals and temporaries.");		
-		f.getStartingBlock().accept(this);
-		emit("movl %ebp, %esp");
+		emit("subl $" + (localSize * 4) + " , %esp   #Reserve spsace for locals and temporaries.");
+		
+		Block currentBlock = f.getStartingBlock();		
+		do
+		{
+			currentBlock.accept(this);
+		}
+		while((currentBlock = currentBlock.getSuccessor()) != null);	
+
 		emit("leave");
 		emit("ret");
 		out.println();
+		
+
 
 	}
 
@@ -133,12 +150,8 @@ public class X86CodeGenerator implements IrVisitor
 
 	public void visit(BinOp b)
 	{
-		
-		if(!(b.getSrc1() instanceof Temporary))
-			b.getSrc1().accept(this);
-		if(!(b.getSrc2() instanceof Temporary))
-			b.getSrc2().accept(this);
-		
+		b.getSrc1().accept(this);	
+		b.getSrc2().accept(this);		
 		emit("popl %ebx");
 		emit("popl %eax");
 		BinOp.Op op = b.getOp();
@@ -152,16 +165,14 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Call call)
 	{
-		for (Value param : call.getParameters())
-		{
-			param.accept(this);
-		}
+		for(int i = call.getParameters().size() - 1; i >= 0; i--)					
+			call.getParameters().get(i).accept(this);			
+					
 		
 		emit("call " + call.getId());
 		int paramSize = call.getParameters().size() * 4;
 		if (paramSize > 0)
-			emit("addl $" + paramSize + ", %esp   # Clean up parameters from call");
-
+			emit("addl $" + paramSize + ", %esp   # Clean up parameters from call");		
 		emit("push %eax  #Store results of call onto stack");
 	}
 
@@ -172,7 +183,7 @@ public class X86CodeGenerator implements IrVisitor
 		{
 			for (Value param : call.getParameters())
 			{
-				param.accept(this);
+				param.accept(this);				
 				emit("pushl $print_num");
 				emit("call _printf");
 				emit("addl $8, %esp   # Pop _printf params off of stack");
@@ -206,15 +217,15 @@ public class X86CodeGenerator implements IrVisitor
 		int tempIndex;
 		if ((paramIndex = getIdByIndex(currentFrame.getParams(), id))>= 0)
 		{
-			return 4 * paramIndex + 12;
+			return 4 * paramIndex + 8;
 		}		
 		else if ((localIndex = getIdByIndex(currentFrame.getLocals(), id)) >= 0)
 		{
-			return  -(4 * localIndex);
+			return  -(4 * localIndex + 4);
 		}			 
 		else if((tempIndex = getIdByIndex(currentFrame.getTemporaries(), id)) >= 0)
 		{
-			return -(tempIndex * 4 + currentFrame.getLocals().size() * 4);
+			return -(tempIndex * 4 + currentFrame.getLocals().size() * 4 + 4);
 		}
 		else
 			return -1;
@@ -233,6 +244,7 @@ public class X86CodeGenerator implements IrVisitor
 		{
 			emit("lea " + (currentStackOffset != 0 ? currentStackOffset : "") +"(%ebp), %eax");
 			emit("pushl %eax");
+			rValue = true;
 		}
 	}
 
@@ -245,8 +257,7 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Temporary t)
 	{
-		
-		
+				
 		
 	}	
 	
@@ -324,11 +335,24 @@ public class X86CodeGenerator implements IrVisitor
 		emit("pop %ebx");
 		emit("movl %ebx, (%eax)");
 	}
-
+	
+	private int conditionCount;	
 	@Override
 	public void visit(Conditional b)
 	{
-		// TODO Auto-generated method stub
+		int conditionCount = this.conditionCount++;
+		b.getTest().accept(this);
+		emit("popl %eax");
+		emit("movl $1, %ebx");
+		emit("je cond_true_" + conditionCount);
+		
+		emitLabel("cond_false_" + conditionCount);
+		b.getFalseBlock().accept(this);
+		emit("jmp cond_end_" + conditionCount, "Jump to end of condition");
+		emitLabel("cond_true_" + conditionCount);
+		b.getTrueBlock().accept(this);
+		
+		emitLabel("cond_end_" + conditionCount);		
 		
 	}
 
@@ -350,7 +374,40 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Return r)
 	{
-		
+		rValue = true;
+		r.getSource().accept(this);		
+		emit("popl %eax", "Pop return value");		
+	}
+	
+	private String getJumpInstruction(RelationalOp.Op op)
+	{
+		switch(op)
+		{
+		case LTE:
+			return "jle";
+		default:
+			throw new RuntimeException("Unrecognized relational operation.");
+		}
+	}
+	
+
+	int relationalCount;
+	@Override
+	public void visit(RelationalOp r)
+	{
+		int relationalCount = this.relationalCount++; 
+		r.getSrc1().accept(this);		
+		r.getSrc2().accept(this);
+		emit("Popl %ebx", "Pop second operand");
+		emit("popl %eax", "Pop first operand");
+		emit("cmp %ebx, %eax", "Compare operands");		
+		emit(getJumpInstruction(r.getOp()) + " relational_true_" + relationalCount);
+		emitLabel("relational_false_" + relationalCount);
+		emit("pushl $0");
+		emit("jmp relational_end_"+ relationalCount);
+		emitLabel("relational_true_" + relationalCount);
+		emit("pushl $1");
+		emitLabel("relational_end_"+ relationalCount);		
 	}
 
 
