@@ -1,6 +1,5 @@
 package ir.ops;
 
-import syntaxtree.Identifier;
 import ir.visitor.IrVisitor;
 
 public class Return implements Operation
@@ -22,5 +21,4 @@ public class Return implements Operation
 		visitor.visit(this);
 		
 	}
-
 }

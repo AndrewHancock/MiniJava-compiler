@@ -385,6 +385,10 @@ public class X86CodeGenerator implements IrVisitor
 		{
 		case LTE:
 			return "jle";
+		case LT:
+			return "jl";
+		case EQ:
+			return "je";			
 		default:
 			throw new RuntimeException("Unrecognized relational operation.");
 		}

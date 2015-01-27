@@ -6,7 +6,9 @@ public class RelationalOp implements Value
 {
 	public enum Op
 	{
-		LTE
+		LTE,
+		LT,
+		EQ
 	}
 	private Op op;	
 	private Value src1;
