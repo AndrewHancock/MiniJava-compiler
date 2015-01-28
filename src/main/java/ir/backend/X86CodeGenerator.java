@@ -19,7 +19,7 @@ import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.BinOp.Op;
 import ir.ops.Call;
-import ir.ops.IdentifierExp;
+import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
 import ir.ops.RecordAccess;
@@ -29,7 +29,7 @@ import ir.ops.RecordDeclaration;
 import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.SysCall;
-import ir.ops.Value;
+import ir.ops.Expression;
 import ir.visitor.IrVisitor;
 
 public class X86CodeGenerator implements IrVisitor
@@ -181,7 +181,7 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		if (call.getId().equals("print") || call.getId().equals("println"))
 		{
-			for (Value param : call.getParameters())
+			for (Expression param : call.getParameters())
 			{
 				param.accept(this);				
 				emit("pushl $print_num");
@@ -201,7 +201,7 @@ public class X86CodeGenerator implements IrVisitor
 
 	}
 
-	private int getIdByIndex(List<IdentifierExp> ids, String id)
+	private int getIdByIndex(List<Identifier> ids, String id)
 	{
 		int result = -1;
 		for (int i = 0; i < ids.size(); i++)
@@ -235,7 +235,7 @@ public class X86CodeGenerator implements IrVisitor
 	private boolean rValue = true;
 	
 	@Override
-	public void visit(IdentifierExp i)
+	public void visit(Identifier i)
 	{
 		int currentStackOffset = getIdentifierStackOffset(i.getId());
 		if(rValue)

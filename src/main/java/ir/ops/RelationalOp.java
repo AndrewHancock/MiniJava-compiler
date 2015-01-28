@@ -2,7 +2,7 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class RelationalOp implements Value
+public class RelationalOp implements Expression
 {
 	public enum Op
 	{
@@ -11,10 +11,10 @@ public class RelationalOp implements Value
 		EQ
 	}
 	private Op op;	
-	private Value src1;
-	private Value src2;
+	private Expression src1;
+	private Expression src2;
 	
-	public RelationalOp(Op op, Value src1, Value src2)
+	public RelationalOp(Op op, Expression src1, Expression src2)
 	{
 		this.op = op;		
 		this.src1 = src1;
@@ -26,12 +26,12 @@ public class RelationalOp implements Value
 		return op;
 	}
 	
-	public Value getSrc1()
+	public Expression getSrc1()
 	{
 		return src1;
 	}
 	
-	public Value getSrc2()
+	public Expression getSrc2()
 	{
 		return src2;
 	}

@@ -4,12 +4,12 @@ import ir.visitor.IrVisitor;
 
 import java.util.List;
 
-public class Call implements Value
+public class Call implements Expression
 {	
 	String id;
-	List<Value> parameters;	
+	List<Expression> parameters;	
 	
-	public Call(String id, List<Value> parameters)
+	public Call(String id, List<Expression> parameters)
 	{
 		this.id = id;
 		this.parameters = parameters;		
@@ -20,7 +20,7 @@ public class Call implements Value
 		return id;
 	}
 	
-	public List<Value> getParameters()
+	public List<Expression> getParameters()
 	{
 		return parameters;
 	}

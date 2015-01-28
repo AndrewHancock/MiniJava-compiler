@@ -1,9 +1,9 @@
 package ir;
 
-import ir.ops.Value;
+import ir.ops.Expression;
 import ir.visitor.IrVisitor;
 
-public class Temporary implements Value
+public class Temporary implements Expression
 {	
 	private String id;
 	private int offset;

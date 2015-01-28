@@ -2,7 +2,7 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class IntegerLiteral implements Value
+public class IntegerLiteral implements Expression
 {
 	int value;
 

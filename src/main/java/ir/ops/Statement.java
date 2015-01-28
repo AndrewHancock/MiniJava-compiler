@@ -2,7 +2,7 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public interface Operation
+public interface Statement
 {
 	public void accept(IrVisitor visitor);
 }

@@ -2,14 +2,14 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class ArrayAccess implements Value
+public class ArrayAccess implements Expression
 {
-	private Value reference;	
+	private Expression reference;	
 	private DataType type;
-	private Value index;
+	private Expression index;
 	
 	
-	public ArrayAccess(Value reference, DataType type, Value index)
+	public ArrayAccess(Expression reference, DataType type, Expression index)
 	{
 		this.reference = reference;
 		this.type = type;
@@ -22,7 +22,7 @@ public class ArrayAccess implements Value
 		visitor.visit(this);		
 	}
 	
-	public Value getReference()
+	public Expression getReference()
 	{
 		return reference;
 	}
@@ -32,7 +32,7 @@ public class ArrayAccess implements Value
 		return type;
 	}
 
-	public Value getIndex()
+	public Expression getIndex()
 	{
 		return index;
 	}

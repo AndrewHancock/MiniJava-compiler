@@ -2,12 +2,12 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class Assignment implements Operation
+public class Assignment implements Statement
 {
-	private Value src;
-	private Value dest;
+	private Expression src;
+	private Expression dest;
 	
-	public Assignment(Value src, Value dest)
+	public Assignment(Expression src, Expression dest)
 	{
 		this.src = src;
 		this.dest = dest;
@@ -19,12 +19,12 @@ public class Assignment implements Operation
 		visitor.visit(this);		
 	}
 
-	public Value getSrc()
+	public Expression getSrc()
 	{
 		return src;
 	}
 
-	public Value getDest()
+	public Expression getDest()
 	{
 		return dest;
 	}	

@@ -36,13 +36,13 @@ import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.DataType;
-import ir.ops.IdentifierExp;
+import ir.ops.Identifier;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
 import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.SysCall;
-import ir.ops.Value;
+import ir.ops.Expression;
 import ir.ops.BinOp.Op;
 import ir.Temporary;
 
@@ -83,7 +83,7 @@ public class IrGenerator extends DepthFirstVisitor
 	@Override
 	public void visit(Print p)
 	{	
-		List<Value> parameters = new ArrayList<Value>();
+		List<Expression> parameters = new ArrayList<Expression>();
 		for(int i = 0; i < p.e.size(); i++)
 		{
 			p.e.elementAt(i).accept(this);
@@ -95,7 +95,7 @@ public class IrGenerator extends DepthFirstVisitor
 	
 	public void visit(PrintLn p)
 	{
-		List<Value> parameters = new ArrayList<Value>();
+		List<Expression> parameters = new ArrayList<Expression>();
 		for(int i = 0; i < p.list.size(); i++)
 		{
 			p.list.elementAt(i).accept(this);
@@ -106,7 +106,7 @@ public class IrGenerator extends DepthFirstVisitor
 		currentBlock.addOperation(new Assignment(new SysCall("println", parameters), currentOperand));		
 	}
 	
-	Value currentOperand = null;
+	Expression currentOperand = null;
 	
 	@Override
 	public void visit(IntegerLiteral l)
@@ -118,11 +118,11 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(Plus p)
 	{		
 		p.e1.accept(this);
-		Value leftOperand = currentOperand;
+		Expression leftOperand = currentOperand;
 		p.e2.accept(this);
-		Value rightOperand = currentOperand;
+		Expression rightOperand = currentOperand;
 		
-		IdentifierExp dest = currentFrame.getTempAllocator().GetTemporary(); 
+		Identifier dest = currentFrame.getTempAllocator().GetTemporary(); 
 		currentBlock.addOperation(new Assignment(new BinOp(Op.ADD, leftOperand, rightOperand), dest));		
 		currentOperand = dest;
 	}
@@ -130,11 +130,11 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(Times t)
 	{
 		t.e1.accept(this);
-		Value leftOperand = currentOperand;
+		Expression leftOperand = currentOperand;
 		t.e2.accept(this);
-		Value rightOperand = currentOperand;
+		Expression rightOperand = currentOperand;
 		
-		IdentifierExp dest = currentFrame.getTempAllocator().GetTemporary(); 
+		Identifier dest = currentFrame.getTempAllocator().GetTemporary(); 
 		currentBlock.addOperation(new Assignment(new BinOp(Op.MULT, leftOperand, rightOperand), dest));		
 		currentOperand = dest;
 	}
@@ -142,11 +142,11 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit (Minus m)
 	{
 		m.e1.accept(this);
-		Value leftOperand = currentOperand;
+		Expression leftOperand = currentOperand;
 		m.e2.accept(this);
-		Value rightOperand = currentOperand;
+		Expression rightOperand = currentOperand;
 		
-		IdentifierExp dest = currentFrame.getTempAllocator().GetTemporary(); 
+		Identifier dest = currentFrame.getTempAllocator().GetTemporary(); 
 		currentBlock.addOperation(new Assignment(new BinOp(Op.SUBTRACT, leftOperand, rightOperand), dest));		
 		currentOperand = dest;	
 	}
@@ -180,17 +180,17 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(Assign a)
 	{
 		a.e.accept(this);
-		currentBlock.addOperation(new Assignment(currentOperand, new IdentifierExp(a.i.s)));		
+		currentBlock.addOperation(new Assignment(currentOperand, new Identifier(a.i.s)));		
 	}
 
 	@Override
 	public void visit(ArrayAssign a)
 	{
 		a.e2.accept(this);
-		Value sourceOperand = currentOperand;
+		Expression sourceOperand = currentOperand;
 		a.e1.accept(this);
-		Value index = currentOperand;
-		currentBlock.addOperation(new ArrayAssignment(sourceOperand, new IdentifierExp(a.i.s), index));		
+		Expression index = currentOperand;
+		currentBlock.addOperation(new ArrayAssignment(sourceOperand, new Identifier(a.i.s), index));		
 	}
 	
 	@Override
@@ -203,18 +203,18 @@ public class IrGenerator extends DepthFirstVisitor
 		currentLocals.clear();
 		
 		// For any method declaration, "this" is implicit
-		currentFrame.getParams().add(new IdentifierExp("this"));
-		currentLocals.put("this", new IdentifierExp("this"));		
+		currentFrame.getParams().add(new Identifier("this"));
+		currentLocals.put("this", new Identifier("this"));		
 		
 		for(int i = 0; i < d.vl.size(); i++)
 		{			
-			currentFrame.getLocals().add(new IdentifierExp(d.vl.elementAt(i).i.s));
+			currentFrame.getLocals().add(new Identifier(d.vl.elementAt(i).i.s));
 			d.vl.elementAt(i).accept(this);
 		}
 		
 		for(int i = 0; i < d.fl.size(); i++)
 		{
-			currentFrame.getParams().add(new IdentifierExp(d.fl.elementAt(i).i.s));
+			currentFrame.getParams().add(new Identifier(d.fl.elementAt(i).i.s));
 			d.fl.elementAt(i).accept(this);
 		}		
 		
@@ -228,7 +228,7 @@ public class IrGenerator extends DepthFirstVisitor
 	@Override 
 	public void visit(Call c)
 	{
-		ArrayList<Value> params = new ArrayList<Value>(c.el.size() + 1);		
+		ArrayList<Expression> params = new ArrayList<Expression>(c.el.size() + 1);		
 		
 		c.e.accept(this);
 		params.add(currentOperand);
@@ -248,11 +248,11 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(And a)
 	{
 		a.e1.accept(this);
-		Value src1 = currentOperand;
+		Expression src1 = currentOperand;
 		a.e2.accept(this);
-		Value src2 = currentOperand;
+		Expression src2 = currentOperand;
 		
-		IdentifierExp dest = currentFrame.getTempAllocator().GetTemporary();
+		Identifier dest = currentFrame.getTempAllocator().GetTemporary();
 		currentBlock.addOperation(new Assignment(new BinOp(Op.AND, src1, src2), dest));
 	}
 	
@@ -260,9 +260,9 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(Or a)
 	{
 		a.e1.accept(this);
-		Value src1 = currentOperand;
+		Expression src1 = currentOperand;
 		a.e2.accept(this);
-		Value src2 = currentOperand;
+		Expression src2 = currentOperand;
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
 		currentBlock.addOperation(new Assignment(currentOperand, new BinOp(Op.OR, src1, src2)));
@@ -275,15 +275,15 @@ public class IrGenerator extends DepthFirstVisitor
 		currentBlock.addOperation(new Assignment(new RecordAllocation(currentNamespace, n.i.s), currentOperand));		
 	}
 	
-	HashMap<String, Value> currentLocals = new HashMap<String, Value>(); 
+	HashMap<String, Expression> currentLocals = new HashMap<String, Expression>(); 
 	public void visit(VarDecl v)
 	{
-		currentLocals.put(v.i.s, new IdentifierExp(v.i.s));		
+		currentLocals.put(v.i.s, new Identifier(v.i.s));		
 	}
 	
 	public void visit(Formal f)
 	{
-		currentLocals.put(f.i.s, new IdentifierExp(f.i.s));
+		currentLocals.put(f.i.s, new Identifier(f.i.s));
 	}
 	
 	@Override
@@ -314,9 +314,9 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(LessThanOrEqual l)
 	{
 		l.e1.accept(this);
-		Value leftOperand = currentOperand;
+		Expression leftOperand = currentOperand;
 		l.e2.accept(this);
-		Value rightOperand = currentOperand;
+		Expression rightOperand = currentOperand;
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
 		currentBlock.addOperation(new Assignment(new RelationalOp(RelationalOp.Op.LTE, leftOperand, rightOperand), currentOperand));

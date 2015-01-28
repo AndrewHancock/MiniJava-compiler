@@ -5,7 +5,7 @@ import ir.visitor.IrVisitor;
 public class RecordAssignment extends Assignment
 {
 
-	public RecordAssignment(Value src, Value dest)
+	public RecordAssignment(Expression src, Expression dest)
 	{
 		super(src, dest);	
 	}

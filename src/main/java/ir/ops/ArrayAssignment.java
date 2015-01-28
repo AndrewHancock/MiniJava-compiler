@@ -2,14 +2,14 @@ package ir.ops;
 
 public class ArrayAssignment extends Assignment 
 {	
-	private Value destIndex;
-	public ArrayAssignment(Value src, Value dest, Value destIndex)
+	private Expression destIndex;
+	public ArrayAssignment(Expression src, Expression dest, Expression destIndex)
 	{
 		super(src, dest);
 		this.destIndex = destIndex;
 	}
 	
-	public Value getDestIndex()
+	public Expression getDestIndex()
 	{
 		return destIndex;
 	}

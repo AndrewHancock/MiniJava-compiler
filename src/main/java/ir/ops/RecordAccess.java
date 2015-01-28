@@ -2,15 +2,15 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class RecordAccess implements Value
+public class RecordAccess implements Expression
 {
 	private String namespace;
 	private String id;
-	private Value value;
+	private Expression value;
 	private int index;
 	
 
-	public RecordAccess(String namespace, String id, Value value, int index)
+	public RecordAccess(String namespace, String id, Expression value, int index)
 	{
 		this.namespace = namespace;
 		this.id = id;		
@@ -34,7 +34,7 @@ public class RecordAccess implements Value
 		return id;
 	}
 	
-	public Value getValue()
+	public Expression getValue()
 	{
 		return value;
 	}

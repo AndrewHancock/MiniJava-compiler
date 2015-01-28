@@ -2,7 +2,7 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class RecordAllocation implements Value
+public class RecordAllocation implements Expression
 {
 	private String namespace;
 	private String typeId;

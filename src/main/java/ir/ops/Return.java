@@ -2,15 +2,15 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class Return implements Operation
+public class Return implements Statement
 {
-	private Value operand;
-	public Return(Value operand)
+	private Expression operand;
+	public Return(Expression operand)
 	{
 		this.operand = operand;
 	}
 	
-	public Value getSource()
+	public Expression getSource()
 	{
 		return operand;
 	}

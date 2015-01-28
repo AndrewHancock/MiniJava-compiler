@@ -2,10 +2,10 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class IdentifierExp implements Value
+public class Identifier implements Expression
 {
 	private String id;
-	public IdentifierExp(String id) { this.id = id; }	
+	public Identifier(String id) { this.id = id; }	
 	
 	public String getId()
 	{

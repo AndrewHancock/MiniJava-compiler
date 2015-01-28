@@ -1,6 +1,6 @@
 package ir.cfgraph;
 
-import ir.ops.Operation;
+import ir.ops.Statement;
 import ir.visitor.IrVisitor;
 
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public class BasicBlock implements Block
 		this.successor = successor;
 	}	
 	
-	public void addOperation(Operation op)
+	public void addOperation(Statement op)
 	{
 		CodePoint point = new CodePoint(op);
 		codePoints.add(point);		

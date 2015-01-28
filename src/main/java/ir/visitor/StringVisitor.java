@@ -13,7 +13,7 @@ import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
-import ir.ops.IdentifierExp;
+import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
 import ir.ops.RecordAccess;
@@ -23,7 +23,7 @@ import ir.ops.RecordDeclaration;
 import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.SysCall;
-import ir.ops.Value;
+import ir.ops.Expression;
 
 public class StringVisitor implements IrVisitor
 {
@@ -39,18 +39,18 @@ public class StringVisitor implements IrVisitor
 	{
 		out.println("\n.namespace " + f.getNamespace() + " " + f.getId() + ":");
 		out.println("Locals: ");
-		for( IdentifierExp value : f.getLocals())
+		for( Identifier value : f.getLocals())
 		{
 			out.println("\t" + value.getId());
 		}
 		out.println("Params: " + f.getParams().size());
-		for(IdentifierExp param : f.getParams())
+		for(Identifier param : f.getParams())
 		{
 			out.println("\t" + param.getId());	
 		}
 		
 		out.println("Temporaries: " + f.getTempAllocator().getTemporaryCount());
-		for(IdentifierExp temp : f.getTemporaries())
+		for(Identifier temp : f.getTemporaries())
 		{
 			out.println("\t" + temp.getId());
 		}
@@ -116,7 +116,7 @@ public class StringVisitor implements IrVisitor
 	{
 		boolean first = true;
 		out.print(c.getId() + "(");
-		for(Value param : c.getParameters())
+		for(Expression param : c.getParameters())
 		{
 			if(first)
 				first = false;
@@ -142,7 +142,7 @@ public class StringVisitor implements IrVisitor
 	{
 		boolean first = true;
 		out.print(s.getId() + "(");
-		for(Value param : s.getParameters())
+		for(Expression param : s.getParameters())
 		{
 			if(first = true)
 				first = false;
@@ -238,7 +238,7 @@ public class StringVisitor implements IrVisitor
 	}
 
 	@Override
-	public void visit(IdentifierExp i)
+	public void visit(Identifier i)
 	{
 		out.print(i.getId());
 		

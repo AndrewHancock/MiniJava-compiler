@@ -2,7 +2,7 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class BinOp implements Value 
+public class BinOp implements Expression 
 {
 	public enum Op
 	{
@@ -13,10 +13,10 @@ public class BinOp implements Value
 		OR
 	}
 	private Op op;	
-	private Value src1;
-	private Value src2;
+	private Expression src1;
+	private Expression src2;
 	
-	public BinOp(Op op, Value src1, Value src2)
+	public BinOp(Op op, Expression src1, Expression src2)
 	{
 		this.op = op;		
 		this.src1 = src1;
@@ -28,12 +28,12 @@ public class BinOp implements Value
 		return op;
 	}
 	
-	public Value getSrc1()
+	public Expression getSrc1()
 	{
 		return src1;
 	}
 	
-	public Value getSrc2()
+	public Expression getSrc2()
 	{
 		return src2;
 	}

@@ -7,7 +7,7 @@ import java.util.List;
 public class SysCall extends Call
 {
 
-	public SysCall(String id, List<Value> parameters)
+	public SysCall(String id, List<Expression> parameters)
 	{
 		super(id, parameters);
 	}

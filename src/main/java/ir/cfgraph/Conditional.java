@@ -1,7 +1,7 @@
 package ir.cfgraph;
 
 import ir.ops.RelationalOp;
-import ir.ops.Value;
+import ir.ops.Expression;
 import ir.visitor.IrVisitor;
 
 import java.util.ArrayList;
@@ -11,11 +11,11 @@ public class Conditional implements Block
 {	
 	private Collection<Block> parents = new ArrayList<Block>();
 	private Block successor;
-	private Value test;
+	private Expression test;
 	private BasicBlock trueBlock;
 	private BasicBlock falseBlock;	
 	
-	public Conditional(BasicBlock parent, Value test)
+	public Conditional(BasicBlock parent, Expression test)
 	{
 		parents.add(parent);
 		parent.setSuccessor(this);
@@ -45,7 +45,7 @@ public class Conditional implements Block
 		return successor;
 	}
 	
-	public Value getTest()
+	public Expression getTest()
 	{
 		return test;
 	}

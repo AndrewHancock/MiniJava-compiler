@@ -1,13 +1,13 @@
 package ir.cfgraph;
 
-import ir.ops.Operation;
+import ir.ops.Statement;
 import ir.visitor.IrVisitor;
 
 public class CodePoint
 {	
-	Operation op;
+	Statement op;
 	
-	public CodePoint(Operation op)
+	public CodePoint(Statement op)
 	{
 		this.op = op;
 	}
@@ -17,7 +17,7 @@ public class CodePoint
 		visitor.visit(this);
 	}
 	
-	public Operation getOperation()
+	public Statement getOperation()
 	{
 		return op;
 	}

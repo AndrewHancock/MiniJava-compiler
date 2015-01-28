@@ -2,7 +2,7 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public interface Value
+public interface Expression
 {	
 	void accept(IrVisitor visitor);	
 }
