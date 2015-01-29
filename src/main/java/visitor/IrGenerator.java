@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Stack;
 
 import symboltable.Table;
 import syntaxtree.And;
@@ -12,6 +11,7 @@ import syntaxtree.ArrayAssign;
 import syntaxtree.Assign;
 import syntaxtree.Call;
 import syntaxtree.ClassDeclSimple;
+import syntaxtree.False;
 import syntaxtree.Formal;
 import syntaxtree.If;
 import syntaxtree.IntegerLiteral;
@@ -27,10 +27,9 @@ import syntaxtree.Print;
 import syntaxtree.PrintLn;
 import syntaxtree.This;
 import syntaxtree.Times;
+import syntaxtree.True;
 import syntaxtree.VarDecl;
-import ir.cfgraph.BasicBlock;
-import ir.cfgraph.Block;
-import ir.cfgraph.Conditional;
+import ir.cfgraph.ControlFlowGraphBuilder;
 import ir.cfgraph.Frame;
 import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
@@ -44,7 +43,6 @@ import ir.ops.Return;
 import ir.ops.SysCall;
 import ir.ops.Expression;
 import ir.ops.BinOp.Op;
-import ir.Temporary;
 
 public class IrGenerator extends DepthFirstVisitor
 {
@@ -56,10 +54,11 @@ public class IrGenerator extends DepthFirstVisitor
 	}
 	
 	private final String currentNamespace = "minijava";
-	private Frame currentFrame;
-	private BasicBlock currentBlock;	
+	private Frame currentFrame;	
 	private Collection<Frame> frameList = new ArrayList<Frame>();
 	private Collection<RecordDeclaration> recordList = new ArrayList<RecordDeclaration>();
+	private ControlFlowGraphBuilder cfgBuilder = new ControlFlowGraphBuilder();
+	
 	
 	public Collection<Frame> getFrameList()
 	{
@@ -73,11 +72,12 @@ public class IrGenerator extends DepthFirstVisitor
 	
 	public void visit(MainClass m)
 	{
-		currentBlock = new BasicBlock();		
+		cfgBuilder.clear();		
 		
-		currentFrame = new Frame("", "main", 0, 0, currentBlock );
+		currentFrame = new Frame("", "main", 0, 0, cfgBuilder.getStartingBlock() );
 		frameList.add(currentFrame);
-		m.s.accept(this);				
+		m.s.accept(this);	
+		
 	}
 	
 	@Override
@@ -90,7 +90,7 @@ public class IrGenerator extends DepthFirstVisitor
 			parameters.add(currentOperand);
 		}		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary(); 
-		currentBlock.addOperation(new Assignment(new SysCall("print", parameters), currentOperand));
+		cfgBuilder.addStatement(new Assignment(new SysCall("print", parameters), currentOperand));
 	}
 	
 	public void visit(PrintLn p)
@@ -103,7 +103,7 @@ public class IrGenerator extends DepthFirstVisitor
 		}		
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
-		currentBlock.addOperation(new Assignment(new SysCall("println", parameters), currentOperand));		
+		cfgBuilder.addStatement(new Assignment(new SysCall("println", parameters), currentOperand));		
 	}
 	
 	Expression currentOperand = null;
@@ -123,7 +123,7 @@ public class IrGenerator extends DepthFirstVisitor
 		Expression rightOperand = currentOperand;
 		
 		Identifier dest = currentFrame.getTempAllocator().GetTemporary(); 
-		currentBlock.addOperation(new Assignment(new BinOp(Op.ADD, leftOperand, rightOperand), dest));		
+		cfgBuilder.addStatement(new Assignment(new BinOp(Op.ADD, leftOperand, rightOperand), dest));		
 		currentOperand = dest;
 	}
 	
@@ -135,7 +135,7 @@ public class IrGenerator extends DepthFirstVisitor
 		Expression rightOperand = currentOperand;
 		
 		Identifier dest = currentFrame.getTempAllocator().GetTemporary(); 
-		currentBlock.addOperation(new Assignment(new BinOp(Op.MULT, leftOperand, rightOperand), dest));		
+		cfgBuilder.addStatement(new Assignment(new BinOp(Op.MULT, leftOperand, rightOperand), dest));		
 		currentOperand = dest;
 	}
 	
@@ -147,7 +147,7 @@ public class IrGenerator extends DepthFirstVisitor
 		Expression rightOperand = currentOperand;
 		
 		Identifier dest = currentFrame.getTempAllocator().GetTemporary(); 
-		currentBlock.addOperation(new Assignment(new BinOp(Op.SUBTRACT, leftOperand, rightOperand), dest));		
+		cfgBuilder.addStatement(new Assignment(new BinOp(Op.SUBTRACT, leftOperand, rightOperand), dest));		
 		currentOperand = dest;	
 	}
 	
@@ -180,7 +180,7 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(Assign a)
 	{
 		a.e.accept(this);
-		currentBlock.addOperation(new Assignment(currentOperand, new Identifier(a.i.s)));		
+		cfgBuilder.addStatement(new Assignment(currentOperand, new Identifier(a.i.s)));		
 	}
 
 	@Override
@@ -190,14 +190,14 @@ public class IrGenerator extends DepthFirstVisitor
 		Expression sourceOperand = currentOperand;
 		a.e1.accept(this);
 		Expression index = currentOperand;
-		currentBlock.addOperation(new ArrayAssignment(sourceOperand, new Identifier(a.i.s), index));		
+		cfgBuilder.addStatement(new ArrayAssignment(sourceOperand, new Identifier(a.i.s), index));		
 	}
 	
 	@Override
 	public void visit(MethodDecl d)
 	{		
-		currentBlock = new BasicBlock();
-		currentFrame = new Frame(currentNamespace, d.i.s, d.fl.size(), d.vl.size(), currentBlock );
+		cfgBuilder.clear();
+		currentFrame = new Frame(currentNamespace, d.i.s, d.fl.size(), d.vl.size(), cfgBuilder.getStartingBlock() );
 		frameList.add(currentFrame);
 		
 		currentLocals.clear();
@@ -222,7 +222,7 @@ public class IrGenerator extends DepthFirstVisitor
 			d.sl.elementAt(i).accept(this);
 		
 		d.e.accept(this);
-		currentBlock.addOperation(new Return(currentOperand));
+		cfgBuilder.addStatement(new Return(currentOperand));
 	}
 	
 	@Override 
@@ -241,38 +241,53 @@ public class IrGenerator extends DepthFirstVisitor
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
 		ir.ops.Call call = new ir.ops.Call(c.i.s, params);
-		currentBlock.addOperation(new Assignment(call, currentOperand));
+		cfgBuilder.addStatement(new Assignment(call, currentOperand));
 	}
 	
 	@Override 
 	public void visit(And a)
 	{
-		a.e1.accept(this);
-		Expression src1 = currentOperand;
-		a.e2.accept(this);
-		Expression src2 = currentOperand;
+		a.e1.accept(this);	
 		
-		Identifier dest = currentFrame.getTempAllocator().GetTemporary();
-		currentBlock.addOperation(new Assignment(new BinOp(Op.AND, src1, src2), dest));
+		Identifier result = currentFrame.getTempAllocator().GetTemporary();
+		// Short circuit - when expression 1 is "false", we do nothing further.
+		cfgBuilder.addCondition(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)));
+		cfgBuilder.beginFalseBlock();
+		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
+		cfgBuilder.beginTrueBlock();
+		a.e2.accept(this);
+		
+		cfgBuilder.addCondition(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)));
+		cfgBuilder.beginFalseBlock();
+		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
+		cfgBuilder.beginTrueBlock();
+		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
+		currentOperand = result;
+		
+		cfgBuilder.endConditional();
+		cfgBuilder.endConditional();
 	}
 	
 	@Override 
 	public void visit(Or a)
-	{
-		a.e1.accept(this);
+	{		
+		/*a.e1.accept(this);
 		Expression src1 = currentOperand;
-		a.e2.accept(this);
-		Expression src2 = currentOperand;
 		
-		currentOperand = currentFrame.getTempAllocator().GetTemporary();
-		currentBlock.addOperation(new Assignment(currentOperand, new BinOp(Op.OR, src1, src2)));
+		Identifier result = currentFrame.getTempAllocator().GetTemporary();
+		// Short circuit - when expression 1 is "true", we do nothing further.
+		Conditional conditional = new Conditional(currentBlock, new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)));
+		conditional.getTrueBlock().addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));		
+		currentBlock = conditional.getFalseBlock();
+		a.e2.accept(this);
+		currentBlock = (BasicBlock) conditional.getSuccessor();*/
 	}
 
 	@Override
 	public void visit(NewObject n)
 	{	
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
-		currentBlock.addOperation(new Assignment(new RecordAllocation(currentNamespace, n.i.s), currentOperand));		
+		cfgBuilder.addStatement(new Assignment(new RecordAllocation(currentNamespace, n.i.s), currentOperand));		
 	}
 	
 	HashMap<String, Expression> currentLocals = new HashMap<String, Expression>(); 
@@ -299,16 +314,16 @@ public class IrGenerator extends DepthFirstVisitor
 	
 	public void visit(If i)
 	{
-		i.e.accept(this);
+		i.e.accept(this);		
+		cfgBuilder.addCondition(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)));
 		
-		Conditional block = new Conditional(currentBlock, currentOperand);
-		
-		currentBlock = block.getTrueBlock();
-		i.s1.accept(this);
-		currentBlock = block.getFalseBlock();
+		cfgBuilder.beginTrueBlock();
+		i.s1.accept(this); 
+
+		cfgBuilder.beginFalseBlock();
 		i.s2.accept(this);
-		// Hack - A "Conditional" is not the same as a "BasicBlock"
-		currentBlock = (BasicBlock)block.getSuccessor();
+		
+		cfgBuilder.endConditional();
 	}
 	
 	public void visit(LessThanOrEqual l)
@@ -319,9 +334,19 @@ public class IrGenerator extends DepthFirstVisitor
 		Expression rightOperand = currentOperand;
 		
 		currentOperand = currentFrame.getTempAllocator().GetTemporary();
-		currentBlock.addOperation(new Assignment(new RelationalOp(RelationalOp.Op.LTE, leftOperand, rightOperand), currentOperand));
+		cfgBuilder.addStatement(new Assignment(new RelationalOp(RelationalOp.Op.LTE, leftOperand, rightOperand), currentOperand));
 	}
 	
 	
+	public void visit(False f)
+	{
+		currentOperand = currentFrame.getTempAllocator().GetTemporary();
+		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), currentOperand));
+	}
 	
+	public void visit(True t)
+	{
+		currentOperand = currentFrame.getTempAllocator().GetTemporary();
+		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(1), currentOperand));
+	}	
 }

@@ -105,12 +105,8 @@ public class X86CodeGenerator implements IrVisitor
 		int localSize = f.getLocals().size() + f.getTempAllocator().getTemporaryCount();
 		emit("subl $" + (localSize * 4) + " , %esp   #Reserve spsace for locals and temporaries.");
 		
-		Block currentBlock = f.getStartingBlock();		
-		do
-		{
-			currentBlock.accept(this);
-		}
-		while((currentBlock = currentBlock.getSuccessor()) != null);	
+		f.getStartingBlock().accept(this);		
+
 
 		emit("leave");
 		emit("ret");
@@ -125,6 +121,9 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		for (CodePoint codePoint : b.getCodePoints())
 			codePoint.accept(this);
+		
+		if(b.getSuccessor() != null)
+			b.getSuccessor().accept(this);
 	}
 
 	@Override
@@ -352,7 +351,10 @@ public class X86CodeGenerator implements IrVisitor
 		emitLabel("cond_true_" + conditionCount);
 		b.getTrueBlock().accept(this);
 		
-		emitLabel("cond_end_" + conditionCount);		
+		emitLabel("cond_end_" + conditionCount);	
+		
+		if(b.getSuccessor() != null)
+			b.getSuccessor().accept(this);
 		
 	}
 

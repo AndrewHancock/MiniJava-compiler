@@ -54,21 +54,19 @@ public class StringVisitor implements IrVisitor
 		{
 			out.println("\t" + temp.getId());
 		}
-		Block currentBlock = f.getStartingBlock();
-		do
-		{
-			currentBlock.accept(this);			
-		}
-		while((currentBlock = currentBlock.getSuccessor()) != null);
+		out.println("Begin:");
+		f.getStartingBlock().accept(this);
 		
 	}
 
 	@Override
 	public void visit(BasicBlock b)
-	{
-		out.println("Basic Block:");
+	{		
 		for(CodePoint c : b.getCodePoints())		
 			c.accept(this);
+		
+		if(b.getSuccessor() != null)
+			b.getSuccessor().accept(this);
 	}
 
 	@Override
@@ -140,7 +138,7 @@ public class StringVisitor implements IrVisitor
 	@Override
 	public void visit(SysCall s)
 	{
-		boolean first = true;
+		boolean first;
 		out.print(s.getId() + "(");
 		for(Expression param : s.getParameters())
 		{
@@ -218,15 +216,19 @@ public class StringVisitor implements IrVisitor
 		int c = conditionCounter++;
 		String label = "condiition_" + c;
 		out.print(label + ":\n") ;
-		out.print("if ");
+		out.print("\tif ");
 		b.getTest().accept(this);
 		out.println(":");
 		
 		
-		out.print(label + "_false:\n");
+		out.println(label + "_false:");
 		b.getFalseBlock().accept(this);
-		out.print(label + "_true:\n");
+		out.println(label + "_true:");
 		b.getTrueBlock().accept(this);		
+		out.println(label + "_end");
+		
+		if(b.getSuccessor() != null)
+			b.getSuccessor().accept(this);
 		
 	}
 
@@ -261,6 +263,12 @@ public class StringVisitor implements IrVisitor
 		{
 		case LTE:
 			op = " <= "; 
+			break;
+		case EQ:
+			op = " == ";
+			break;
+		case LT:
+			op = " < ";
 			break;
 		default:
 			throw new RuntimeException("Unrecognized operation.");		

@@ -29,7 +29,7 @@ public class BasicBlock implements Block
 		this.successor = successor;
 	}	
 	
-	public void addOperation(Statement op)
+	public void addStatement(Statement op)
 	{
 		CodePoint point = new CodePoint(op);
 		codePoints.add(point);		
@@ -45,6 +45,7 @@ public class BasicBlock implements Block
 		visitor.visit(this);
 	}
 	
+	@Override
 	public Block getSuccessor()
 	{
 		return successor;
