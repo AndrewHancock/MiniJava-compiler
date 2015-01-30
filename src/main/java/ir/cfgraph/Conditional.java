@@ -21,8 +21,8 @@ public class Conditional implements Block
 		parents.add(parent);		
 		parent.setSuccessor(this);
 		successor = new BasicBlock();
-		this.trueBlock = new BasicBlock(parent, successor);
-		this.falseBlock = new BasicBlock(parent, successor);
+		this.trueBlock = new BasicBlock(parent);
+		this.falseBlock = new BasicBlock(parent);
 		this.test = test;
 	}
 	

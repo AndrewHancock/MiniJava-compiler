@@ -32,7 +32,7 @@ public class ControlFlowGraphBuilder
 	public void beginTrueBlock()
 	{
 		if(currentConditional == null)
-			throw new RuntimeException("Conditonal is null.");
+			throw new RuntimeException("Conditional is null.");
 		currentBlock = currentConditional.getTrueBlock();
 	}
 	
