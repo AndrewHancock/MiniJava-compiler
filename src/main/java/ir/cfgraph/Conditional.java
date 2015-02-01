@@ -10,28 +10,48 @@ import java.util.Collection;
 
 public class Conditional implements Block
 {	
+	protected enum State
+	{
+		PENDING,
+		TRUE,
+		FALSE,
+		COMPLETE
+		
+	}
+	private int id;
 	private Collection<Block> parents = new ArrayList<Block>();
+	private Block currentBlock;
 	private Block successor;
 	private RelationalOp test;
 	private BasicBlock trueBlock;
-	private BasicBlock falseBlock;	
-	
-	public Conditional(Block parent, RelationalOp test)
+	private BasicBlock falseBlock;
+	protected State state = State.PENDING;	
+		
+	public Conditional(RelationalOp test)
 	{
-		parents.add(parent);		
-		parent.setSuccessor(this);
-		successor = new BasicBlock();
-		this.trueBlock = new BasicBlock(parent);
-		this.falseBlock = new BasicBlock(parent);
+		id = BasicBlock.nextId++;		
 		this.test = test;
 	}
 	
-	public BasicBlock getTrueBlock()
+	public void beginTrueBlock()
+	{		
+		state = State.TRUE;
+		// Will be null on first call
+		currentBlock = trueBlock = new BasicBlock();		
+	}
+	
+	public void beginFalseBlock()
+	{
+		state = State.FALSE;
+		currentBlock = falseBlock = new BasicBlock();
+	}	
+	
+	public Block getTrueBlock()
 	{
 		return trueBlock;
 	}
 	
-	public BasicBlock getFalseBlock()
+	public Block getFalseBlock()
 	{
 		return falseBlock;
 	}
@@ -53,6 +73,11 @@ public class Conditional implements Block
 		this.successor = successor;
 	}
 	
+	public void addParent(Block parent)
+	{
+		parents.add(parent);
+	}
+	
 	public Expression getTest()
 	{
 		return test;
@@ -63,5 +88,56 @@ public class Conditional implements Block
 	{
 		visitor.visit(this);
 		
+	}
+
+	@Override
+	public int getId()
+	{		
+		return id;
+	}
+
+	@Override
+	public void addStatement(Statement statement)
+	{
+		if(state == null)
+			throw new RuntimeException("State of Conditional is null.");
+		if(currentBlock == null)
+		{
+			if(state == State.TRUE)
+			{
+				trueBlock = new BasicBlock();
+				currentBlock = trueBlock;
+			}
+			else if (state == State.FALSE)
+			{
+				falseBlock = new BasicBlock();
+				currentBlock = falseBlock;
+			}
+		}	
+			
+		currentBlock.addStatement(statement);
+	}
+	
+	public void addBlock(Block block)
+	{
+		if(state == null)
+			throw new RuntimeException("State of conditional is null.");
+		
+		if(currentBlock == null)
+		{
+			if(state == State.TRUE)
+			{
+				trueBlock = new BasicBlock();
+				currentBlock = trueBlock;
+			}
+			else if (state == State.FALSE)
+			{
+				falseBlock = new BasicBlock();
+				currentBlock = falseBlock;
+			}			
+		}
+		else
+			currentBlock.setSuccessor(block);
+		currentBlock = block;		
 	}
 }

@@ -8,22 +8,21 @@ import ir.visitor.IrVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Frame extends Declaration
+public class Frame extends Declaration implements TemporaryProvider
 {
 	private List<Identifier> parameters;
 	private List<Identifier> locals;	
-	private Block startBlock = new BasicBlock();
+	private Block startBlock;
 	
 	private TempAllocator allocator = new TempAllocator();	
 	
 		
-	public Frame(String namespace, String id, int paramSize, int localSize, Block startBlock)
+	public Frame(String namespace, String id, int paramSize, int localSize)
 	{
 		super(namespace, id);
 		
 		locals = new ArrayList<Identifier>(localSize);
-		parameters = new ArrayList<Identifier>(paramSize);		
-		this.startBlock = startBlock;
+		parameters = new ArrayList<Identifier>(paramSize);
 	}
 	
 	
@@ -62,14 +61,19 @@ public class Frame extends Declaration
 		locals.add(index, local);
 	}
 	
-	public TempAllocator getTempAllocator()
+	public Identifier getTemporary()
 	{
-		return allocator;
+		return allocator.GetTemporary();
 	}
 	
 	public Block getStartingBlock()
 	{
 		return startBlock;
+	}
+	
+	public void setStartingBlock(Block startBlock)
+	{
+		this.startBlock = startBlock;
 	}
 	
 	public void accept(IrVisitor visitor)

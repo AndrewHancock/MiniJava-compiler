@@ -49,7 +49,7 @@ public class StringVisitor implements IrVisitor
 			out.println("\t" + param.getId());	
 		}
 		
-		out.println("Temporaries: " + f.getTempAllocator().getTemporaryCount());
+		out.println("Temporaries: " + f.getTemporaries().size());
 		for(Identifier temp : f.getTemporaries())
 		{
 			out.println("\t" + temp.getId());
@@ -62,11 +62,17 @@ public class StringVisitor implements IrVisitor
 	@Override
 	public void visit(BasicBlock b)
 	{		
+		out.println("Begin block " + b.getId());
 		for(CodePoint c : b.getCodePoints())		
 			c.accept(this);
 		
 		if(b.getSuccessor() != null)
+		{
+			out.println("Successor: " +  b.getSuccessor().getId());
 			b.getSuccessor().accept(this);
+		}
+		
+		
 	}
 
 	@Override
@@ -213,6 +219,7 @@ public class StringVisitor implements IrVisitor
 	@Override
 	public void visit(Conditional b)
 	{
+		out.println("Begin block " + b.getId());
 		int c = conditionCounter++;
 		String label = "condiition_" + c;
 		out.print(label + ":\n") ;
@@ -228,7 +235,10 @@ public class StringVisitor implements IrVisitor
 		out.println(label + "_end");
 		
 		if(b.getSuccessor() != null)
+		{
+			out.println("Successor: " + b.getSuccessor().getId());
 			b.getSuccessor().accept(this);
+		}
 		
 	}
 

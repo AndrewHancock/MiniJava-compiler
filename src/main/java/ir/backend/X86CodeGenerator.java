@@ -102,7 +102,7 @@ public class X86CodeGenerator implements IrVisitor
 		emit("pushl %ebp");
 		emit("movl %esp, %ebp");
 		currentFrame = f;
-		int localSize = f.getLocals().size() + f.getTempAllocator().getTemporaryCount();
+		int localSize = f.getLocals().size() + f.getTemporaries().size();
 		emit("subl $" + (localSize * 4) + " , %esp   #Reserve spsace for locals and temporaries.");
 		
 		f.getStartingBlock().accept(this);		

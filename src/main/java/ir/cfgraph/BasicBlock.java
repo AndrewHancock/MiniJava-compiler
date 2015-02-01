@@ -9,24 +9,21 @@ import java.util.List;
 
 public class BasicBlock implements Block
 {
+	protected static int nextId;
+	private int id;
 	private Collection<Block> parents = new ArrayList<Block>();
 	protected Block successor;	
 	private List<CodePoint> codePoints = new ArrayList<CodePoint>();
 	
+	
 	public BasicBlock()
 	{
-		
+		id = nextId++;
 	}
 	
 	public BasicBlock(Block parent)
 	{
-		parents.add(parent);
-	}
-	
-	public BasicBlock(Block parent, Block successor)
-	{
-		parents.add(parent);
-		this.successor = successor;
+		this();		
 	}	
 	
 	public void addStatement(Statement op)
@@ -56,7 +53,7 @@ public class BasicBlock implements Block
 		this.successor = successor;
 	}
 	
-	public Collection<Block> getParent()
+	public Collection<Block> getParents()
 	{
 		return parents;		
 	}
@@ -64,5 +61,11 @@ public class BasicBlock implements Block
 	public void addParent(Block parent)
 	{
 		parents.add(parent);
+	}
+
+	@Override
+	public int getId()
+	{
+		return id;
 	}
 }
