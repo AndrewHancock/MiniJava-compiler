@@ -5,17 +5,17 @@ import ir.visitor.IrVisitor;
 public class RecordAccess implements Expression
 {
 	private String namespace;
-	private String id;
-	private Expression value;
-	private int index;
+	private String typeName;
+	private Identifier identifier;
+	private int recordIndex;	
 	
 
-	public RecordAccess(String namespace, String id, Expression value, int index)
+	public RecordAccess(String namespace, String typeName, Identifier id, int recordIndex)
 	{
 		this.namespace = namespace;
-		this.id = id;		
-		this.index = index;
-		this.value = value;
+		this.typeName = typeName;
+		this.identifier = id;
+		this.recordIndex = recordIndex;
 	}
 
 	@Override
@@ -29,22 +29,19 @@ public class RecordAccess implements Expression
 		return namespace;
 	}
 	
-	public String getId()
+	public Identifier getIdentifier()
 	{
-		return id;
+		return identifier;
 	}
 	
-	public Expression getValue()
+	public int getFieldIndex()
 	{
-		return value;
-	}
-
-	public int getIndex()
-	{
-		return index;
+		return recordIndex;
 	}
 	
-	
-	
+	public String getTypeName()
+	{
+		return typeName;
+	}
 
 }

@@ -308,13 +308,19 @@ public class X86CodeGenerator implements IrVisitor
 
 	@Override
 	public void visit(RecordAccess r)
-	{	
-		//Assume 4 bytes for now
-		int offset = r.getIndex() * 4;
-		
-		r.accept(this);
-		emit("pop %esi");
-		emit("push " + offset + "(%esi)");		
+	{			
+		int offset = (r.getFieldIndex() * 4);
+		r.getIdentifier().accept(this);		
+		emit("pop %esi");				
+		if(rValue)
+			emit("push " + offset + "(%esi)");
+		else
+		{
+			if(offset > 0)
+				emit("addl $" + offset + ", %esi");
+			emit("push %esi");
+			rValue = true;
+		}
 	}
 
 	@Override
@@ -366,8 +372,8 @@ public class X86CodeGenerator implements IrVisitor
 		{
 			emit("push $" + (decl.getFieldCount() * 4) + "     # Push object size onto stack");
 			emit("call _malloc");		
-			emit("$addl $4, %esp");
-			emit("$push %eax");
+			emit("addl $4, %esp");
+			emit("push %eax");
 		}
 		else
 			emit("push $0      # Push placeholder address onto stack");

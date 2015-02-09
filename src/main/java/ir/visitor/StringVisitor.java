@@ -203,7 +203,7 @@ public class StringVisitor implements IrVisitor
 	@Override
 	public void visit(RecordAccess r)
 	{
-		out.print(r.getId() + "[" + r.getIndex() + "]" );
+		out.print("(" + r.getNamespace() + "." + r.getTypeName() +")." + r.getIdentifier().getId() + "[" + r.getFieldIndex() + "]" );
 		
 	}
 
