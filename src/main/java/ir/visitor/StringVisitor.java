@@ -9,7 +9,6 @@ import ir.cfgraph.CodePoint;
 import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
 import ir.ops.ArrayAccess;
-import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
@@ -18,7 +17,6 @@ import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
 import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
-import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
 import ir.ops.RelationalOp;
 import ir.ops.Return;
@@ -180,12 +178,6 @@ public class StringVisitor implements IrVisitor
 	}
 
 	@Override
-	public void visit(ArrayAssignment a)
-	{		
-		
-	}
-
-	@Override
 	public void visit(NewArray n)
 	{	
 		
@@ -205,14 +197,6 @@ public class StringVisitor implements IrVisitor
 	{
 		out.print("(" + r.getNamespace() + "." + r.getTypeName() +")." + r.getIdentifier().getId() + "[" + r.getFieldIndex() + "]" );
 		
-	}
-
-	@Override
-	public void visit(RecordAssignment r)
-	{
-		r.getDest().accept(this);
-		out.print(" := ");
-		r.getSrc();		
 	}
 
 	private int conditionCounter = 0;

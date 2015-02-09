@@ -14,7 +14,6 @@ import ir.cfgraph.CodePoint;
 import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
 import ir.ops.ArrayAccess;
-import ir.ops.ArrayAssignment;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.BinOp.Op;
@@ -24,7 +23,6 @@ import ir.ops.IntegerLiteral;
 import ir.ops.NewArray;
 import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
-import ir.ops.RecordAssignment;
 import ir.ops.RecordDeclaration;
 import ir.ops.RelationalOp;
 import ir.ops.Return;
@@ -111,9 +109,6 @@ public class X86CodeGenerator implements IrVisitor
 		emit("leave");
 		emit("ret");
 		out.println();
-		
-
-
 	}
 
 	@Override
@@ -284,20 +279,6 @@ public class X86CodeGenerator implements IrVisitor
 		emit("push %eax");
 		emit("call _malloc");
 		emit("push %eax");		
-	}	
-	
-
-	@Override
-	public void visit(ArrayAssignment a)
-	{
-		emitComment("Assign to an array element");
-		a.getSrc().accept(this);
-		a.getDest().accept(this);
-		a.getDestIndex().accept(this);
-		emit("popl %eax   #Load array index");
-		emit("popl %esi   #Load array reference");		
-		emit("incl %eax   #Skip the size word at the beginning");
-		emit("pushl (%esi, %eax, $4)    # Store contents of value at offset onto stack");		
 	}
 	
 	@Override
@@ -310,7 +291,10 @@ public class X86CodeGenerator implements IrVisitor
 	public void visit(RecordAccess r)
 	{			
 		int offset = (r.getFieldIndex() * 4);
-		r.getIdentifier().accept(this);		
+		boolean isRValue = rValue;
+		rValue = true;
+		r.getIdentifier().accept(this);
+		rValue = isRValue;
 		emit("pop %esi");				
 		if(rValue)
 			emit("push " + offset + "(%esi)");
@@ -321,12 +305,6 @@ public class X86CodeGenerator implements IrVisitor
 			emit("push %esi");
 			rValue = true;
 		}
-	}
-
-	@Override
-	public void visit(RecordAssignment r)
-	{		
-		
 	}
 
 	@Override

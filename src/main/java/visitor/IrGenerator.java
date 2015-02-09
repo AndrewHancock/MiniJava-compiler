@@ -34,7 +34,7 @@ import syntaxtree.True;
 import syntaxtree.VarDecl;
 import ir.cfgraph.ControlFlowGraphBuilder;
 import ir.cfgraph.Frame;
-import ir.ops.ArrayAssignment;
+import ir.ops.ArrayAccess;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.DataType;
@@ -238,11 +238,13 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(ArrayAssign a)
 	{
 		a.e2.accept(this);
-		Expression sourceOperand = currentOperand;
+		Expression src = currentOperand;
 		a.e1.accept(this);
 		Expression index = currentOperand;
-		cfgBuilder.addStatement(new ArrayAssignment(sourceOperand, new Identifier(
-				a.i.s), index));
+		a.i.accept(this);
+		Expression dest = currentOperand;
+		
+		cfgBuilder.addStatement(new Assignment(src, new ArrayAccess(dest, DataType.INT, index)));
 	}
 
 	@Override
