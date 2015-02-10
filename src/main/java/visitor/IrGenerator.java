@@ -9,10 +9,13 @@ import symboltable.RamClass;
 import symboltable.Table;
 import syntaxtree.And;
 import syntaxtree.ArrayAssign;
+import syntaxtree.ArrayLookup;
 import syntaxtree.Assign;
 import syntaxtree.Call;
 import syntaxtree.ClassDeclSimple;
+import syntaxtree.Equality;
 import syntaxtree.False;
+import syntaxtree.ForEach;
 import syntaxtree.Formal;
 import syntaxtree.If;
 import syntaxtree.IntegerLiteral;
@@ -32,9 +35,11 @@ import syntaxtree.This;
 import syntaxtree.Times;
 import syntaxtree.True;
 import syntaxtree.VarDecl;
+import syntaxtree.While;
 import ir.cfgraph.ControlFlowGraphBuilder;
 import ir.cfgraph.Frame;
 import ir.ops.ArrayAccess;
+import ir.ops.ArrayLength;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.DataType;
@@ -220,8 +225,20 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(NewArray a)
 	{
 		a.e.accept(this);
-		ir.ops.NewArray newArray = new ir.ops.NewArray(DataType.INT, currentOperand);
-		currentOperand = newArray;
+		currentOperand = new ir.ops.NewArray(DataType.INT, currentOperand);		
+	}
+	
+	
+
+	@Override
+	public void visit(ArrayLookup n)
+	{
+		n.e1.accept(this);
+		Expression array = currentOperand;
+		n.e2.accept(this);
+		Expression index = currentOperand;
+		
+		currentOperand = new ArrayAccess(array, DataType.INT, index);
 	}
 
 	@Override
@@ -424,6 +441,19 @@ public class IrGenerator extends DepthFirstVisitor
 		cfgBuilder.addStatement(new Assignment(new RelationalOp(RelationalOp.Op.LT,
 				leftOperand, rightOperand), currentOperand));
 	}
+	
+	@Override 
+	public void visit(Equality e)
+	{
+		e.e1.accept(this);
+		Expression leftOperand = currentOperand;
+		e.e2.accept(this);
+		Expression rightOperand = currentOperand;
+
+		currentOperand = cfgBuilder.getTemporary();
+		cfgBuilder.addStatement(new Assignment(new RelationalOp(RelationalOp.Op.EQ,
+				leftOperand, rightOperand), currentOperand));		
+	}	
 
 	public void visit(False f)
 	{
@@ -453,5 +483,38 @@ public class IrGenerator extends DepthFirstVisitor
 				.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
 		cfgBuilder.endConditional();
 		currentOperand = result;
+	}
+
+	@Override
+	public void visit(While n)
+	{
+		cfgBuilder.addLoop();
+		cfgBuilder.beginTest();
+		n.e.accept(this);
+		cfgBuilder.setLoopTestResult(currentOperand);
+		cfgBuilder.beginBody();
+		n.s.accept(this);
+		cfgBuilder.endLoop();
+	}
+
+	@Override
+	public void visit(ForEach n)
+	{
+		// Initialize counter
+		Identifier source = (Identifier)currentOperand;
+		Identifier length = cfgBuilder.getTemporary();
+		Identifier counter = cfgBuilder.getTemporary();
+		Identifier testResult = cfgBuilder.getTemporary();
+		cfgBuilder.addStatement(new Assignment(new ir.ops.ArrayLength(source), length));
+		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), counter));
+		cfgBuilder.addLoop();		
+		cfgBuilder.beginTest();
+		cfgBuilder.addStatement(new Assignment(new RelationalOp(RelationalOp.Op.LT, counter, length), testResult));
+		cfgBuilder.setLoopTestResult(testResult);		
+		//n.e.accept(this);
+		cfgBuilder.beginBody();
+		n.statement.accept(this);
+		cfgBuilder.addStatement(new Assignment(new BinOp(Op.ADD, new ir.ops.IntegerLiteral(1), counter), currentOperand));
+		cfgBuilder.endLoop();
 	}
 }

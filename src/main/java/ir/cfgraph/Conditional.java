@@ -8,7 +8,7 @@ import ir.visitor.IrVisitor;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class Conditional implements Block
+public class Conditional implements Block, ControlFlow
 {	
 	protected enum State
 	{
@@ -99,8 +99,9 @@ public class Conditional implements Block
 	@Override
 	public void addStatement(Statement statement)
 	{
-		if(state == null)
-			throw new RuntimeException("State of Conditional is null.");
+		if(state == null || state == State.COMPLETE)
+			throw new RuntimeException("Invalid Conditional state.");
+		
 		if(currentBlock == null)
 		{
 			if(state == State.TRUE)
@@ -118,6 +119,7 @@ public class Conditional implements Block
 		currentBlock.addStatement(statement);
 	}
 	
+	@Override
 	public void addBlock(Block block)
 	{
 		if(state == null)
@@ -139,5 +141,11 @@ public class Conditional implements Block
 		else
 			currentBlock.setSuccessor(block);
 		currentBlock = block;		
+	}
+
+	@Override
+	public boolean isComplete()
+	{
+		return(state == State.COMPLETE);
 	}
 }

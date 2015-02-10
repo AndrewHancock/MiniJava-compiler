@@ -5,7 +5,9 @@ import ir.cfgraph.BasicBlock;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
+import ir.cfgraph.Loop;
 import ir.ops.ArrayAccess;
+import ir.ops.ArrayLength;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
@@ -39,4 +41,6 @@ public interface IrVisitor
 	void visit(RecordAllocation a);
 	void visit(Return r);
 	void visit(RelationalOp r);
+	void visit(Loop l);
+	void visit(ArrayLength a);
 }

@@ -13,7 +13,9 @@ import ir.cfgraph.Block;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
+import ir.cfgraph.Loop;
 import ir.ops.ArrayAccess;
+import ir.ops.ArrayLength;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.BinOp.Op;
@@ -184,12 +186,12 @@ public class X86CodeGenerator implements IrVisitor
 			}
 		}
 		
+		// Note: Leave the return value on the stack
 		if(call.getId().equals("println"))
 		{
 	    	emitComment("Print new line");
 	    	emit("pushl $newline");
-	    	emit("call _printf");
-	    	emit("Addl $4, %esp");
+	    	emit("call _printf");	    	
 	    	emitComment("End println");
 		}
 
@@ -258,13 +260,25 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(ArrayAccess a)
 	{		
+		boolean currentRValue = rValue;
 		emitComment("Access an array element");
+		rValue = true;
 		a.getReference().accept(this);
-		emit("popl %esi   #Load array reference");
+		
+		emit("popl %ebx   #Load array reference");
+		rValue = true;
 		a.getIndex().accept(this);
-		emit("popl %eax   #Load array index");
-		emit("incl %eax   #Skip the size word at the beginning");
-		emit("push (%esi, %eax, $4)    # Store contents of value at offset onto stack");
+		rValue = currentRValue;
+		emit("popl %eax   #Load array index");		
+		emit("imul $4, %eax");
+		emit("addl %ebx, %eax");
+		if(rValue)
+			emit("push (%eax)    # Store contents of value at offset onto stack");
+		else
+		{
+			rValue = true;
+			emit("push %eax");
+		}
 	}
 	
 	
@@ -275,9 +289,12 @@ public class X86CodeGenerator implements IrVisitor
 		emitComment("Allocate new array");
 		n.getSize().accept(this);
 		emit("pop %eax");
-		emit("mull $4, %eax");
+		emit("mov %eax, %ebx", "Save size before _malloc call");
+		emit("imull $4, %eax");
+		emit("addl $4, %eax", "Request 4 additional bytes for size");
 		emit("push %eax");
 		emit("call _malloc");
+		emit("mov %ebx, (%eax)", "Store array length at zeroth location");
 		emit("push %eax");		
 	}
 	
@@ -398,6 +415,38 @@ public class X86CodeGenerator implements IrVisitor
 		emitLabel("relational_true_" + relationalCount);
 		emit("pushl $1");
 		emitLabel("relational_end_"+ relationalCount);		
+	}
+
+	private int loopCount;
+	@Override
+	public void visit(Loop l)
+	{
+		int loopCount = this.loopCount++;
+
+		emitLabel("loop_test_" + loopCount);
+		l.getTest().accept(this);
+		l.getTestResult().accept(this);
+		emit("movl $1, %ebx");
+		emit("popl %eax");
+		emit("cmp %ebx, %eax");
+		emit("jne loop_end_" + loopCount);
+		l.getBody().accept(this);
+		emit("jmp loop_test_" + loopCount);
+		emitLabel("loop_end_" + loopCount);
+		
+		if(l.getSuccessor() != null)
+			l.getSuccessor().accept(this);
+		
+		
+		
+	}
+
+	@Override
+	public void visit(ArrayLength a)
+	{
+		a.getExpression().accept(this);
+		emit("popl %eax");
+		emit("pushl (%eax)");		
 	}
 
 

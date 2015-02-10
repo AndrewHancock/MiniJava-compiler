@@ -4,11 +4,12 @@ import java.io.PrintStream;
 
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
-import ir.cfgraph.Block;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.Conditional;
 import ir.cfgraph.Frame;
+import ir.cfgraph.Loop;
 import ir.ops.ArrayAccess;
+import ir.ops.ArrayLength;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
@@ -173,13 +174,16 @@ public class StringVisitor implements IrVisitor
 	public void visit(ArrayAccess a)
 	{
 		a.getReference().accept(this);
-		out.print("[" + a.getIndex() + "]" );
+		out.print("[");
+		a.getIndex().accept(this);
+		out.print("]"); 
 		
 	}
 
 	@Override
 	public void visit(NewArray n)
 	{	
+		out.print("new Int[" + n.getSize() + "]");
 		
 	}
 
@@ -236,8 +240,7 @@ public class StringVisitor implements IrVisitor
 	@Override
 	public void visit(Identifier i)
 	{
-		out.print(i.getId());
-		
+		out.print(i.getId());		
 	}
 
 	@Override
@@ -274,4 +277,32 @@ public class StringVisitor implements IrVisitor
 		if(r.getSrc2() != null)
 			r.getSrc2().accept(this);		
 	}
+
+	@Override
+	public void visit(Loop l)
+	{
+		out.println("Begin block " + l.getId());
+		out.println("Loop test:");
+		l.getTest().accept(this);
+		out.print("Test Result: ");
+		l.getTestResult().accept(this);
+		out.println();
+				
+		out.println("Loop body:");
+		l.getBody().accept(this);		
+		if(l.getSuccessor() != null)
+		{
+			out.println("Successor: " + l.getSuccessor().getId());
+			l.getSuccessor().accept(this);
+		}
+	}
+
+	@Override
+	public void visit(ArrayLength a)
+	{
+		a.getExpression().accept(this);
+		out.println(".length");		
+	}
+	
+	
 }
