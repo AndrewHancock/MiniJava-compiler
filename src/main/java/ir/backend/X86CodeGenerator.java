@@ -11,8 +11,8 @@ import ir.Temporary;
 import ir.cfgraph.BasicBlock;
 import ir.cfgraph.Block;
 import ir.cfgraph.CodePoint;
-import ir.cfgraph.Conditional;
-import ir.cfgraph.Frame;
+import ir.cfgraph.Branch;
+import ir.cfgraph.Function;
 import ir.cfgraph.Loop;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayLength;
@@ -22,7 +22,7 @@ import ir.ops.BinOp.Op;
 import ir.ops.Call;
 import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
-import ir.ops.NewArray;
+import ir.ops.ArrayAllocation;
 import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
@@ -86,10 +86,10 @@ public class X86CodeGenerator implements IrVisitor
 	}
 
 	private boolean startFrame;
-	private Frame currentFrame;
+	private Function currentFrame;
 
 	@Override
-	public void visit(Frame f)
+	public void visit(Function f)
 	{
 		if (!startFrame)
 		{
@@ -284,7 +284,7 @@ public class X86CodeGenerator implements IrVisitor
 	
 
 	@Override
-	public void visit(NewArray n)
+	public void visit(ArrayAllocation n)
 	{
 		emitComment("Allocate new array");
 		n.getSize().accept(this);
@@ -338,7 +338,7 @@ public class X86CodeGenerator implements IrVisitor
 	
 	private int conditionCount;	
 	@Override
-	public void visit(Conditional b)
+	public void visit(Branch b)
 	{
 		int conditionCount = this.conditionCount++;
 		b.getTest().accept(this);

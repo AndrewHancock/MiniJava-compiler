@@ -5,8 +5,8 @@ import ir.visitor.IrVisitor;
 
 public interface Block
 {
-	void accept(IrVisitor visitor);	
-	void addParent(Block parent);
+	void accept(IrVisitor visitor);
+
 	void setSuccessor(Block successor);
 	Block getSuccessor();	
 	int getId();

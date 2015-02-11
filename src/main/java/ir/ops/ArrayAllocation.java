@@ -2,12 +2,12 @@ package ir.ops;
 
 import ir.visitor.IrVisitor;
 
-public class NewArray implements Expression
+public class ArrayAllocation implements Expression
 {
 	private DataType type;
 	private Expression size;
 	
-	public NewArray(DataType type, Expression size)
+	public ArrayAllocation(DataType type, Expression size)
 	{
 		this.type = type;
 		this.size = size;

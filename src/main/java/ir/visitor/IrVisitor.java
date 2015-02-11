@@ -3,8 +3,8 @@ package ir.visitor;
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
 import ir.cfgraph.CodePoint;
-import ir.cfgraph.Conditional;
-import ir.cfgraph.Frame;
+import ir.cfgraph.Branch;
+import ir.cfgraph.Function;
 import ir.cfgraph.Loop;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayLength;
@@ -13,7 +13,7 @@ import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
-import ir.ops.NewArray;
+import ir.ops.ArrayAllocation;
 import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
@@ -23,9 +23,9 @@ import ir.ops.SysCall;
 
 public interface IrVisitor
 {
-	void visit(Frame f);
+	void visit(Function f);
 	void visit(BasicBlock b);	
-	void visit(Conditional b);
+	void visit(Branch b);
 	void visit(CodePoint c);
 	void visit(BinOp b);
 	void visit(Call c);
@@ -35,7 +35,7 @@ public interface IrVisitor
 	void visit(Identifier i);	
 	void visit(IntegerLiteral l);
 	void visit(ArrayAccess a);	
-	void visit(NewArray n);
+	void visit(ArrayAllocation n);
 	void visit(RecordDeclaration r);
 	void visit(RecordAccess r);	
 	void visit(RecordAllocation a);

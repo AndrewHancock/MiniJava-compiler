@@ -26,11 +26,6 @@ public class Loop implements Block, ControlFlow
 	}
 
 	@Override
-	public void addParent(Block parent)
-	{
-	}
-
-	@Override
 	public void setSuccessor(Block successor)
 	{
 		this.successor = successor;

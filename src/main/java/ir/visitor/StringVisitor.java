@@ -5,8 +5,8 @@ import java.io.PrintStream;
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
 import ir.cfgraph.CodePoint;
-import ir.cfgraph.Conditional;
-import ir.cfgraph.Frame;
+import ir.cfgraph.Branch;
+import ir.cfgraph.Function;
 import ir.cfgraph.Loop;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayLength;
@@ -15,7 +15,7 @@ import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
-import ir.ops.NewArray;
+import ir.ops.ArrayAllocation;
 import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
@@ -34,7 +34,7 @@ public class StringVisitor implements IrVisitor
 	}
 
 	@Override
-	public void visit(Frame f)
+	public void visit(Function f)
 	{
 		out.println("\n.namespace " + f.getNamespace() + " " + f.getId() + ":");
 		out.println("Locals: ");
@@ -143,11 +143,11 @@ public class StringVisitor implements IrVisitor
 	@Override
 	public void visit(SysCall s)
 	{
-		boolean first;
+		boolean first = true;
 		out.print(s.getId() + "(");
 		for(Expression param : s.getParameters())
 		{
-			if(first = true)
+			if(first)
 				first = false;
 			else
 				out.print(", ");
@@ -181,7 +181,7 @@ public class StringVisitor implements IrVisitor
 	}
 
 	@Override
-	public void visit(NewArray n)
+	public void visit(ArrayAllocation n)
 	{	
 		out.print("new Int[" + n.getSize() + "]");
 		
@@ -205,7 +205,7 @@ public class StringVisitor implements IrVisitor
 
 	private int conditionCounter = 0;
 	@Override
-	public void visit(Conditional b)
+	public void visit(Branch b)
 	{
 		out.println("Begin block " + b.getId());
 		int c = conditionCounter++;
