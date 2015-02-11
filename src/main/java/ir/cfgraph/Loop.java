@@ -11,7 +11,7 @@ public class Loop implements Block, ControlFlow
 	private Block successor;
 	private Block test = new BasicBlock();
 	private Block body = new BasicBlock();
-	private boolean loopEnded;
+	private boolean isCompelted;
 	
 	private Block currentBlock;
 	
@@ -46,6 +46,12 @@ public class Loop implements Block, ControlFlow
 	@Override
 	public void addStatement(Statement statement)
 	{
+		if(currentBlock instanceof ControlFlow && ((ControlFlow)currentBlock).isComplete())
+		{
+			BasicBlock successor = new BasicBlock();
+			currentBlock.setSuccessor(successor);
+			currentBlock = successor;
+		}
 		currentBlock.addStatement(statement);
 	}
 	
@@ -72,12 +78,12 @@ public class Loop implements Block, ControlFlow
 	
 	public void endLoop()
 	{
-		loopEnded = true;
+		isCompelted = true;
 	}
 	
 	public boolean getLoopEnded()
 	{
-		return loopEnded;
+		return isCompelted;
 	}
 
 	public Block getTest()
@@ -93,14 +99,15 @@ public class Loop implements Block, ControlFlow
 	@Override
 	public void addBlock(Block b)
 	{
-		if(loopEnded)
+		if(isCompelted)
 			throw new RuntimeException("Loop is already ended. Cannot add block");
 		
 		currentBlock.setSuccessor(b);
+		currentBlock = b;
 	}
 	@Override
 	public boolean isComplete()
 	{
-		return loopEnded;
+		return isCompelted;
 	}
 }

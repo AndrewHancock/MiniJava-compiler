@@ -349,7 +349,7 @@ public class X86CodeGenerator implements IrVisitor
 		emitLabel("cond_true_" + conditionCount);
 		b.getTrueBlock().accept(this);
 		
-		emitLabel("cond_end_" + conditionCount);	
+		emitLabel("cond_end_" + conditionCount);
 		
 		if(b.getSuccessor() != null)
 			b.getSuccessor().accept(this);
@@ -430,6 +430,7 @@ public class X86CodeGenerator implements IrVisitor
 		l.getBody().accept(this);
 		emit("jmp loop_test_" + loopCount);
 		emitLabel("loop_end_" + loopCount);
+		
 		
 		if(l.getSuccessor() != null)
 			l.getSuccessor().accept(this);

@@ -36,7 +36,7 @@ public class FunctionBuilder implements TemporaryProvider
 			startingBlock = new BasicBlock();
 			currentBlock = startingBlock;
 		}
-		if (currentBlock instanceof ControlFlow
+		else if (currentBlock instanceof ControlFlow
 				&& ((ControlFlow) currentBlock).isComplete())
 		{
 			BasicBlock successor = new BasicBlock();
@@ -86,8 +86,9 @@ public class FunctionBuilder implements TemporaryProvider
 	{
 		currentBranch.endBranch();
 		if (!controlFlowStack.empty())
-		{
+		{			
 			currentBlock = controlFlowStack.pop();
+			
 			if(currentBlock instanceof Branch)
 				currentBranch = (Branch)currentBlock;
 			else
@@ -141,6 +142,7 @@ public class FunctionBuilder implements TemporaryProvider
 
 	public void endLoop()
 	{		
+		currentLoop.endLoop();
 		if (!controlFlowStack.empty())
 		{
 			currentBlock = controlFlowStack.pop();

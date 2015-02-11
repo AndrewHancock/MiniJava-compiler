@@ -81,8 +81,12 @@ public class Branch implements Block, ControlFlow
 	@Override
 	public void addStatement(Statement statement)
 	{
-		if(isCompleted)
-			throw new RuntimeException("Invalid Conditional state.");		
+		if(currentBlock instanceof ControlFlow && ((ControlFlow)currentBlock).isComplete())
+		{
+			BasicBlock successor = new BasicBlock();
+			currentBlock.setSuccessor(successor);
+			currentBlock = successor;
+		}	
 			
 		currentBlock.addStatement(statement);
 	}
@@ -94,6 +98,7 @@ public class Branch implements Block, ControlFlow
 			throw new RuntimeException("State of conditional is null.");		
 
 		currentBlock.setSuccessor(block);
+		currentBlock = block;
 	}
 
 	@Override
