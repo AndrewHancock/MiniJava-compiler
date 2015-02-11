@@ -79,9 +79,12 @@ public class IrGenerator extends DepthFirstVisitor
 
 	public void visit(MainClass m)
 	{
-		currentFrame = new Function("", "main", 0, 0);
-		cfgBuilder = new FunctionBuilder(currentFrame);
+		
+		cfgBuilder = new FunctionBuilder();
 		m.s.accept(this);
+		currentFrame = new Function("", "main");
+		for(Identifier id : cfgBuilder.getTemporaries())
+			currentFrame.getTemporaries().add(id);
 		currentFrame.setStartingBlock(cfgBuilder.getStartingBlock());
 		frameList.add(currentFrame);
 	}
@@ -89,16 +92,14 @@ public class IrGenerator extends DepthFirstVisitor
 	@Override
 	public void visit(MethodDecl d)
 	{
+		cfgBuilder = new FunctionBuilder();
 
-		currentFrame = new Function(currentNamespace, d.i.s, d.fl.size(), d.vl.size());
-		cfgBuilder = new FunctionBuilder(currentFrame);
-
-		currentLocals.clear();
-
-		// For any method declaration, "this" is implicit
-		currentFrame.getParams().add(new Identifier("this"));
+		currentLocals.clear();		
 		currentLocals.put("this", new Identifier("this"));
 
+		currentFrame = new Function(currentNamespace, d.i.s);
+		
+		currentFrame.getParams().add(new Identifier("this"));
 		for (int i = 0; i < d.vl.size(); i++)
 		{
 			currentFrame.getLocals().add(new Identifier(d.vl.elementAt(i).i.s));
@@ -109,13 +110,19 @@ public class IrGenerator extends DepthFirstVisitor
 		{
 			currentFrame.getParams().add(new Identifier(d.fl.elementAt(i).i.s));
 			d.fl.elementAt(i).accept(this);
-		}
-
-		for (int i = 0; i < d.sl.size(); i++)
+		}	
+		
+		for(int i = 0; i < d.sl.size(); i++)
+		{
 			d.sl.elementAt(i).accept(this);
-
+		}
 		d.e.accept(this);
 		cfgBuilder.addStatement(new Return(currentOperand));
+		
+		for(Identifier id : cfgBuilder.getTemporaries())
+		{
+			currentFrame.getTemporaries().add(id);			
+		}
 
 		currentFrame.setStartingBlock(cfgBuilder.getStartingBlock());
 		frameList.add(currentFrame);

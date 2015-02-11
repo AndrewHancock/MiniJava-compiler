@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import symboltable.Table;
-import syntaxtree.MethodDecl;
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
 import ir.cfgraph.Block;
@@ -18,7 +16,6 @@ import ir.ops.ArrayAccess;
 import ir.ops.ArrayLength;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
-import ir.ops.BinOp.Op;
 import ir.ops.Call;
 import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;

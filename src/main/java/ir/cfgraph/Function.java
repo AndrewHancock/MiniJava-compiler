@@ -1,28 +1,28 @@
 package ir.cfgraph;
 
-import ir.TempAllocator;
 import ir.ops.Declaration;
 import ir.ops.Identifier;
 import ir.visitor.IrVisitor;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class Function extends Declaration
+public class Function extends Declaration 
 {
 	private List<Identifier> parameters;
-	private List<Identifier> locals;	
+	private List<Identifier> locals;
+	private List<Identifier> temporaries;
 	private Block startBlock;
 	
-	private TempAllocator allocator = new TempAllocator();	
+	
 	
 		
-	public Function(String namespace, String id, int paramSize, int localSize)
+	public Function(String namespace, String id)
 	{
 		super(namespace, id);
 		
-		locals = new ArrayList<Identifier>(localSize);
-		parameters = new ArrayList<Identifier>(paramSize);
+		locals = new ArrayList<Identifier>();
+		parameters = new ArrayList<Identifier>();
+		temporaries = new ArrayList<Identifier>();		
 	}
 	
 	
@@ -48,7 +48,7 @@ public class Function extends Declaration
 	
 	public List<Identifier> getTemporaries()
 	{
-		return allocator.getTemporaries();
+		return temporaries;
 	}
 	
 	public Identifier getLocal(int index)

@@ -1,7 +1,9 @@
 package ir.cfgraph;
 
+import java.util.List;
 import java.util.Stack;
 
+import ir.TempAllocator;
 import ir.ops.Expression;
 import ir.ops.Identifier;
 import ir.ops.RelationalOp;
@@ -12,21 +14,21 @@ public class FunctionBuilder implements TemporaryProvider
 	private Block startingBlock;
 	private Block currentBlock;
 	private Branch currentBranch = null;
-	private Loop currentLoop = null;
-	private TemporaryProvider tempProvider;
+	private Loop currentLoop = null;	
+	private TempAllocator tempAllocator = new TempAllocator();	
 
 	private Stack<Block> controlFlowStack = new Stack<Block>();	
 
-	public FunctionBuilder(TemporaryProvider tempProvider)
+	public FunctionBuilder()
 	{
-		this.tempProvider = tempProvider;
+		
 	}
-
-	public void setControlFlowGraphBuilder(TemporaryProvider tempProvider)
+	
+	public List<Identifier> getTemporaries()
 	{
-		this.tempProvider = tempProvider;
+		return tempAllocator.getTemporaries();
 	}
-
+	
 	public void addStatement(Statement statement)
 	{
 		if (startingBlock == null)
@@ -51,8 +53,7 @@ public class FunctionBuilder implements TemporaryProvider
 		{
 			currentBlock = startingBlock = currentBranch;
 		}
-
-		if (currentBlock instanceof ControlFlow)
+		else if (currentBlock instanceof ControlFlow)
 		{			
 			ControlFlow cf = (ControlFlow)currentBlock;
 			controlFlowStack.push(currentBlock);
@@ -81,7 +82,7 @@ public class FunctionBuilder implements TemporaryProvider
 		currentBranch.beginFalseBlock();
 	}
 
-	public void endConditional()
+	public void endBranch()
 	{
 		currentBranch.endBranch();
 		if (!controlFlowStack.empty())
@@ -108,18 +109,17 @@ public class FunctionBuilder implements TemporaryProvider
 		{
 			currentBlock = startingBlock = currentLoop;
 		}
-
-		if (currentBlock instanceof ControlFlow)
+		else if (currentBlock instanceof ControlFlow)
 		{			
 			ControlFlow cf = (ControlFlow)currentBlock;
 			controlFlowStack.push(currentBlock);
 			if (cf.isComplete())
 				currentBlock.setSuccessor(currentBranch);
 			else
-				cf.addBlock(currentBranch);
+				cf.addBlock(currentBlock);
 		}	
 		else
-			currentBlock.setSuccessor(currentBranch);
+			currentBlock.setSuccessor(currentLoop);
 		
 		currentBlock = currentLoop;
 	}
@@ -174,6 +174,6 @@ public class FunctionBuilder implements TemporaryProvider
 	@Override
 	public Identifier getTemporary()
 	{
-		return tempProvider.getTemporary();
+		return tempAllocator.GetTemporary();
 	}
 }

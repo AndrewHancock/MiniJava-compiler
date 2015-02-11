@@ -36,22 +36,21 @@ TOKEN :
 | < RSQPAREN: "]" >
 | < LBRACE: "{" >
 | < RBRACE: "}" >
-| < SEMICOLON: "!" >
+| < SEMICOLON: ";" >
 | < COLON: ":" >
 | < COMMA: "," >
-| < DOT: "." >
 | < ASSIGN: "=" >
-| < LESSTHAN: "lt" >
-| < LESSTHANOREQ: "lte" >
+| < LESSTHAN: "<" >
+| < LESSTHANOREQ: "< =" >
 | < PLUSEQUALS: "+=" >
-| < EQUALITY: "eq" >
+| < EQUALITY: "==" >
 | < PLUS: "+" >
 | < MINUS: "-" >
 | < TIMES: "*" >
-| < AND : "and" >   
-| < OR : "or" >
-| < NOT : ";" >   
-| < BOOLEAN: "bool" >   
+| < AND : "&&" >   
+| < OR : "||" >
+| < NOT : "!" >   
+| < BOOLEAN: "boolean" >   
 | < CLASS: "class" >
 | < ELSE: "else" >
 | < FALSE: "false" >
@@ -68,35 +67,15 @@ TOKEN :
 | < STRING: "String" >
 | < THIS: "this" >
 | < TRUE: "true" >
-| < PRINT: "print" >
-| < PRINTLN: "println" >
-| < VOID: "void" >  
+| < VOID: "void" >
+| < PRINT: "System.out.print" >
+| < PRINTLN: "System.out.println" >
+| < DOT: "." >
 | < INTEGER_LITERAL: ( ["1"-"9"] (["0"-"9"])* | "0" ) >  
 | < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>|"_")* > 
 | < #LETTER: ["a"-"z","A"-"Z"] >
 | < #DIGIT: ["0"-"9"] >  
 }
-
-
-/*
-void Goal() :
-{}
-{  
-    ( RamToken() )*  <EOF> 
-}
-
-void RamToken():
-{}
-{
-  <CLASS>  |  <IDENTIFIER> | <LBRACE> | <PUBLIC> | <STATIC> | <VOID> |
-  <MAIN> | <LPAREN> | <STRING> | <LSQPAREN> | <RSQPAREN> | <RPAREN> | <RBRACE> |
-  <PLUSEQUALS> | <SEMICOLON> | <RETURN> | <COMMA> | <INTEGER> | <BOOLEAN> | <ASSIGN> |
-  <IF> | <ELSE> | <WHILE> | <FOREACH> | <COLON> | <PRINT> | <PRINTLN> | <AND> |
-  <OR> | <LESSTHAN> | <LESSTHANOREQ> | <EQUALITY> | <PLUS> | <MINUS> | <TIMES> |
-  <DOT> | <LENGTH> | <INTEGER_LITERAL> | <TRUE> | <FALSE> | <THIS> | <NEW> |
-  <NOT>
-}
-*/
 
 Program Goal() :
 {
@@ -277,13 +256,13 @@ Statement Statement() :
     <RPAREN >
     s1 = Statement()
     { return new ForEach(s1, type, ie, ie2); }       
-    | 
+    |    
     <PRINT> <LPAREN> 
     el1 = ExpList() 
     <RPAREN> <SEMICOLON> 
     { return new Print(el1); } 
-    |
-    <PRINTLN> <LPAREN> 
+    |    
+    <PRINTLN><LPAREN>
     el1 = ExpList()
     <RPAREN> <SEMICOLON> 
     { return new PrintLn(el1); } 
