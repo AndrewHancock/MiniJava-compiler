@@ -95,7 +95,8 @@ public class X86CodeGenerator implements IrVisitor
 		}
 
 		out.println();
-		emitLabel(f.getId());
+		String nameNames = f.getNamespace().isEmpty() ? "" : f.getNamespace() + "_";
+		emitLabel(nameNames + f.getId());
 		emit("pushl %ebp");
 		emit("movl %esp, %ebp");
 		currentFrame = f;
@@ -162,7 +163,7 @@ public class X86CodeGenerator implements IrVisitor
 			call.getParameters().get(i).accept(this);			
 					
 		
-		emit("call " + call.getId());
+		emit("call " + call.getNamespace() + "_" + call.getId());
 		int paramSize = call.getParameters().size() * 4;
 		if (paramSize > 0)
 			emit("addl $" + paramSize + ", %esp   # Clean up parameters from call");		

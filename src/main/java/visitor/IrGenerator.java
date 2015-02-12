@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import symboltable.RamClass;
+import symboltable.RamMethod;
+import symboltable.RamVariable;
 import symboltable.Table;
 import syntaxtree.And;
 import syntaxtree.ArrayAssign;
@@ -17,6 +19,7 @@ import syntaxtree.Equality;
 import syntaxtree.False;
 import syntaxtree.ForEach;
 import syntaxtree.Formal;
+import syntaxtree.IdentifierType;
 import syntaxtree.If;
 import syntaxtree.IntegerLiteral;
 import syntaxtree.LessThan;
@@ -89,15 +92,17 @@ public class IrGenerator extends DepthFirstVisitor
 		frameList.add(currentFrame);
 	}
 
+	private RamMethod currentMethod;
 	@Override
 	public void visit(MethodDecl d)
 	{
+		currentMethod = currentClass.getMethod(d.i.s);
 		cfgBuilder = new FunctionBuilder();
 
 		currentLocals.clear();		
 		currentLocals.put("this", new Identifier("this"));
 
-		currentFrame = new Function(currentNamespace, d.i.s);
+		currentFrame = new Function(currentClass.getId(), d.i.s);
 		
 		currentFrame.getParams().add(new Identifier("this"));
 		for (int i = 0; i < d.vl.size(); i++)
@@ -138,7 +143,7 @@ public class IrGenerator extends DepthFirstVisitor
 			parameters.add(currentOperand);
 		}
 		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new SysCall("print", parameters),
+		cfgBuilder.addStatement(new Assignment(new SysCall("system", "print", parameters),
 				currentOperand));
 	}
 
@@ -152,7 +157,7 @@ public class IrGenerator extends DepthFirstVisitor
 		}
 
 		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new SysCall("println", parameters),
+		cfgBuilder.addStatement(new Assignment(new SysCall("system", "println", parameters),
 				currentOperand));
 	}
 
@@ -277,6 +282,7 @@ public class IrGenerator extends DepthFirstVisitor
 
 		// Always pass this pointer first
 		c.e.accept(this);
+		String methodClassName = currentClassName; 
 		params.add(currentOperand);
 
 		for (int i = 0; i < c.el.size(); i++)
@@ -286,7 +292,7 @@ public class IrGenerator extends DepthFirstVisitor
 		}
 
 		currentOperand = cfgBuilder.getTemporary();
-		ir.ops.Call call = new ir.ops.Call(c.i.s, params);
+		ir.ops.Call call = new ir.ops.Call(methodClassName, c.i.s, params);
 		cfgBuilder.addStatement(new Assignment(call, currentOperand));
 	}
 
@@ -348,15 +354,17 @@ public class IrGenerator extends DepthFirstVisitor
 		cfgBuilder.endBranch();
 	}
 
+	String currentClassName;
 	@Override
 	public void visit(NewObject n)
 	{
+		currentClassName = n.i.s;
 		currentOperand = cfgBuilder.getTemporary();
 		cfgBuilder.addStatement(new Assignment(new RecordAllocation(
 				currentNamespace, n.i.s), currentOperand));
 	}
 
-	HashMap<String, Expression> currentLocals = new HashMap<String, Expression>();
+	private HashMap<String, Identifier> currentLocals = new HashMap<String, Identifier>();
 
 	public void visit(VarDecl v)
 	{
@@ -371,18 +379,26 @@ public class IrGenerator extends DepthFirstVisitor
 	
 	@Override
 	public void visit(syntaxtree.IdentifierExp e)
-	{
-		Expression result = null;		
-		if((result = currentLocals.get(e.s)) != null)
-		{
-			currentOperand = result;
+	{			
+		RamVariable result = null;		
+		if((result = currentMethod.getVar(e.s)) != null
+				|| (result = currentMethod.getParam(e.s)) != null)
+		{						
+			if(result.type() instanceof IdentifierType)
+				currentClassName = ((IdentifierType)result.type()).s;
+			
+			currentOperand = currentLocals.get(e.s);
 			return;
-		}
-		else if(recordMap.get(currentClass.getId()) != null)
+		}		
+		else if((result = currentClass.getVar(e.s)) != null)
 		{
-			currentClass.getVar(e.s).getMemoryOffset();
-			currentOperand = new RecordAccess("minijava", currentClass.getId(), new Identifier("this"), currentClass.getVar(e.s).getMemoryOffset());
+			if(result.type() instanceof IdentifierType)
+				currentClassName = ((IdentifierType)result.type()).s;
+			
+			
+			currentOperand = new RecordAccess("minijava", currentClass.getId(), new Identifier("this"), result.getMemoryOffset());
 		}
+		
 	}
 	
 	@Override

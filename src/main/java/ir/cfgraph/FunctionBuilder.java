@@ -117,7 +117,7 @@ public class FunctionBuilder implements TemporaryProvider
 			if (cf.isComplete())
 				currentBlock.setSuccessor(currentBranch);
 			else
-				cf.addBlock(currentBlock);
+				cf.addBlock(currentLoop);
 		}	
 		else
 			currentBlock.setSuccessor(currentLoop);
