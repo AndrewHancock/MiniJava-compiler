@@ -1,9 +1,0 @@
-class Fail1 
-{
-    public static void main(String[] a) 
-    {
-	//This declaration should fail because of the pipe
-	int variable!|
-        println(variable)! 
-    }
-}
