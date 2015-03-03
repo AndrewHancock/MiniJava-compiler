@@ -4,9 +4,9 @@ import ir.visitor.IrVisitor;
 
 public class ArrayLength implements Expression
 {
-	private Identifier id;
+	private Expression id;
 	
-	public ArrayLength(Identifier id)
+	public ArrayLength(Expression id)
 	{
 		this.id = id;
 	}
@@ -16,7 +16,7 @@ public class ArrayLength implements Expression
 		visitor.visit(this);
 	}
 	
-	public Identifier getExpression()
+	public Expression getExpression()
 	{
 		return id;
 	}

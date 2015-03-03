@@ -301,7 +301,7 @@ public class StringVisitor implements IrVisitor
 	public void visit(ArrayLength a)
 	{
 		a.getExpression().accept(this);
-		out.println(".length");		
+		out.print(".length");		
 	}
 	
 	

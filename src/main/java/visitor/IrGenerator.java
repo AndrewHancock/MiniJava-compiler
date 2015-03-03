@@ -11,6 +11,7 @@ import symboltable.RamVariable;
 import symboltable.Table;
 import syntaxtree.And;
 import syntaxtree.ArrayAssign;
+import syntaxtree.ArrayLength;
 import syntaxtree.ArrayLookup;
 import syntaxtree.Assign;
 import syntaxtree.Call;
@@ -477,16 +478,12 @@ public class IrGenerator extends DepthFirstVisitor
 
 	public void visit(False f)
 	{
-		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0),
-				currentOperand));
+		currentOperand = new ir.ops.IntegerLiteral(0);
 	}
 
 	public void visit(True t)
 	{
-		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(1),
-				currentOperand));
+		currentOperand = new ir.ops.IntegerLiteral(1);
 	}
 
 	public void visit(Not n)
@@ -535,5 +532,12 @@ public class IrGenerator extends DepthFirstVisitor
 		n.statement.accept(this);
 		cfgBuilder.addStatement(new Assignment(new BinOp(Op.ADD, new ir.ops.IntegerLiteral(1), counter), currentOperand));
 		cfgBuilder.endLoop();
+	}
+	
+	@Override
+	public void visit(ArrayLength l)
+	{
+		super.visit(l);
+		currentOperand = new ir.ops.ArrayLength(currentOperand);
 	}
 }

@@ -1,33 +1,32 @@
 package ir.backend;
 
-import java.io.PrintStream;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-
 import ir.Temporary;
 import ir.cfgraph.BasicBlock;
-import ir.cfgraph.Block;
-import ir.cfgraph.CodePoint;
 import ir.cfgraph.Branch;
+import ir.cfgraph.CodePoint;
 import ir.cfgraph.Function;
 import ir.cfgraph.Loop;
 import ir.ops.ArrayAccess;
+import ir.ops.ArrayAllocation;
 import ir.ops.ArrayLength;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
+import ir.ops.Expression;
 import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
-import ir.ops.ArrayAllocation;
 import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
 import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.SysCall;
-import ir.ops.Expression;
 import ir.visitor.IrVisitor;
+
+import java.io.PrintStream;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 
 public class X86CodeGenerator implements IrVisitor
 {
