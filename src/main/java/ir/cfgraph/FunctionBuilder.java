@@ -53,7 +53,8 @@ public class FunctionBuilder implements TemporaryProvider
 		{
 			currentBlock = startingBlock = currentBranch;
 		}
-		else if (currentBlock instanceof ControlFlow)
+		else if (currentBlock instanceof ControlFlow
+				&& !((ControlFlow) currentBlock).isComplete())
 		{			
 			ControlFlow cf = (ControlFlow)currentBlock;
 			controlFlowStack.push(currentBlock);
