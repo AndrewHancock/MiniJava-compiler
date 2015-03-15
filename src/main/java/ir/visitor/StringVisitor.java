@@ -1,7 +1,6 @@
 package ir.visitor;
 
 import ir.Temporary;
-import ir.cfgraph.Function;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAllocation;
 import ir.ops.ArrayLength;
@@ -10,6 +9,7 @@ import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.ConditionalJump;
 import ir.ops.Expression;
+import ir.ops.FunctionDeclaration;
 import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
 import ir.ops.Jump;
@@ -35,7 +35,7 @@ public class StringVisitor implements IrVisitor
 	}
 
 	@Override
-	public void visit(Function f)
+	public void visit(FunctionDeclaration f)
 	{
 		out.println("\n.namespace " + f.getNamespace() + " " + f.getId() + ":");
 		out.println("Locals: ");

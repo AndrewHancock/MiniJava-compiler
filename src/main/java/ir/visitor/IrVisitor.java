@@ -1,7 +1,6 @@
 package ir.visitor;
 
 import ir.Temporary;
-import ir.cfgraph.Function;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAllocation;
 import ir.ops.ArrayLength;
@@ -9,6 +8,7 @@ import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
 import ir.ops.ConditionalJump;
+import ir.ops.FunctionDeclaration;
 import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
 import ir.ops.Jump;
@@ -29,7 +29,7 @@ public interface IrVisitor
 	void visit(BinOp b);
 	void visit(Call c);
 	void visit(ConditionalJump j);
-	void visit(Function f);	
+	void visit(FunctionDeclaration f);	
 	void visit(Identifier i);	
 	void visit(IntegerLiteral l);
 	void visit(Jump j);

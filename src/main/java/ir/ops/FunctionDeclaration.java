@@ -1,21 +1,18 @@
-package ir.cfgraph;
+package ir.ops;
 
-import ir.ops.Declaration;
-import ir.ops.Identifier;
-import ir.ops.Statement;
 import ir.visitor.IrVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Function extends Declaration 
+public class FunctionDeclaration extends Declaration 
 {
 	private List<Identifier> parameters = new ArrayList<Identifier>();
 	private List<Identifier> locals = new ArrayList<Identifier>();
 	private List<Identifier> temporaries = new ArrayList<Identifier>();
 	private List<Statement> statements = new ArrayList<Statement>();
 			
-	public Function(String namespace, String id)
+	public FunctionDeclaration(String namespace, String id)
 	{
 		super(namespace, id);
 		

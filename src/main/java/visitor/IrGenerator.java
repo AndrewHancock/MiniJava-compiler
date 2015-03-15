@@ -41,12 +41,12 @@ import syntaxtree.True;
 import syntaxtree.VarDecl;
 import syntaxtree.While;
 import ir.cfgraph.FunctionBuilder;
-import ir.cfgraph.Function;
 import ir.ops.ArrayAccess;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.ConditionalJump;
 import ir.ops.DataType;
+import ir.ops.FunctionDeclaration;
 import ir.ops.Identifier;
 import ir.ops.Jump;
 import ir.ops.Label;
@@ -70,12 +70,12 @@ public class IrGenerator extends DepthFirstVisitor
 	}
 
 	private final String currentNamespace = "minijava";
-	private Function currentFrame;
-	private Collection<Function> frameList = new ArrayList<Function>();
+	private FunctionDeclaration currentFrame;
+	private Collection<FunctionDeclaration> frameList = new ArrayList<FunctionDeclaration>();
 	private Collection<RecordDeclaration> recordList = new ArrayList<RecordDeclaration>();
 	private FunctionBuilder cfgBuilder;
 
-	public Collection<Function> getFrameList()
+	public Collection<FunctionDeclaration> getFrameList()
 	{
 		return frameList;
 	}
@@ -90,7 +90,7 @@ public class IrGenerator extends DepthFirstVisitor
 		
 		cfgBuilder = new FunctionBuilder();
 		m.s.accept(this);
-		currentFrame = new Function("", "main");
+		currentFrame = new FunctionDeclaration("", "main");
 		for(Identifier id : cfgBuilder.getTemporaries())
 			currentFrame.getTemporaries().add(id);		
 		for(Statement statement : cfgBuilder.getStatements())
@@ -108,7 +108,7 @@ public class IrGenerator extends DepthFirstVisitor
 		currentLocals.clear();		
 		currentLocals.put("this", new Identifier("this"));
 
-		currentFrame = new Function(currentClass.getId(), d.i.s);
+		currentFrame = new FunctionDeclaration(currentClass.getId(), d.i.s);
 		
 		currentFrame.getParams().add(new Identifier("this"));
 		for (int i = 0; i < d.vl.size(); i++)
