@@ -1,36 +1,37 @@
 package ir.visitor;
 
-import java.io.PrintStream;
-
 import ir.Temporary;
-import ir.cfgraph.BasicBlock;
-import ir.cfgraph.CodePoint;
-import ir.cfgraph.Branch;
 import ir.cfgraph.Function;
-import ir.cfgraph.Loop;
 import ir.ops.ArrayAccess;
+import ir.ops.ArrayAllocation;
 import ir.ops.ArrayLength;
 import ir.ops.Assignment;
 import ir.ops.BinOp;
 import ir.ops.Call;
+import ir.ops.ConditionalJump;
+import ir.ops.Expression;
 import ir.ops.Identifier;
 import ir.ops.IntegerLiteral;
-import ir.ops.ArrayAllocation;
+import ir.ops.Jump;
+import ir.ops.Label;
 import ir.ops.RecordAccess;
 import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
 import ir.ops.RelationalOp;
 import ir.ops.Return;
+import ir.ops.Statement;
 import ir.ops.SysCall;
-import ir.ops.Expression;
+
+import java.io.PrintStream;
+import java.util.Stack;
 
 public class StringVisitor implements IrVisitor
 {
-	private PrintStream out;
-	
+	private IrPrintStream out;
+
 	public StringVisitor(PrintStream out)
 	{
-		this.out = out;
+		this.out = new IrPrintStream(out);
 	}
 
 	@Override
@@ -38,55 +39,37 @@ public class StringVisitor implements IrVisitor
 	{
 		out.println("\n.namespace " + f.getNamespace() + " " + f.getId() + ":");
 		out.println("Locals: ");
-		for( Identifier value : f.getLocals())
+		for (Identifier value : f.getLocals())
 		{
 			out.println("\t" + value.getId());
 		}
 		out.println("Params: " + f.getParams().size());
-		for(Identifier param : f.getParams())
+		for (Identifier param : f.getParams())
 		{
-			out.println("\t" + param.getId());	
+			out.println("\t" + param.getId());
 		}
-		
+
 		out.println("Temporaries: " + f.getTemporaries().size());
-		for(Identifier temp : f.getTemporaries())
+		for (Identifier temp : f.getTemporaries())
 		{
 			out.println("\t" + temp.getId());
-		}
+		}		
 		out.println("Begin:");
-		f.getStartingBlock().accept(this);
-		
-	}
-
-	@Override
-	public void visit(BasicBlock b)
-	{		
-		out.println("Begin block " + b.getId());
-		for(CodePoint c : b.getCodePoints())		
-			c.accept(this);
-		
-		if(b.getSuccessor() != null)
+		out.indent();
+		for(Statement statement : f.getStatements())
 		{
-			out.println("Successor: " +  b.getSuccessor().getId());
-			b.getSuccessor().accept(this);
+			statement.accept(this);
+			out.println("");
 		}
-		
-		
-	}
+		out.unindent();
 
-	@Override
-	public void visit(CodePoint c)
-	{
-		out.print("\t");
-		c.getOperation().accept(this);		
-		out.println();
 	}
 
 	@Override
 	public void visit(BinOp b)
-	{		
+	{
 		String op;
-		switch(b.getOp())
+		switch (b.getOp())
 		{
 		case ADD:
 			op = " + ";
@@ -104,13 +87,13 @@ public class StringVisitor implements IrVisitor
 			op = " | ";
 			break;
 		default:
-			throw new RuntimeException("Unrecognized operation.");		
+			throw new RuntimeException("Unrecognized operation.");
 		}
-		
+
 		b.getSrc1().accept(this);
 		out.print(op);
-		
-		if(b.getSrc2() != null)
+
+		if (b.getSrc2() != null)
 			b.getSrc2().accept(this);
 	}
 
@@ -119,16 +102,16 @@ public class StringVisitor implements IrVisitor
 	{
 		boolean first = true;
 		out.print(c.getId() + "(");
-		for(Expression param : c.getParameters())
+		for (Expression param : c.getParameters())
 		{
-			if(first)
+			if (first)
 				first = false;
 			else
 				out.print(", ");
 			param.accept(this);
 		}
 		out.print(")");
-		
+
 	}
 
 	@Override
@@ -137,7 +120,7 @@ public class StringVisitor implements IrVisitor
 		assignment.getDest().accept(this);
 		out.print(" := ");
 		assignment.getSrc().accept(this);
-		
+
 	}
 
 	@Override
@@ -145,29 +128,29 @@ public class StringVisitor implements IrVisitor
 	{
 		boolean first = true;
 		out.print(s.getId() + "(");
-		for(Expression param : s.getParameters())
+		for (Expression param : s.getParameters())
 		{
-			if(first)
+			if (first)
 				first = false;
 			else
 				out.print(", ");
 			param.accept(this);
 		}
-		out.print(")");		
+		out.print(")");
 	}
 
 	@Override
 	public void visit(Temporary t)
 	{
 		out.print(t.getId());
-		
+
 	}
 
 	@Override
 	public void visit(IntegerLiteral l)
 	{
 		out.print(l.getValue());
-		
+
 	}
 
 	@Override
@@ -176,15 +159,15 @@ public class StringVisitor implements IrVisitor
 		a.getReference().accept(this);
 		out.print("[");
 		a.getIndex().accept(this);
-		out.print("]"); 
-		
+		out.print("]");
+
 	}
 
 	@Override
 	public void visit(ArrayAllocation n)
-	{	
+	{
 		out.print("new Int[" + n.getSize() + "]");
-		
+
 	}
 
 	@Override
@@ -193,54 +176,28 @@ public class StringVisitor implements IrVisitor
 		out.println("Record:");
 		out.println(r.getId());
 		out.println("Fields:");
-		out.println(r.getFieldCount());		
+		out.println(r.getFieldCount());
 	}
 
 	@Override
 	public void visit(RecordAccess r)
 	{
-		out.print("(" + r.getNamespace() + "." + r.getTypeName() +")." + r.getIdentifier().getId() + "[" + r.getFieldIndex() + "]" );
-		
-	}
+		out.print("(" + r.getNamespace() + "." + r.getTypeName() + ")."
+				+ r.getIdentifier().getId() + "[" + r.getFieldIndex() + "]");
 
-	private int conditionCounter = 0;
-	@Override
-	public void visit(Branch b)
-	{
-		out.println("Begin block " + b.getId());
-		int c = conditionCounter++;
-		String label = "condiition_" + c;
-		out.print(label + ":\n") ;
-		out.print("\tif ");
-		b.getTest().accept(this);
-		out.println(":");
-		
-		
-		out.println(label + "_false:");
-		b.getFalseBlock().accept(this);
-		out.println(label + "_true:");
-		b.getTrueBlock().accept(this);		
-		out.println(label + "_end");
-		
-		if(b.getSuccessor() != null)
-		{
-			out.println("Successor: " + b.getSuccessor().getId());
-			b.getSuccessor().accept(this);
-		}
-		
 	}
 
 	@Override
 	public void visit(RecordAllocation a)
 	{
 		out.print("new " + a.getTypeId());
-		
+
 	}
 
 	@Override
 	public void visit(Identifier i)
 	{
-		out.print(i.getId());		
+		out.print(i.getId());
 	}
 
 	@Override
@@ -256,10 +213,10 @@ public class StringVisitor implements IrVisitor
 	{
 
 		String op;
-		switch(r.getOp())
+		switch (r.getOp())
 		{
 		case LTE:
-			op = " <= "; 
+			op = " <= ";
 			break;
 		case EQ:
 			op = " == ";
@@ -268,41 +225,100 @@ public class StringVisitor implements IrVisitor
 			op = " < ";
 			break;
 		default:
-			throw new RuntimeException("Unrecognized operation.");		
+			throw new RuntimeException("Unrecognized operation.");
 		}
-		
+
 		r.getSrc1().accept(this);
 		out.print(op);
-		
-		if(r.getSrc2() != null)
-			r.getSrc2().accept(this);		
-	}
 
-	@Override
-	public void visit(Loop l)
-	{
-		out.println("Begin block " + l.getId());
-		out.println("Loop test:");
-		l.getTest().accept(this);
-		out.print("Test Result: ");
-		l.getTestResult().accept(this);
-		out.println();
-				
-		out.println("Loop body:");
-		l.getBody().accept(this);		
-		if(l.getSuccessor() != null)
-		{
-			out.println("Successor: " + l.getSuccessor().getId());
-			l.getSuccessor().accept(this);
-		}
+		if (r.getSrc2() != null)
+			r.getSrc2().accept(this);
 	}
 
 	@Override
 	public void visit(ArrayLength a)
 	{
 		a.getExpression().accept(this);
-		out.print(".length");		
+		out.print(".length");
 	}
+
+	@Override
+	public void visit(ConditionalJump j)
+	{
+		out.print("jump if ");
+		j.getCondition().accept(this);
+		out.print(" to " + getNewLabel(j.getLabel()));
+		
+	}
+
+	private int trueLabelCount;
+	private int falseLabelCount;
+	private int testLabelCount;
+	private int bodyLabelCount;
+	private int endLabelCount;
 	
-	
+	Stack<String> trueLabels = new Stack<String>();
+	Stack<String> falseLabels = new Stack<String>();
+	Stack<String> testLabels = new Stack<String>();
+	Stack<String> bodyLabels = new Stack<String>();
+	Stack<String> endLabels = new Stack<String>();
+
+	private String getNewLabel(Label label)
+	{
+		
+		switch (label)
+		{
+		case TRUE:
+			trueLabels.push("true_" + trueLabelCount++);
+			return trueLabels.peek();			
+		case FALSE:
+			falseLabels.push("false_" + falseLabelCount++);
+			return falseLabels.peek();
+		case TEST:			
+			return testLabels.pop();			
+		case BODY:
+			bodyLabels.push("body_" + bodyLabelCount++);
+			return bodyLabels.peek();
+		case END:
+			endLabels.push("end_" + endLabelCount++);
+			return endLabels.peek();
+		default:
+			throw new RuntimeException("Unrecognized Label Type.");
+		}
+	}
+
+	@Override
+	public void visit(Label label)
+	{
+		out.unindent();
+		switch(label)
+		{
+		case TRUE:
+			out.print(trueLabels.pop() +  ":");
+			break;
+		case FALSE:
+			out.print(falseLabels.pop() +  ":");
+			break;
+		case TEST:
+			testLabels.push("test_" + testLabelCount++);
+			out.print(testLabels.peek() + ":");
+			break;
+		case BODY:
+			out.print(bodyLabels.pop() + ":");
+			break;
+		case END:
+			out.print(endLabels.pop() + ":");
+			break;			
+		default:
+			throw new RuntimeException("Unrecognized label.");
+		}
+		out.indent();
+	}
+
+	@Override
+	public void visit(Jump j)
+	{
+		out.print("jump " + getNewLabel(j.getLabel()));		
+	}
+
 }

@@ -2,20 +2,19 @@ package ir.cfgraph;
 
 import ir.ops.Declaration;
 import ir.ops.Identifier;
+import ir.ops.Statement;
 import ir.visitor.IrVisitor;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Function extends Declaration 
 {
-	private List<Identifier> parameters;
-	private List<Identifier> locals;
-	private List<Identifier> temporaries;
-	private Block startBlock;
-	
-	
-	
-		
+	private List<Identifier> parameters = new ArrayList<Identifier>();
+	private List<Identifier> locals = new ArrayList<Identifier>();
+	private List<Identifier> temporaries = new ArrayList<Identifier>();
+	private List<Statement> statements = new ArrayList<Statement>();
+			
 	public Function(String namespace, String id)
 	{
 		super(namespace, id);
@@ -59,21 +58,20 @@ public class Function extends Declaration
 	public void setLocal(int index, Identifier local)
 	{
 		locals.add(index, local);
-	}
-	
-	public Block getStartingBlock()
-	{
-		return startBlock;
-	}
-	
-	public void setStartingBlock(Block startBlock)
-	{
-		this.startBlock = startBlock;
-	}
+	}	
 	
 	public void accept(IrVisitor visitor)
 	{
 		visitor.visit(this);
 	}	
-
+	
+	public void addStatement(Statement s)
+	{
+		statements.add(s);
+	}
+	
+	public List<Statement> getStatements()
+	{
+		return statements;
+	}
 }
