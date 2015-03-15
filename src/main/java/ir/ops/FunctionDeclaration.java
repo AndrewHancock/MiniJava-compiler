@@ -60,11 +60,6 @@ public class FunctionDeclaration extends Declaration
 	public void accept(IrVisitor visitor)
 	{
 		visitor.visit(this);
-	}	
-	
-	public void addStatement(Statement s)
-	{
-		statements.add(s);
 	}
 	
 	public List<Statement> getStatements()

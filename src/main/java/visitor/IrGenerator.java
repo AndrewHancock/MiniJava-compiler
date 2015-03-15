@@ -1,5 +1,25 @@
 package visitor;
 
+import ir.TempAllocator;
+import ir.ops.ArrayAccess;
+import ir.ops.Assignment;
+import ir.ops.BinOp;
+import ir.ops.BinOp.Op;
+import ir.ops.ConditionalJump;
+import ir.ops.DataType;
+import ir.ops.Expression;
+import ir.ops.FunctionDeclaration;
+import ir.ops.Identifier;
+import ir.ops.Jump;
+import ir.ops.Label;
+import ir.ops.RecordAccess;
+import ir.ops.RecordAllocation;
+import ir.ops.RecordDeclaration;
+import ir.ops.RelationalOp;
+import ir.ops.Return;
+import ir.ops.Statement;
+import ir.ops.SysCall;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,25 +60,6 @@ import syntaxtree.Times;
 import syntaxtree.True;
 import syntaxtree.VarDecl;
 import syntaxtree.While;
-import ir.cfgraph.FunctionBuilder;
-import ir.ops.ArrayAccess;
-import ir.ops.Assignment;
-import ir.ops.BinOp;
-import ir.ops.ConditionalJump;
-import ir.ops.DataType;
-import ir.ops.FunctionDeclaration;
-import ir.ops.Identifier;
-import ir.ops.Jump;
-import ir.ops.Label;
-import ir.ops.RecordAccess;
-import ir.ops.RecordAllocation;
-import ir.ops.RecordDeclaration;
-import ir.ops.RelationalOp;
-import ir.ops.Return;
-import ir.ops.Statement;
-import ir.ops.SysCall;
-import ir.ops.Expression;
-import ir.ops.BinOp.Op;
 
 public class IrGenerator extends DepthFirstVisitor
 {
@@ -70,32 +71,39 @@ public class IrGenerator extends DepthFirstVisitor
 	}
 
 	private final String currentNamespace = "minijava";
-	private FunctionDeclaration currentFrame;
-	private Collection<FunctionDeclaration> frameList = new ArrayList<FunctionDeclaration>();
-	private Collection<RecordDeclaration> recordList = new ArrayList<RecordDeclaration>();
-	private FunctionBuilder cfgBuilder;
+	private FunctionDeclaration currentFunction;
+	private TempAllocator tempAllocator = new TempAllocator(); 
+	private Collection<FunctionDeclaration> functionDeclarations = new ArrayList<FunctionDeclaration>();
+	private Collection<RecordDeclaration> recordDeclarations = new ArrayList<RecordDeclaration>();	
 
 	public Collection<FunctionDeclaration> getFrameList()
 	{
-		return frameList;
+		return functionDeclarations;
 	}
 
 	public Collection<RecordDeclaration> getRecordList()
 	{
-		return recordList;
+		return recordDeclarations;
 	}
+	
+	private void addStatement(Statement s)
+	{
+		currentFunction.getStatements().add(s);
+	}
+	
+	private Identifier getNewTemporary()
+	{
+		Identifier temp = tempAllocator.GetTemporary();
+		currentFunction.getTemporaries().add(temp);
+		return temp;
+	}	
 
 	public void visit(MainClass m)
-	{
-		
-		cfgBuilder = new FunctionBuilder();
+	{	
+	
+		currentFunction = new FunctionDeclaration("", "main");
 		m.s.accept(this);
-		currentFrame = new FunctionDeclaration("", "main");
-		for(Identifier id : cfgBuilder.getTemporaries())
-			currentFrame.getTemporaries().add(id);		
-		for(Statement statement : cfgBuilder.getStatements())
-			currentFrame.addStatement(statement);
-		frameList.add(currentFrame);
+		functionDeclarations.add(currentFunction);
 	}
 
 	private RamMethod currentMethod;
@@ -103,23 +111,22 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(MethodDecl d)
 	{
 		currentMethod = currentClass.getMethod(d.i.s);
-		cfgBuilder = new FunctionBuilder();
 
 		currentLocals.clear();		
 		currentLocals.put("this", new Identifier("this"));
 
-		currentFrame = new FunctionDeclaration(currentClass.getId(), d.i.s);
+		currentFunction = new FunctionDeclaration(currentClass.getId(), d.i.s);
 		
-		currentFrame.getParams().add(new Identifier("this"));
+		currentFunction.getParams().add(new Identifier("this"));
 		for (int i = 0; i < d.vl.size(); i++)
 		{
-			currentFrame.getLocals().add(new Identifier(d.vl.elementAt(i).i.s));
+			currentFunction.getLocals().add(new Identifier(d.vl.elementAt(i).i.s));
 			d.vl.elementAt(i).accept(this);
 		}
 
 		for (int i = 0; i < d.fl.size(); i++)
 		{
-			currentFrame.getParams().add(new Identifier(d.fl.elementAt(i).i.s));
+			currentFunction.getParams().add(new Identifier(d.fl.elementAt(i).i.s));
 			d.fl.elementAt(i).accept(this);
 		}	
 		
@@ -128,17 +135,9 @@ public class IrGenerator extends DepthFirstVisitor
 			d.sl.elementAt(i).accept(this);
 		}
 		d.e.accept(this);
-		cfgBuilder.addStatement(new Return(currentOperand));
+		addStatement(new Return(currentOperand));
 		
-		for(Identifier id : cfgBuilder.getTemporaries())
-		{
-			currentFrame.getTemporaries().add(id);			
-		}
-		
-		for(Statement statement : cfgBuilder.getStatements())
-			currentFrame.addStatement(statement);
-		
-		frameList.add(currentFrame);
+		functionDeclarations.add(currentFunction);
 	}
 
 	@Override
@@ -150,8 +149,8 @@ public class IrGenerator extends DepthFirstVisitor
 			p.e.elementAt(i).accept(this);
 			parameters.add(currentOperand);
 		}
-		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new SysCall("system", "print", parameters),
+		currentOperand = getNewTemporary();
+		addStatement(new Assignment(new SysCall("system", "print", parameters),
 				currentOperand));
 	}
 
@@ -164,8 +163,8 @@ public class IrGenerator extends DepthFirstVisitor
 			parameters.add(currentOperand);
 		}
 
-		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new SysCall("system", "println", parameters),
+		currentOperand = getNewTemporary();
+		addStatement(new Assignment(new SysCall("system", "println", parameters),
 				currentOperand));
 	}
 
@@ -184,8 +183,8 @@ public class IrGenerator extends DepthFirstVisitor
 		p.e2.accept(this);
 		Expression rightOperand = currentOperand;
 
-		Identifier dest = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new BinOp(Op.ADD, leftOperand,
+		Identifier dest = getNewTemporary();
+		addStatement(new Assignment(new BinOp(Op.ADD, leftOperand,
 				rightOperand), dest));
 		currentOperand = dest;
 	}
@@ -197,8 +196,8 @@ public class IrGenerator extends DepthFirstVisitor
 		t.e2.accept(this);
 		Expression rightOperand = currentOperand;
 
-		Identifier dest = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new BinOp(Op.MULT, leftOperand,
+		Identifier dest = getNewTemporary();
+		addStatement(new Assignment(new BinOp(Op.MULT, leftOperand,
 				rightOperand), dest));
 		currentOperand = dest;
 	}
@@ -210,8 +209,8 @@ public class IrGenerator extends DepthFirstVisitor
 		m.e2.accept(this);
 		Expression rightOperand = currentOperand;
 
-		Identifier dest = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new BinOp(Op.SUBTRACT, leftOperand,
+		Identifier dest = getNewTemporary();
+		addStatement(new Assignment(new BinOp(Op.SUBTRACT, leftOperand,
 				rightOperand), dest));
 		currentOperand = dest;
 	}
@@ -230,7 +229,7 @@ public class IrGenerator extends DepthFirstVisitor
 			currentClass.getVar(c.vl.elementAt(i).i.s).setMemoryOffset(i);
 			declaration.addField(DataType.INT);
 		}
-		recordList.add(declaration);
+		recordDeclarations.add(declaration);
 		recordMap.put(c.i.s, declaration);
 
 		for (int i = 0; i < c.ml.size(); i++)
@@ -267,7 +266,7 @@ public class IrGenerator extends DepthFirstVisitor
 		Expression src = currentOperand;
 		a.i.accept(this);
 		Expression dest = currentOperand;
-		cfgBuilder.addStatement(new Assignment(src, dest));
+		addStatement(new Assignment(src, dest));
 	}
 
 	@Override
@@ -280,7 +279,7 @@ public class IrGenerator extends DepthFirstVisitor
 		a.i.accept(this);
 		Expression dest = currentOperand;
 		
-		cfgBuilder.addStatement(new Assignment(src, new ArrayAccess(dest, DataType.INT, index)));
+		addStatement(new Assignment(src, new ArrayAccess(dest, DataType.INT, index)));
 	}
 
 	@Override
@@ -299,9 +298,9 @@ public class IrGenerator extends DepthFirstVisitor
 			params.add(currentOperand);
 		}
 
-		currentOperand = cfgBuilder.getTemporary();
+		currentOperand = getNewTemporary();
 		ir.ops.Call call = new ir.ops.Call(methodClassName, c.i.s, params);
-		cfgBuilder.addStatement(new Assignment(call, currentOperand));
+		addStatement(new Assignment(call, currentOperand));
 	}
 
 	@Override
@@ -309,27 +308,27 @@ public class IrGenerator extends DepthFirstVisitor
 	{
 		a.e1.accept(this);
 
-		Identifier result = cfgBuilder.getTemporary();
+		Identifier result = getNewTemporary();
 		
 		// Short circuit - when expression 1 is "false", we do nothing further.
-		cfgBuilder.addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		cfgBuilder.addStatement(new Jump(Label.FALSE));
-		cfgBuilder.addStatement(Label.TRUE);
+		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
+		addStatement(new Jump(Label.FALSE));
+		addStatement(Label.TRUE);
 		
 		a.e2.accept(this);
-		cfgBuilder.addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		cfgBuilder.addStatement(new Jump(Label.FALSE));
-		cfgBuilder.addStatement(Label.TRUE);
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
-		cfgBuilder.addStatement(new Jump(Label.END));
-		cfgBuilder.addStatement(Label.FALSE);
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
-		cfgBuilder.addStatement(Label.END);
-		cfgBuilder.addStatement(new Jump(Label.END));
+		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
+		addStatement(new Jump(Label.FALSE));
+		addStatement(Label.TRUE);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
+		addStatement(new Jump(Label.END));
+		addStatement(Label.FALSE);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
+		addStatement(Label.END);
+		addStatement(new Jump(Label.END));
 		
-		cfgBuilder.addStatement(Label.FALSE);
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
-		cfgBuilder.addStatement(Label.END);		
+		addStatement(Label.FALSE);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
+		addStatement(Label.END);		
 	}
 
 	@Override
@@ -337,27 +336,27 @@ public class IrGenerator extends DepthFirstVisitor
 	{
 		a.e1.accept(this);
 
-		Identifier result = cfgBuilder.getTemporary();
+		Identifier result = getNewTemporary();
 
 		// Short circuit - when expression 1 is "false", we do nothing further.
-		cfgBuilder.addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		cfgBuilder.addStatement(new Jump(Label.FALSE));
-		cfgBuilder.addStatement(Label.TRUE);
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
-		cfgBuilder.addStatement(new Jump(Label.END));
+		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
+		addStatement(new Jump(Label.FALSE));
+		addStatement(Label.TRUE);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
+		addStatement(new Jump(Label.END));
 		
-		cfgBuilder.addStatement(Label.FALSE);
+		addStatement(Label.FALSE);
 		a.e2.accept(this);
-		cfgBuilder.addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		cfgBuilder.addStatement(new Jump(Label.FALSE));
-		cfgBuilder.addStatement(Label.TRUE);
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
-		cfgBuilder.addStatement(new Jump(Label.END));
-		cfgBuilder.addStatement(Label.FALSE);
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
-		cfgBuilder.addStatement(Label.END);
+		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
+		addStatement(new Jump(Label.FALSE));
+		addStatement(Label.TRUE);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
+		addStatement(new Jump(Label.END));
+		addStatement(Label.FALSE);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
+		addStatement(Label.END);
 		
-		cfgBuilder.addStatement(Label.END);		
+		addStatement(Label.END);		
 	}
 
 	String currentClassName;
@@ -365,8 +364,8 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(NewObject n)
 	{
 		currentClassName = n.i.s;
-		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new RecordAllocation(
+		currentOperand = getNewTemporary();
+		addStatement(new Assignment(new RecordAllocation(
 				currentNamespace, n.i.s), currentOperand));
 	}
 
@@ -432,15 +431,15 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(If i)
 	{
 		i.e.accept(this);
-		cfgBuilder.addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand,
+		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand,
 				new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		cfgBuilder.addStatement(new Jump(Label.FALSE));
-		cfgBuilder.addStatement(Label.TRUE);		
+		addStatement(new Jump(Label.FALSE));
+		addStatement(Label.TRUE);		
 		i.s1.accept(this);
-		cfgBuilder.addStatement(new Jump(Label.END));
-		cfgBuilder.addStatement(Label.FALSE);		
+		addStatement(new Jump(Label.END));
+		addStatement(Label.FALSE);		
 		i.s2.accept(this);
-		cfgBuilder.addStatement(Label.END);
+		addStatement(Label.END);
 		
 	}
 
@@ -451,8 +450,8 @@ public class IrGenerator extends DepthFirstVisitor
 		l.e2.accept(this);
 		Expression rightOperand = currentOperand;
 
-		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new RelationalOp(RelationalOp.Op.LTE,
+		currentOperand = getNewTemporary();
+		addStatement(new Assignment(new RelationalOp(RelationalOp.Op.LTE,
 				leftOperand, rightOperand), currentOperand));
 	}
 
@@ -463,8 +462,8 @@ public class IrGenerator extends DepthFirstVisitor
 		l.e2.accept(this);
 		Expression rightOperand = currentOperand;
 
-		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new RelationalOp(RelationalOp.Op.LT,
+		currentOperand = getNewTemporary();
+		addStatement(new Assignment(new RelationalOp(RelationalOp.Op.LT,
 				leftOperand, rightOperand), currentOperand));
 	}
 	
@@ -476,8 +475,8 @@ public class IrGenerator extends DepthFirstVisitor
 		e.e2.accept(this);
 		Expression rightOperand = currentOperand;
 
-		currentOperand = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new Assignment(new RelationalOp(RelationalOp.Op.EQ,
+		currentOperand = getNewTemporary();
+		addStatement(new Assignment(new RelationalOp(RelationalOp.Op.EQ,
 				leftOperand, rightOperand), currentOperand));		
 	}	
 
@@ -494,29 +493,29 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(Not n)
 	{
 		n.e.accept(this);
-		Identifier result = cfgBuilder.getTemporary();
-		cfgBuilder.addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		cfgBuilder.addStatement(new Jump(Label.FALSE));
-		cfgBuilder.addStatement(Label.TRUE);		
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
-		cfgBuilder.addStatement(new Jump(Label.END));
-		cfgBuilder.addStatement(Label.FALSE);
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
-		cfgBuilder.addStatement(Label.END);
+		Identifier result = getNewTemporary();
+		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
+		addStatement(new Jump(Label.FALSE));
+		addStatement(Label.TRUE);		
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
+		addStatement(new Jump(Label.END));
+		addStatement(Label.FALSE);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
+		addStatement(Label.END);
 		currentOperand = result;
 	}
 
 	@Override
 	public void visit(While n)
 	{
-		cfgBuilder.addStatement(Label.TEST);
+		addStatement(Label.TEST);
 		n.e.accept(this);
-		cfgBuilder.addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.BODY));
-		cfgBuilder.addStatement(new Jump(Label.END));
-		cfgBuilder.addStatement(Label.BODY);			
+		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ, currentOperand, new ir.ops.IntegerLiteral(1)), Label.BODY));
+		addStatement(new Jump(Label.END));
+		addStatement(Label.BODY);			
 		n.s.accept(this);
-		cfgBuilder.addStatement(new Jump(Label.TEST));
-		cfgBuilder.addStatement(Label.END);
+		addStatement(new Jump(Label.TEST));
+		addStatement(Label.END);
 	}
 
 	@Override
@@ -524,18 +523,18 @@ public class IrGenerator extends DepthFirstVisitor
 	{
 		// Initialize counter
 		Identifier source = (Identifier)currentOperand;
-		Identifier length = cfgBuilder.getTemporary();
-		Identifier counter = cfgBuilder.getTemporary();		
-		cfgBuilder.addStatement(new Assignment(new ir.ops.ArrayLength(source), length));
-		cfgBuilder.addStatement(new Assignment(new ir.ops.IntegerLiteral(0), counter));
+		Identifier length = getNewTemporary();
+		Identifier counter = getNewTemporary();		
+		addStatement(new Assignment(new ir.ops.ArrayLength(source), length));
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), counter));
 
-		cfgBuilder.addStatement(Label.TEST);
-		cfgBuilder.addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.LT, counter, length), Label.BODY));
-		cfgBuilder.addStatement(new Jump(Label.END));
-		cfgBuilder.addStatement(Label.BODY);
+		addStatement(Label.TEST);
+		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.LT, counter, length), Label.BODY));
+		addStatement(new Jump(Label.END));
+		addStatement(Label.BODY);
 		n.statement.accept(this);
-		cfgBuilder.addStatement(new Assignment(new BinOp(Op.ADD, new ir.ops.IntegerLiteral(1), counter), currentOperand));
-		cfgBuilder.addStatement(Label.END);
+		addStatement(new Assignment(new BinOp(Op.ADD, new ir.ops.IntegerLiteral(1), counter), currentOperand));
+		addStatement(Label.END);
 	}
 	
 	@Override
