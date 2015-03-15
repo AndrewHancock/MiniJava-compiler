@@ -1,6 +1,5 @@
 package ir.visitor;
 
-import ir.Temporary;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAllocation;
 import ir.ops.ArrayLength;
@@ -39,6 +38,5 @@ public interface IrVisitor
 	void visit(RecordDeclaration r);
 	void visit(RelationalOp r);
 	void visit(Return r);	
-	void visit(SysCall s);	
-	void visit(Temporary t);	
+	void visit(SysCall s);
 }

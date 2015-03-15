@@ -1,23 +1,36 @@
 package syntaxtree;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-public class VarDeclList {
-   private Vector<VarDecl> list;
+public class VarDeclList implements Iterable<VarDecl>
+{
+	private List<VarDecl> list;
 
-   public VarDeclList() {
-      list = new Vector<VarDecl>();
-   }
+	public VarDeclList()
+	{
+		list = new ArrayList<VarDecl>();
+	}
 
-   public void addElement(VarDecl n) {
-      list.addElement(n);
-   }
+	public void add(VarDecl n)
+	{
+		list.add(n);
+	}
 
-   public VarDecl elementAt(int i)  { 
-      return list.elementAt(i); 
-   }
+	public VarDecl get(int i)
+	{
+		return list.get(i);
+	}
 
-   public int size() { 
-      return list.size(); 
-   }
+	public int size()
+	{
+		return list.size();
+	}
+
+	@Override
+	public Iterator<VarDecl> iterator()
+	{
+		return list.iterator();
+	}
 }

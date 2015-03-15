@@ -33,7 +33,7 @@ public class DepthFirstVisitor implements Visitor
         n.i.accept(this);
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
         }
         for (int i = 0; i < n.ml.size(); i++)
         {
@@ -51,7 +51,7 @@ public class DepthFirstVisitor implements Visitor
         n.j.accept(this);
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
         }
         for (int i = 0; i < n.ml.size(); i++)
         {
@@ -79,15 +79,15 @@ public class DepthFirstVisitor implements Visitor
         n.i.accept(this);
         for (int i = 0; i < n.fl.size(); i++)
         {
-            n.fl.elementAt(i).accept(this);
+            n.fl.get(i).accept(this);
         }
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
         }
         for (int i = 0; i < n.sl.size(); i++)
         {
-            n.sl.elementAt(i).accept(this);
+            n.sl.get(i).accept(this);
         }
         n.e.accept(this);
     }
@@ -118,7 +118,7 @@ public class DepthFirstVisitor implements Visitor
     {
         for (int i = 0; i < n.sl.size(); i++)
         {
-            n.sl.elementAt(i).accept(this);
+            n.sl.get(i).accept(this);
         }
     }
 

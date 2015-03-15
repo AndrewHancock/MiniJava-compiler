@@ -1,6 +1,5 @@
 package ir.visitor;
 
-import ir.Temporary;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAllocation;
 import ir.ops.ArrayLength;
@@ -138,14 +137,7 @@ public class StringVisitor implements IrVisitor
 		}
 		out.print(")");
 	}
-
-	@Override
-	public void visit(Temporary t)
-	{
-		out.print(t.getId());
-
-	}
-
+	
 	@Override
 	public void visit(IntegerLiteral l)
 	{

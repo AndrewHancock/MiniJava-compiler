@@ -1,23 +1,41 @@
 package syntaxtree;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-public class StatementList {
-   private Vector<Statement> list;
+public class StatementList implements Iterable<Statement>
+{
+	private List<Statement> list;
 
-   public StatementList() {
-      list = new Vector<Statement>();
-   }
+	public StatementList()
+	{
+		list = new ArrayList<Statement>();
+	}
 
-   public void addElement(Statement n) {
-      list.addElement(n);
-   }
+	public void add(Statement n)
+	{
+		list.add(n);
+	}
 
-   public Statement elementAt(int i)  { 
-      return list.elementAt(i); 
-   }
+	public Statement get(int i)
+	{
+		return list.get(i);
+	}
+	
+	public List<Statement> getList()
+	{
+		return list;
+	}
 
-   public int size() { 
-      return list.size(); 
-   }
+	public int size()
+	{
+		return list.size();
+	}
+
+	@Override
+	public Iterator<Statement> iterator()
+	{
+		return list.iterator(); 
+	}
 }

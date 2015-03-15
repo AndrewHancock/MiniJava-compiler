@@ -76,7 +76,7 @@ public class TypeDepthFirstVisitor implements TypeVisitor
         n.i.accept(this);
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
         }
         for (int i = 0; i < n.ml.size(); i++)
         {
@@ -95,7 +95,7 @@ public class TypeDepthFirstVisitor implements TypeVisitor
         n.j.accept(this);
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
         }
         for (int i = 0; i < n.ml.size(); i++)
         {
@@ -125,15 +125,15 @@ public class TypeDepthFirstVisitor implements TypeVisitor
         n.i.accept(this);
         for (int i = 0; i < n.fl.size(); i++)
         {
-            n.fl.elementAt(i).accept(this);
+            n.fl.get(i).accept(this);
         }
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
         }
         for (int i = 0; i < n.sl.size(); i++)
         {
-            n.sl.elementAt(i).accept(this);
+            n.sl.get(i).accept(this);
         }
         n.e.accept(this);
         return null;
@@ -174,7 +174,7 @@ public class TypeDepthFirstVisitor implements TypeVisitor
     {
         for (int i = 0; i < n.sl.size(); i++)
         {
-            n.sl.elementAt(i).accept(this);
+            n.sl.get(i).accept(this);
         }
         return null;
     }

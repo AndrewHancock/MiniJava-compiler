@@ -44,7 +44,7 @@ public class ASTPrintVisitor implements Visitor
         System.out.print(", (");
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
             if (i + 1 < n.vl.size())
                 System.out.print(", ");
         }
@@ -72,7 +72,7 @@ public class ASTPrintVisitor implements Visitor
         System.out.print(", (");
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
             if (i + 1 < n.vl.size())
                 System.out.print(", ");
         }
@@ -112,21 +112,21 @@ public class ASTPrintVisitor implements Visitor
         System.out.print(", (");
         for (int i = 0; i < n.fl.size(); i++)
         {
-            n.fl.elementAt(i).accept(this);
+            n.fl.get(i).accept(this);
             if (i + 1 < n.fl.size())
                 System.out.print(", ");
         }
         System.out.println("), (");
         for (int i = 0; i < n.vl.size(); i++)
         {
-            n.vl.elementAt(i).accept(this);
+            n.vl.get(i).accept(this);
             if (i + 1 < n.vl.size())
                 System.out.print(", ");
         }
         System.out.println("), (");
         for (int i = 0; i < n.sl.size(); i++)
         {
-            n.sl.elementAt(i).accept(this);
+            n.sl.get(i).accept(this);
             if (i + 1 < n.sl.size())
                 System.out.println(", ");
         }
@@ -173,7 +173,7 @@ public class ASTPrintVisitor implements Visitor
         System.out.println("Block((");
         for (int i = 0; i < n.sl.size(); i++)
         {
-            n.sl.elementAt(i).accept(this);
+            n.sl.get(i).accept(this);
             if (i + 1 < n.sl.size())
                 System.out.println(",");
         }

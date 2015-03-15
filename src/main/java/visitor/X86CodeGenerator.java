@@ -343,7 +343,7 @@ public class X86CodeGenerator extends DepthFirstVisitor
     	
     	for(int i = 0; i < c.vl.size(); i++)
     	{
-    		currentClass.getVar(c.vl.elementAt(i).i.s).setMemoryOffset(i * 4);    		
+    		currentClass.getVar(c.vl.get(i).i.s).setMemoryOffset(i * 4);    		
     	}
     
     	for(int i = 0; i < c.ml.size(); i++)
@@ -368,12 +368,12 @@ public class X86CodeGenerator extends DepthFirstVisitor
     	
     	for(int i = 0; i < m.vl.size(); i++)
     	{
-    		currentMethod.getVar(m.vl.elementAt(i).i.s).setMemoryOffset((i * 4 + 4) * -1);
+    		currentMethod.getVar(m.vl.get(i).i.s).setMemoryOffset((i * 4 + 4) * -1);
     	}
     	
     	for(int i = 0; i < m.sl.size(); i++)
     	{
-    		m.sl.elementAt(i).accept(this);
+    		m.sl.get(i).accept(this);
     	}
     	
     	m.e.accept(this);

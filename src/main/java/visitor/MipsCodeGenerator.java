@@ -347,7 +347,7 @@ public class MipsCodeGenerator extends DepthFirstVisitor
         currClass = symTable.getClass(n.i.s);
         for (int i = 0; i < n.vl.size(); i++)
         {
-            RamVariable var = currClass.getVar(n.vl.elementAt(i).i.s);
+            RamVariable var = currClass.getVar(n.vl.get(i).i.s);
             var.setMemoryOffset(i * 4);
         }
         
@@ -387,7 +387,7 @@ public class MipsCodeGenerator extends DepthFirstVisitor
 
         for (int i = 0; i < n.sl.size(); i++)
         {
-            n.sl.elementAt(i).accept(this);
+            n.sl.get(i).accept(this);
         }
         
         n.e.accept(this); // Handle return expression

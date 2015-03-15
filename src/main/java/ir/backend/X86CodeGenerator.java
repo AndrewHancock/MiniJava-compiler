@@ -1,6 +1,5 @@
 package ir.backend;
 
-import ir.Temporary;
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAllocation;
 import ir.ops.ArrayLength;
@@ -233,12 +232,6 @@ public class X86CodeGenerator implements IrVisitor
 	public void visit(IntegerLiteral l)
 	{
 		emit("pushl $" + l.getValue());
-	}
-
-	@Override
-	public void visit(Temporary t)
-	{
-
 	}
 
 	@Override

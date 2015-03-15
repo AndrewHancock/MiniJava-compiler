@@ -89,20 +89,20 @@ public class PythonVisitor implements Visitor
 			for (int i = 0; i < n.vl.size(); i++)
 			{
 				indent();				
-				print("self." + n.vl.elementAt(i).i.s + " = ");
-				if (n.vl.elementAt(i).t instanceof IntegerType)
+				print("self." + n.vl.get(i).i.s + " = ");
+				if (n.vl.get(i).t instanceof IntegerType)
 				{
 					println("0");
 				}
-				else if (n.vl.elementAt(i).t instanceof BooleanType)
+				else if (n.vl.get(i).t instanceof BooleanType)
 				{
 					println("False");
 				}
-				else if (n.vl.elementAt(i).t instanceof IntArrayType)
+				else if (n.vl.get(i).t instanceof IntArrayType)
 				{
 					println("[]");
 				}
-				else if (n.vl.elementAt(i).t instanceof IdentifierType)
+				else if (n.vl.get(i).t instanceof IdentifierType)
 				{
 					println("None");					
 				}
@@ -141,7 +141,7 @@ public class PythonVisitor implements Visitor
 		for (int i = 0; i < n.fl.size(); i++)
 		{
 			print(", ");
-			n.fl.elementAt(i).accept(this);
+			n.fl.get(i).accept(this);
 		}
 		println("):");
 		level++;
@@ -149,7 +149,7 @@ public class PythonVisitor implements Visitor
 		for (int i = 0; i < n.sl.size(); i++)
 		{
 			indent();
-			n.sl.elementAt(i).accept(this);
+			n.sl.get(i).accept(this);
 			println("");
 		}
 		indent();
@@ -200,7 +200,7 @@ public class PythonVisitor implements Visitor
 		{
 			if (i > 0)
 				indent();
-			n.sl.elementAt(i).accept(this);
+			n.sl.get(i).accept(this);
 			println("");
 		}
 	}

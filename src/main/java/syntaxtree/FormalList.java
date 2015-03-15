@@ -1,23 +1,41 @@
 package syntaxtree;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-public class FormalList {
-   private Vector<Formal> list;
+public class FormalList implements Iterable<Formal>
+{
+	private List<Formal> list;
 
-   public FormalList() {
-      list = new Vector<Formal>();
-   }
+	public FormalList()
+	{
+		list = new ArrayList<Formal>();
+	}
 
-   public void addElement(Formal n) {
-      list.addElement(n);
-   }
+	public void add(Formal n)
+	{
+		list.add(n);
+	}
 
-   public Formal elementAt(int i)  { 
-      return list.elementAt(i); 
-   }
+	public Formal get(int i)
+	{
+		return list.get(i);
+	}
 
-   public int size() { 
-      return list.size(); 
-   }
+	public List<Formal> getList()
+	{
+		return list;
+	}
+
+	public int size()
+	{
+		return list.size();
+	}
+
+	@Override
+	public Iterator<Formal> iterator()
+	{
+		return list.iterator();
+	}
 }
