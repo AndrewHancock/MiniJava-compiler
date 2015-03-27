@@ -33,6 +33,9 @@ public class X86CodeGenerator implements IrVisitor
 	private PrintStream out;
 	private HashMap<String, RecordDeclaration> recordMap = new HashMap<String, RecordDeclaration>();
 
+	private String[] registers = { "rcx", "rdx", "r8", "r9", "r10", "r11", "r12",
+			"r13", "r14", "r15" };
+
 	public X86CodeGenerator(PrintStream out,
 			Collection<RecordDeclaration> recordTypes)
 	{
@@ -73,21 +76,22 @@ public class X86CodeGenerator implements IrVisitor
 		emit(".globl _main");
 		emitLabel("_main");
 		emitComment("Prologue to _main");
-		emit("pushl %ebp");
-		emit("movl %esp, %ebp");
+		emit("pushl %rbp");
+		emit("movl %rsp, %rbp");
 		emit("call ___main   #Call c library main");
 		emit("call " + startFrameId + "  #call the starting frame");
 		emit("leave");
 		emit("ret");
-
 	}
 
 	private boolean startFrame;
-	private FunctionDeclaration currentFrame;
+	private FunctionDeclaration currentFunction;
+	private RegisterAllocator allocator = new RegisterAllocator(registers.length);
 
 	@Override
 	public void visit(FunctionDeclaration f)
 	{
+		allocator.clear();
 		if (!startFrame)
 		{
 			startFrame = true;
@@ -95,13 +99,18 @@ public class X86CodeGenerator implements IrVisitor
 		}
 
 		out.println();
-		String nameNames = f.getNamespace().isEmpty() ? "" : f.getNamespace() + "_";
+		String nameNames = f.getNamespace() + "_";
 		emitLabel(nameNames + f.getId());
-		emit("pushl %ebp");
-		emit("movl %esp, %ebp");
-		currentFrame = f;
-		int localSize = f.getLocals().size() + f.getTemporaries().size();
-		emit("subl $" + (localSize * 4) + " , %esp",
+		emit("pushl %rbp");
+		emit("movl %rsp, %rbp");
+		currentFunction = f;
+
+		for (Identifier id : f.getLocals())
+			allocator.addIdentifier(id.getId());
+		for (Identifier id : f.getTemporaries())
+			allocator.addIdentifier(id.getId());
+
+		emit("subl $" + allocator.getStackSize() + " , %rsp",
 				"Reserve spsace for locals and temporaries.");
 
 		for (Statement statement : f.getStatements())
@@ -129,15 +138,15 @@ public class X86CodeGenerator implements IrVisitor
 
 	public void visit(BinOp b)
 	{
-		b.getSrc1().accept(this);
-		b.getSrc2().accept(this);
-		emit("popl %ebx");
-		emit("popl %eax");
 		BinOp.Op op = b.getOp();
 		if (op != null)
 		{
-			emit(getOpOpcode(b.getOp()) + " %ebx, %eax");
-			emit("pushl %eax");
+			b.getSrc1().accept(this);
+			Value left = currentValue;
+			b.getSrc2().accept(this);
+			Value right = currentValue;
+			emit("movl " + right + " ,  %rax");
+			emit(getOpOpcode(b.getOp()) + " " + left + ", %rax");
 		}
 	}
 
@@ -193,17 +202,17 @@ public class X86CodeGenerator implements IrVisitor
 		int paramIndex;
 		int localIndex;
 		int tempIndex;
-		if ((paramIndex = getIdByIndex(currentFrame.getParams(), id)) >= 0)
+		if ((paramIndex = getIdByIndex(currentFunction.getParams(), id)) >= 0)
 		{
 			return 4 * paramIndex + 8;
 		}
-		else if ((localIndex = getIdByIndex(currentFrame.getLocals(), id)) >= 0)
+		else if ((localIndex = getIdByIndex(currentFunction.getLocals(), id)) >= 0)
 		{
 			return -(4 * localIndex + 4);
 		}
-		else if ((tempIndex = getIdByIndex(currentFrame.getTemporaries(), id)) >= 0)
+		else if ((tempIndex = getIdByIndex(currentFunction.getTemporaries(), id)) >= 0)
 		{
-			return -(tempIndex * 4 + currentFrame.getLocals().size() * 4 + 4);
+			return -(tempIndex * 4 + currentFunction.getLocals().size() * 4 + 4);
 		}
 		else
 			return -1;
@@ -211,21 +220,12 @@ public class X86CodeGenerator implements IrVisitor
 	}
 
 	private boolean rValue = true;
+	private Value currentValue;
 
 	@Override
 	public void visit(Identifier i)
 	{
-		int currentStackOffset = getIdentifierStackOffset(i.getId());
-		if (rValue)
-			emit("pushl " + (currentStackOffset != 0 ? currentStackOffset : "")
-					+ "(%ebp)");
-		else
-		{
-			emit("lea " + (currentStackOffset != 0 ? currentStackOffset : "")
-					+ "(%ebp), %eax");
-			emit("pushl %eax");
-			rValue = true;
-		}
+		currentValue = allocator.getValueForIdentifier(i.getId());
 	}
 
 	@Override
@@ -452,7 +452,8 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Jump j)
 	{
-		emit("jmp " + getNewLabel(j.getLabel()), "Uncondintional jump to " + j.getLabel().toString());
+		emit("jmp " + getNewLabel(j.getLabel()), "Uncondintional jump to "
+				+ j.getLabel().toString());
 
 	}
 

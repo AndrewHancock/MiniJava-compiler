@@ -524,7 +524,7 @@ public class IrGenerator extends DepthFirstVisitor
 		addStatement(Label.TEST);
 		n.e.accept(this);
 		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ,
-				currentOperand, new ir.ops.IntegerLiteral(1)), Label.BODY));
+				currentOperand, new ir.ops.IntegerLiteral(0)), Label.BODY));
 		addStatement(new Jump(Label.END));
 		addStatement(Label.BODY);
 		n.s.accept(this);

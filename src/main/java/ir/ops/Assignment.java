@@ -13,7 +13,6 @@ public class Assignment implements Statement
 		this.dest = dest;
 	}
 
-
 	@Override
 	public void accept(IrVisitor visitor)
 	{
