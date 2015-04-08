@@ -37,12 +37,12 @@ public abstract class BottomUpVisitor implements Visitor
 	public void visit(BranchCodePoint codePoint)
 	{
 		visited.add(codePoint);
-		handleCodepoint(codePoint.getParents());
+		handleCodepoint(codePoint);
 	}
 	
 	public void visit(LinearCodePoint codePoint)
 	{
 		visited.add(codePoint);
-		handleCodepoint(codePoint.getParents());
+		handleCodepoint(codePoint);
 	}
 }
