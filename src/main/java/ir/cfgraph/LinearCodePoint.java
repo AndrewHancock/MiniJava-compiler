@@ -27,4 +27,10 @@ public class LinearCodePoint extends CodePoint
 	{
 		return statement;
 	}
+	
+	@Override
+	public void accept(Visitor v)
+	{
+		v.visit(this);
+	}
 }

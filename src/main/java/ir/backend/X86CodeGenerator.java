@@ -378,66 +378,13 @@ public class X86CodeGenerator implements IrVisitor
 		emit("pushl (%eax)");
 	}
 
-	private int trueLabelCount;
-	private int falseLabelCount;
-	private int testLabelCount;
-	private int bodyLabelCount;
-	private int endLabelCount;
 
-	Stack<String> trueLabels = new Stack<String>();
-	Stack<String> falseLabels = new Stack<String>();
-	Stack<String> testLabels = new Stack<String>();
-	Stack<String> bodyLabels = new Stack<String>();
-	Stack<String> endLabels = new Stack<String>();
 
-	private String getNewLabel(Label label)
-	{
-
-		switch (label)
-		{
-		case TRUE:
-			trueLabels.push("true_" + trueLabelCount++);
-			return trueLabels.peek();
-		case FALSE:
-			falseLabels.push("false_" + falseLabelCount++);
-			return falseLabels.peek();
-		case TEST:
-			return testLabels.pop();
-		case BODY:
-			bodyLabels.push("body_" + bodyLabelCount++);
-			return bodyLabels.peek();
-		case END:
-			endLabels.push("end_" + endLabelCount++);
-			return endLabels.peek();
-		default:
-			throw new RuntimeException("Unrecognized Label Type.");
-		}
-	}
 
 	@Override
 	public void visit(Label label)
 	{
-		switch (label)
-		{
-		case TRUE:
-			emitLabel(trueLabels.pop());
-			break;
-		case FALSE:
-			emitLabel(falseLabels.pop());
-			break;
-		case TEST:
-			testLabels.push("test_" + testLabelCount++);
-			emitLabel(testLabels.peek());
-			break;
-		case BODY:
-			emitLabel(bodyLabels.pop());
-			break;
-		case END:
-			emitLabel(endLabels.pop());
-			break;
-		default:
-			throw new RuntimeException("Unrecognized label.");
-		}
+		emitLabel(label.getLabel());
 	}
 
 	@Override
@@ -446,13 +393,13 @@ public class X86CodeGenerator implements IrVisitor
 		j.getCondition().accept(this);
 		emit("pop %ebx", "Pop result of condition");
 		emit("cmp $1, %ebx");
-		emit("je " + getNewLabel(j.getLabel()));
+		emit("je " + j.getLabel().getLabel());
 	}
 
 	@Override
 	public void visit(Jump j)
 	{
-		emit("jmp " + getNewLabel(j.getLabel()), "Uncondintional jump to "
+		emit("jmp " + j.getLabel().getLabel(), "Uncondintional jump to "
 				+ j.getLabel().toString());
 
 	}

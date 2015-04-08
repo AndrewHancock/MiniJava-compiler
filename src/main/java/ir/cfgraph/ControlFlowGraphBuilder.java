@@ -1,81 +1,87 @@
 package ir.cfgraph;
 
 import ir.ops.ConditionalJump;
-import ir.ops.Jump;
 import ir.ops.Label;
 import ir.ops.Statement;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 public class ControlFlowGraphBuilder
 {
-	private Map<CodePoint, CodePoint> statementMap = new HashMap<CodePoint, CodePoint>();
-
-	public Statement buildCfg(List<Statement> statements)
+	private Map<String, LinearCodePoint> getLabelMap(List<Statement> statements)
 	{
-		Statement entryNode = null;
-		LinearCodePoint currentNode = null;
-		BranchCodePoint currentBranch = null;
-		Stack<Integer> branchIndex = new Stack<Integer>();
-		for (int i = 0; i < statements.size(); i++)
+		Map<String, LinearCodePoint> labelMap = new HashMap<String, LinearCodePoint>();
+
+		LinearCodePoint currentParent = null;
+		for (Statement statement : statements)
 		{
-			Statement statement = statements.get(i);
-			if (statement instanceof ConditionalJump)
+			if (statement instanceof Label)
 			{
-				branchIndex.push(i);
-				currentBranch = new BranchCodePoint((ConditionalJump) statement);
-				currentNode = null;
-				i = seekLabel(statements, i, currentBranch.getCondition().getLabel());
+				currentParent = new LinearCodePoint(statement);
+				labelMap.put(((Label) statement).getLabel(), currentParent);
 			}
-			else if (statement instanceof Label)
+		}
+		return labelMap;
+	}
+
+	public CodePoint getCfg(List<Statement> statements)
+	{
+
+		Map<String, LinearCodePoint> labelMap = getLabelMap(statements);
+
+		CodePoint entryPoint = null;
+		LinearCodePoint currentNode = null;
+		BranchCodePoint incompleteBranch = null;
+
+		for (Statement statement : statements)
+		{
+
+			if (statement instanceof Label)
 			{
-				Label label = (Label) statement;
-				if (label == Label.END
-						&& (currentBranch.getNotTakenSuccessor() == null || currentBranch.getTakenSuccessor() == null)	)
-				{
-					i = branchIndex.pop() + 1;
-					currentNode = null;
-				}
-				else
-					i++;
+				currentNode = labelMap.get(((Label) statement).getLabel());
 			}
 			else
 			{
-				LinearCodePoint newNode = null;
-				if (currentNode == null && currentBranch != null)
+				CodePoint newNode = null;
+				if (statement instanceof ConditionalJump)
 				{
-					newNode = new LinearCodePoint(statement);
-					if (currentBranch.getTakenSuccessor() == null)
-						currentBranch.setTakenSuccessor(newNode);
-					else
-						currentBranch.setNotTakenSuccessor(newNode);
+					BranchCodePoint newBranch = new BranchCodePoint(
+							(ConditionalJump) statement);
+					CodePoint targetLabel = labelMap
+							.get(((ConditionalJump) statement).getLabel());
+					newBranch.setTakenSuccessor(targetLabel);
+					targetLabel.addParent(newBranch);
+					newNode = newBranch;
+					if (incompleteBranch != null)
+						incompleteBranch.setNotTakenSuccessor(newBranch);
+					incompleteBranch = newBranch;
 				}
-				else if (currentNode != null)
-					currentNode.setSuccessor(newNode);
-				currentNode = newNode;
+				else
+				{
+					LinearCodePoint newLinearNode = new LinearCodePoint(statement);
 
-				if (statement instanceof Jump)
-					i = seekLabel(statements, i, ((Jump) statement).getLabel());
+					if (incompleteBranch != null)
+					{
+						incompleteBranch.setNotTakenSuccessor(newNode);
+						newLinearNode.addParent(incompleteBranch);
+						incompleteBranch = null;
+					}
+					else if (currentNode != null)
+					{
+						newLinearNode.addParent(currentNode);
+						currentNode.setSuccessor(newNode);						
+					}
+					currentNode = newLinearNode;
+					newNode = newLinearNode;
+				}
+
+				if (entryPoint == null)
+					entryPoint = newNode;
+
 			}
 		}
-		return entryNode;
+		return null;
 	}
-
-	private static int seekLabel(List<Statement> statements, int startIndex,
-			Label label)
-	{
-		for (int i = startIndex; i < statements.size(); i = label == Label.TEST ? i - 1 : i + 1)
-		{
-			Statement statement = statements.get(i);
-			if (statement instanceof Label && ((Label) statement) == label)
-			{
-				return i;
-			}
-		}
-		throw new RuntimeException("Expected Label Not Found.");
-	}
-
 }

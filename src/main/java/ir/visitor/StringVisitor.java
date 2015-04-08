@@ -239,78 +239,22 @@ public class StringVisitor implements IrVisitor
 	{
 		out.print("jump if ");
 		j.getCondition().accept(this);
-		out.print(" to " + getNewLabel(j.getLabel()));
+		out.print(" to " + j.getLabel().getLabel());
 		
-	}
-
-	private int trueLabelCount;
-	private int falseLabelCount;
-	private int testLabelCount;
-	private int bodyLabelCount;
-	private int endLabelCount;
-	
-	Stack<String> trueLabels = new Stack<String>();
-	Stack<String> falseLabels = new Stack<String>();
-	Stack<String> testLabels = new Stack<String>();
-	Stack<String> bodyLabels = new Stack<String>();
-	Stack<String> endLabels = new Stack<String>();
-
-	private String getNewLabel(Label label)
-	{
-		
-		switch (label)
-		{
-		case TRUE:
-			trueLabels.push("true_" + trueLabelCount++);
-			return trueLabels.peek();			
-		case FALSE:
-			falseLabels.push("false_" + falseLabelCount++);
-			return falseLabels.peek();
-		case TEST:			
-			return testLabels.pop();			
-		case BODY:
-			bodyLabels.push("body_" + bodyLabelCount++);
-			return bodyLabels.peek();
-		case END:
-			endLabels.push("end_" + endLabelCount++);
-			return endLabels.peek();
-		default:
-			throw new RuntimeException("Unrecognized Label Type.");
-		}
 	}
 
 	@Override
 	public void visit(Label label)
 	{
 		out.unindent();
-		switch(label)
-		{
-		case TRUE:
-			out.print(trueLabels.pop() +  ":");
-			break;
-		case FALSE:
-			out.print(falseLabels.pop() +  ":");
-			break;
-		case TEST:
-			testLabels.push("test_" + testLabelCount++);
-			out.print(testLabels.peek() + ":");
-			break;
-		case BODY:
-			out.print(bodyLabels.pop() + ":");
-			break;
-		case END:
-			out.print(endLabels.pop() + ":");
-			break;			
-		default:
-			throw new RuntimeException("Unrecognized label.");
-		}
+		out.print(label.getLabel());
 		out.indent();
 	}
 
 	@Override
 	public void visit(Jump j)
 	{
-		out.print("jump " + getNewLabel(j.getLabel()));		
+		out.print("jump " + j.getLabel());		
 	}
 
 }

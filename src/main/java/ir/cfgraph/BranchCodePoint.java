@@ -37,5 +37,10 @@ public class BranchCodePoint extends CodePoint
 	{
 		return condition;
 	}
-
+	
+	@Override
+	public void accept(Visitor v)
+	{
+		v.visit(this);
+	}
 }

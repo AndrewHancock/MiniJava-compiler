@@ -309,64 +309,52 @@ public class IrGenerator extends DepthFirstVisitor
 		addStatement(new Assignment(call, currentOperand));
 	}
 
+	int andCount;
 	@Override
 	public void visit(And a)
 	{
+		int count = andCount++;
+		Label falseLabel = new Label("and_false_" + count);
+		Label endLabel = new Label("and_end_" + count);
 		a.e1.accept(this);
 
 		Identifier result = getNewTemporary();
 
 		// Short circuit - when expression 1 is "false", we do nothing further.
 		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ,
-				currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		addStatement(new Jump(Label.FALSE));
-		addStatement(Label.TRUE);
-
+				currentOperand, new ir.ops.IntegerLiteral(0)), falseLabel));
 		a.e2.accept(this);
 		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ,
-				currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		addStatement(new Jump(Label.FALSE));
-		addStatement(Label.TRUE);
+				currentOperand, new ir.ops.IntegerLiteral(0)), falseLabel));
 		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
-		addStatement(new Jump(Label.END));
-		addStatement(Label.FALSE);
+		addStatement(new Jump(endLabel));
+		addStatement(falseLabel);
 		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
-		addStatement(Label.END);
-		addStatement(new Jump(Label.END));
-
-		addStatement(Label.FALSE);
-		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
-		addStatement(Label.END);
+		addStatement(endLabel);
 	}
 
+	int orCount;
 	@Override
 	public void visit(Or a)
 	{
+		int count = orCount++;
+		Label trueLabel = new Label("or_true_" + count);
+		Label endLabel = new Label("or_end_" + count);
+		
 		a.e1.accept(this);
-
 		Identifier result = getNewTemporary();
-
 		// Short circuit - when expression 1 is "false", we do nothing further.
 		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ,
-				currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		addStatement(new Jump(Label.FALSE));
-		addStatement(Label.TRUE);
-		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
-		addStatement(new Jump(Label.END));
-
-		addStatement(Label.FALSE);
+				currentOperand, new ir.ops.IntegerLiteral(1)), trueLabel));
 		a.e2.accept(this);
 		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ,
-				currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		addStatement(new Jump(Label.FALSE));
-		addStatement(Label.TRUE);
-		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
-		addStatement(new Jump(Label.END));
-		addStatement(Label.FALSE);
-		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
-		addStatement(Label.END);
+				currentOperand, new ir.ops.IntegerLiteral(1)), trueLabel));
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));		
+		addStatement(new Jump(endLabel));
+		addStatement(trueLabel);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));		
 
-		addStatement(Label.END);
+		addStatement(endLabel);
 	}
 
 	String currentClassName;
@@ -440,21 +428,25 @@ public class IrGenerator extends DepthFirstVisitor
 		currentOperand = currentLocals.get("this");
 	}
 
+	int ifCount;
+	@Override
 	public void visit(If i)
 	{
+		int count = ifCount++;
+		Label trueLabel = new Label("if_true_" + count);
+		Label endLabel = new Label("if_end_" + count);
+		
 		i.e.accept(this);
 		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ,
-				currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		addStatement(new Jump(Label.FALSE));
-		addStatement(Label.TRUE);
-		i.s1.accept(this);
-		addStatement(new Jump(Label.END));
-		addStatement(Label.FALSE);
+				currentOperand, new ir.ops.IntegerLiteral(1)), trueLabel));
 		i.s2.accept(this);
-		addStatement(Label.END);
-
+		addStatement(new Jump(endLabel));
+		addStatement(trueLabel);
+		i.s1.accept(this);
+		addStatement(endLabel);
 	}
 
+	@Override
 	public void visit(LessThanOrEqual l)
 	{
 		l.e1.accept(this);
@@ -467,6 +459,7 @@ public class IrGenerator extends DepthFirstVisitor
 				leftOperand, rightOperand), currentOperand));
 	}
 
+	@Override
 	public void visit(LessThan l)
 	{
 		l.e1.accept(this);
@@ -492,65 +485,58 @@ public class IrGenerator extends DepthFirstVisitor
 				leftOperand, rightOperand), currentOperand));
 	}
 
+	@Override
 	public void visit(False f)
 	{
 		currentOperand = new ir.ops.IntegerLiteral(0);
 	}
 
+	@Override
 	public void visit(True t)
 	{
 		currentOperand = new ir.ops.IntegerLiteral(1);
 	}
 
+	private int notCount;
+	@Override
 	public void visit(Not n)
 	{
+		int count = notCount++;
+		Label trueLabel = new Label("not_true_" + count);		
+		Label endLabel = new Label("not_end_" + count);
 		n.e.accept(this);
 		Identifier result = getNewTemporary();
 		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ,
-				currentOperand, new ir.ops.IntegerLiteral(1)), Label.TRUE));
-		addStatement(new Jump(Label.FALSE));
-		addStatement(Label.TRUE);
-		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
-		addStatement(new Jump(Label.END));
-		addStatement(Label.FALSE);
+				currentOperand, new ir.ops.IntegerLiteral(1)), trueLabel));
 		addStatement(new Assignment(new ir.ops.IntegerLiteral(1), result));
-		addStatement(Label.END);
+		addStatement(new Jump(endLabel));
+		addStatement(trueLabel);
+		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), result));
+		addStatement(endLabel);
 		currentOperand = result;
 	}
 
+	private int whileCount;
 	@Override
 	public void visit(While n)
 	{
-		addStatement(Label.TEST);
+		int count = whileCount++;
+		Label testLabel = new Label("while_test_" + count);
+		Label endLabel = new Label("while_end_" + count);
+		addStatement(testLabel);
 		n.e.accept(this);
 		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.EQ,
-				currentOperand, new ir.ops.IntegerLiteral(0)), Label.BODY));
-		addStatement(new Jump(Label.END));
-		addStatement(Label.BODY);
+				currentOperand, new ir.ops.IntegerLiteral(0)), endLabel));
 		n.s.accept(this);
-		addStatement(new Jump(Label.TEST));
-		addStatement(Label.END);
+		addStatement(new Jump(testLabel));
+		addStatement(endLabel);
 	}
+
 
 	@Override
 	public void visit(ForEach n)
 	{
-		// Initialize counter
-		Identifier source = (Identifier) currentOperand;
-		Identifier length = getNewTemporary();
-		Identifier counter = getNewTemporary();
-		addStatement(new Assignment(new ir.ops.ArrayLength(source), length));
-		addStatement(new Assignment(new ir.ops.IntegerLiteral(0), counter));
-
-		addStatement(Label.TEST);
-		addStatement(new ConditionalJump(new RelationalOp(RelationalOp.Op.LT,
-				counter, length), Label.BODY));
-		addStatement(new Jump(Label.END));
-		addStatement(Label.BODY);
-		n.statement.accept(this);
-		addStatement(new Assignment(new BinOp(Op.ADD, new ir.ops.IntegerLiteral(1),
-				counter), currentOperand));
-		addStatement(Label.END);
+		// Planning to remove for loop
 	}
 
 	@Override
