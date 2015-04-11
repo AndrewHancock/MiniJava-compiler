@@ -1,4 +1,4 @@
-package ir.backend;
+package ir.regalloc;
 
 import java.util.HashMap;
 import java.util.Map;

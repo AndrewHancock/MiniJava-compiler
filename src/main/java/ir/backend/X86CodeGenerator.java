@@ -20,6 +20,8 @@ import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.Statement;
 import ir.ops.SysCall;
+import ir.regalloc.RegisterAllocator;
+import ir.regalloc.Value;
 import ir.visitor.IrVisitor;
 
 import java.io.PrintStream;

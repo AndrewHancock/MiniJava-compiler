@@ -1,7 +1,5 @@
 package ir.regalloc;
 
-import java.util.HashSet;
-
 import ir.ops.ArrayAccess;
 import ir.ops.ArrayAllocation;
 import ir.ops.ArrayLength;
@@ -20,9 +18,10 @@ import ir.ops.RecordAllocation;
 import ir.ops.RecordDeclaration;
 import ir.ops.RelationalOp;
 import ir.ops.Return;
-import ir.ops.Statement;
 import ir.ops.SysCall;
 import ir.visitor.IrVisitor;
+
+import java.util.HashSet;
 
 public class StatementVisitor implements IrVisitor
 {

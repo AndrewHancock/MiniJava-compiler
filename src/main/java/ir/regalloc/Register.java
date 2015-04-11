@@ -1,4 +1,4 @@
-package ir.backend;
+package ir.regalloc;
 
 public class Register extends Value
 {	

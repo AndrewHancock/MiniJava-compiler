@@ -1,15 +1,16 @@
 package ir.regalloc;
 
-import java.util.BitSet;
-
-import ir.cfgraph.BottomUpVisitor;
 import ir.cfgraph.BranchCodePoint;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.LinearCodePoint;
+import ir.cfgraph.Visitor;
 import ir.ops.FunctionDeclaration;
 import ir.ops.Statement;
 
-public class LivenessVisitor extends BottomUpVisitor
+import java.util.BitSet;
+import java.util.HashSet;
+
+public class LivenessVisitor implements Visitor
 {		
 	private FunctionDeclaration func;
 	
@@ -41,9 +42,8 @@ public class LivenessVisitor extends BottomUpVisitor
 		
 		if(previousLivenessFlags != null)
 		{
-			liveness.or(liveness);
-		}
-		previousLivenessFlags = codePoint.getLiveness();
+			liveness.or(previousLivenessFlags);
+		}		
 		
 		for(String liveId : statementVisitor.getLiveSet())
 			liveness.set(getIdentifierIndex(liveId));
@@ -51,7 +51,7 @@ public class LivenessVisitor extends BottomUpVisitor
 			liveness.clear(getIdentifierIndex(deadId));
 	}
 	
-	@Override
+	
 	protected void joinCallback(CodePoint codePoint)
 	{
 		previousLivenessFlags = codePoint.getLiveness();
@@ -62,14 +62,32 @@ public class LivenessVisitor extends BottomUpVisitor
 	public void visit(LinearCodePoint codePoint)
 	{	
 		setLivenessFlag(codePoint.getStatement(), codePoint);
-		super.visit(codePoint);
+		for(CodePoint parent : codePoint.getParents())
+		{
+			previousLivenessFlags = codePoint.getLiveness();
+			parent.accept(this);			
+		}
 	}
 	
+	private HashSet<BranchCodePoint> incompleteBranchSet = new HashSet<BranchCodePoint>();
 	@Override
 	public void visit(BranchCodePoint codePoint)
-	{
+	{	
 		setLivenessFlag(codePoint.getCondition(), codePoint);
-		super.visit(codePoint);
+		// A branch is always visited twice - once from the "taken" edge,
+		// and once from the "not taken edge." The parents are only visited
+		// after both branches have joined.
+		if(! incompleteBranchSet.remove(codePoint))
+		{
+			incompleteBranchSet.add(codePoint);			
+		}
+		else
+		{
+			for(CodePoint parent : codePoint.getParents())
+			{
+				previousLivenessFlags = codePoint.getLiveness();
+				parent.accept(this);
+			}
+		}		
 	}
-
 }
