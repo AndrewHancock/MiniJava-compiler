@@ -1,6 +1,6 @@
 package syntaxtree;
-import visitor.Visitor;
-import visitor.TypeVisitor;
+import syntaxtree.visitor.TypeVisitor;
+import syntaxtree.visitor.Visitor;
 
 public class ClassDeclSimple extends ClassDecl {
   public Identifier i;

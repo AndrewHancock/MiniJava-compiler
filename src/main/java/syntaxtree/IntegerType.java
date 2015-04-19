@@ -1,6 +1,6 @@
 package syntaxtree;
-import visitor.Visitor;
-import visitor.TypeVisitor;
+import syntaxtree.visitor.TypeVisitor;
+import syntaxtree.visitor.Visitor;
 
 public class IntegerType extends Type {
   public void accept(Visitor v) {

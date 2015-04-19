@@ -1,6 +1,6 @@
 package syntaxtree;
-import visitor.Visitor;
-import visitor.TypeVisitor;
+import syntaxtree.visitor.TypeVisitor;
+import syntaxtree.visitor.Visitor;
 
 public class IdentifierType extends Type {
   public String s;

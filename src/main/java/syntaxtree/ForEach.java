@@ -1,7 +1,7 @@
 package syntaxtree;
 
-import visitor.TypeVisitor;
-import visitor.Visitor;
+import syntaxtree.visitor.TypeVisitor;
+import syntaxtree.visitor.Visitor;
 
 public class ForEach extends Statement
 {

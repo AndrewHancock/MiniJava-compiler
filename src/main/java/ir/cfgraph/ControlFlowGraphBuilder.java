@@ -32,7 +32,7 @@ public class ControlFlowGraphBuilder
 		Map<String, LinearCodePoint> labelMap = getLabelMap(statements);
 
 		CodePoint entryPoint = null;
-		LinearCodePoint currentNode = null;
+		LinearCodePoint previousNode = null;
 		BranchCodePoint incompleteBranch = null;
 
 		for (Statement statement : statements)
@@ -40,7 +40,7 @@ public class ControlFlowGraphBuilder
 
 			if (statement instanceof Label)
 			{
-				currentNode = labelMap.get(((Label) statement).getLabel());
+				previousNode = labelMap.get(((Label) statement).getLabel());
 			}
 			else
 			{
@@ -68,12 +68,12 @@ public class ControlFlowGraphBuilder
 						newLinearNode.addParent(incompleteBranch);
 						incompleteBranch = null;
 					}
-					else if (currentNode != null)
+					else if (previousNode != null)
 					{
-						newLinearNode.addParent(currentNode);
-						currentNode.setSuccessor(newNode);						
+						newLinearNode.addParent(previousNode);
+						previousNode.setSuccessor(newNode);						
 					}
-					currentNode = newLinearNode;
+					previousNode = newLinearNode;
 					newNode = newLinearNode;
 				}
 

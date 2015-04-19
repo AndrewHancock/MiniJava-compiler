@@ -6,12 +6,12 @@ public class StackOffset extends Value
 	
 	public StackOffset(int stackOffset)
 	{
-		this.stackOffset = stackOffset;
+		super(stackOffset);
 	}
 
 	public int getStackOffset()
 	{
-		return stackOffset;
+		return getValue();
 	}
 	
 	@Override
