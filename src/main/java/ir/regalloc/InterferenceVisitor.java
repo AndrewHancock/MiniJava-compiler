@@ -2,57 +2,61 @@ package ir.regalloc;
 
 import ir.cfgraph.BottomUpVisitor;
 import ir.cfgraph.BranchCodePoint;
-import ir.cfgraph.CodePoint;
 import ir.cfgraph.LinearCodePoint;
 
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
 
 public class InterferenceVisitor extends BottomUpVisitor
 {
-	private class Node
-	{
-		HashSet<Node> neighbors = new HashSet<Node>();
-	}
 
-	private Node[] nodes;
+	private InterferenceGraph graph = new InterferenceGraph();
 	
-	public void clear()
+	public InterferenceVisitor()
 	{
-		nodes = null;
+				
 	}
 	
-	private void updateGraph(CodePoint codePoint)
+	public void setTemporaryCount(int temporaryCount)
 	{
-		BitSet liveness = codePoint.getLiveness();
-		if(nodes == null)
-			nodes = new Node[liveness.size()];
-
-		for(int i = 0; i < liveness.size(); i++)
+		
+	}
+	
+	private HashSet<Integer> liveSet = new HashSet<Integer>();
+	private void handleLivenessSet(BitSet liveness)
+	{				
+		for(int i = 0; i < liveness.size() - 1; i++ )
 		{
 			if(liveness.get(i))
-			{
-				Node node = nodes[i];
-				if(node == null)					
-					node = nodes[i] = new Node();
-				
-			}
-			
+				liveSet.add(i);			
 		}
-
+		
+		for(Integer index: liveSet)
+		{
+			graph.addNode(index);
+			for(Integer neighbor : liveSet)
+			{
+				graph.addEdge(index, neighbor);				
+			}
+		}
 	}
+	
 	@Override
 	public void visit(BranchCodePoint codePoint)
 	{
+		handleLivenessSet(codePoint.getLiveness());
 		super.visit(codePoint);
 	}
 
 	@Override
 	public void visit(LinearCodePoint codePoint)
 	{
+		handleLivenessSet(codePoint.getLiveness());
 		super.visit(codePoint);
-
 	}
-
+	
+	public InterferenceGraph getInterferenceGraph()
+	{
+		return graph;
+	}
 }

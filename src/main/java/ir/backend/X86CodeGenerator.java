@@ -38,13 +38,9 @@ public class X86CodeGenerator implements IrVisitor
 	private String[] registers = { "rcx", "rdx", "r8", "r9", "r10", "r11", "r12",
 			"r13", "r14", "r15" };
 
-	public X86CodeGenerator(PrintStream out,
-			Collection<RecordDeclaration> recordTypes)
+	public X86CodeGenerator(PrintStream out)
 	{
 		this.out = out;
-		for (RecordDeclaration recordDecl : recordTypes)
-			recordMap
-					.put(recordDecl.getNamespace() + recordDecl.getId(), recordDecl);
 	}
 
 	private void emit(String text)

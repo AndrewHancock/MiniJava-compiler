@@ -1,22 +1,23 @@
 package ir.regalloc;
 
+import ir.cfgraph.BottomUpVisitor;
 import ir.cfgraph.BranchCodePoint;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.LinearCodePoint;
-import ir.cfgraph.Visitor;
 import ir.ops.FunctionDeclaration;
 import ir.ops.Statement;
 
 import java.util.BitSet;
-import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-public class LivenessVisitor implements Visitor
+public class LivenessVisitor extends BottomUpVisitor
 {		
-	private FunctionDeclaration func;
 	
-	public void setFunctionDeclaration(FunctionDeclaration func)
+	int nodeCount;
+	public void setNodeCount(int count)
 	{
-		this.func = func;
+		nodeCount = count;
 	}
 
 	private int getIdentifierIndex(String id)
@@ -49,45 +50,24 @@ public class LivenessVisitor implements Visitor
 			liveness.set(getIdentifierIndex(liveId));
 		for(String deadId : statementVisitor.getDeadSet())
 			liveness.clear(getIdentifierIndex(deadId));
-	}
-	
+	}	
 	
 	protected void joinCallback(CodePoint codePoint)
 	{
 		previousLivenessFlags = codePoint.getLiveness();
-	}
-	
+	}	
 	
 	@Override
 	public void visit(LinearCodePoint codePoint)
 	{	
 		setLivenessFlag(codePoint.getStatement(), codePoint);
-		for(CodePoint parent : codePoint.getParents())
-		{
-			previousLivenessFlags = codePoint.getLiveness();
-			parent.accept(this);			
-		}
-	}
+		super.visit(codePoint);
+	}	
 	
-	private HashSet<BranchCodePoint> incompleteBranchSet = new HashSet<BranchCodePoint>();
 	@Override
 	public void visit(BranchCodePoint codePoint)
 	{	
 		setLivenessFlag(codePoint.getCondition(), codePoint);
-		// A branch is always visited twice - once from the "taken" edge,
-		// and once from the "not taken edge." The parents are only visited
-		// after both branches have joined.
-		if(! incompleteBranchSet.remove(codePoint))
-		{
-			incompleteBranchSet.add(codePoint);			
-		}
-		else
-		{
-			for(CodePoint parent : codePoint.getParents())
-			{
-				previousLivenessFlags = codePoint.getLiveness();
-				parent.accept(this);
-			}
-		}		
+		super.visit(codePoint);		
 	}
 }

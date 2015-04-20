@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class ControlFlowGraphBuilder
 {
-	private Map<String, LinearCodePoint> getLabelMap(List<Statement> statements)
+	private static Map<String, LinearCodePoint> getLabelMap(List<Statement> statements)
 	{
 		Map<String, LinearCodePoint> labelMap = new HashMap<String, LinearCodePoint>();
 
@@ -26,7 +26,7 @@ public class ControlFlowGraphBuilder
 		return labelMap;
 	}
 
-	public CodePoint getCfg(List<Statement> statements)
+	public static FlowGraph getCfg(List<Statement> statements)
 	{
 
 		Map<String, LinearCodePoint> labelMap = getLabelMap(statements);
@@ -79,9 +79,8 @@ public class ControlFlowGraphBuilder
 
 				if (entryPoint == null)
 					entryPoint = newNode;
-
 			}
 		}
-		return null;
+		return new FlowGraph(entryPoint, previousNode);
 	}
 }
