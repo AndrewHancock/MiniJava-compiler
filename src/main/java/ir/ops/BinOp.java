@@ -8,9 +8,7 @@ public class BinOp implements Expression
 	{
 		ADD,
 		SUBTRACT,
-		MULT,
-		AND,
-		OR
+		MULT
 	}
 	private Op op;	
 	private Expression src1;
@@ -41,5 +39,25 @@ public class BinOp implements Expression
 	public void accept(IrVisitor visitor)
 	{
 		visitor.visit(this);
+	}
+	
+	@Override
+	public String toString()
+	{
+		String result = src1.toString();
+		switch(op)
+		{
+		case ADD:
+			result += " + ";
+			break;
+		case SUBTRACT:
+			result += " - ";
+			break;
+		case MULT:
+			result += " * ";
+			break;
+		}
+		
+		return result + src2.toString();
 	}
 }

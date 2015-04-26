@@ -36,7 +36,8 @@ public class StringVisitor implements IrVisitor
 	@Override
 	public void visit(FunctionDeclaration f)
 	{
-		out.println("\n.namespace " + f.getNamespace() + " " + f.getId() + ":");
+		out.println("");
+		out.println(".namespace " + f.getNamespace() + " " + f.getId() + ":");
 		out.println("Locals: ");
 		for (Identifier value : f.getLocals())
 		{
@@ -78,12 +79,6 @@ public class StringVisitor implements IrVisitor
 			break;
 		case MULT:
 			op = " * ";
-			break;
-		case AND:
-			op = " & ";
-			break;
-		case OR:
-			op = " | ";
 			break;
 		default:
 			throw new RuntimeException("Unrecognized operation.");
@@ -247,14 +242,14 @@ public class StringVisitor implements IrVisitor
 	public void visit(Label label)
 	{
 		out.unindent();
-		out.print(label.getLabel());
+		out.print(label.getLabel() + ":");
 		out.indent();
 	}
 
 	@Override
 	public void visit(Jump j)
 	{
-		out.print("jump " + j.getLabel());		
+		out.print("jump " + j.getLabel().getLabel());		
 	}
 
 }

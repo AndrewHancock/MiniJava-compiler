@@ -21,4 +21,10 @@ public class Jump implements Statement
 	{
 		visitor.visit(this);		
 	}
+	
+	@Override
+	public String toString()
+	{
+		return "jump " + label.getLabel();
+	}
 }

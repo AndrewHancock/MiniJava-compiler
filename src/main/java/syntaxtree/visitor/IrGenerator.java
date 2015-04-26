@@ -96,9 +96,9 @@ public class IrGenerator extends DepthFirstVisitor
 		String tempName;
 		do
 		{
-			tempName = "t" + tempCounter;
+			tempName = "t" + tempCounter++;
 		} 
-		while (!currentLocals.containsKey(tempName));
+		while (currentLocals.containsKey(tempName));
 		Identifier temp = new Identifier(tempName);
 		currentFunction.getTemporaries().add(new Identifier(tempName));
 		return temp;
@@ -106,8 +106,8 @@ public class IrGenerator extends DepthFirstVisitor
 
 	public void visit(MainClass m)
 	{
-
-		currentFunction = new FunctionDeclaration("", "main");
+		tempCounter = 0;
+		currentFunction = new FunctionDeclaration(m.i1.s, "main");
 		m.s.accept(this);
 		functionDeclarations.add(currentFunction);
 	}
@@ -117,6 +117,7 @@ public class IrGenerator extends DepthFirstVisitor
 	@Override
 	public void visit(MethodDecl d)
 	{
+		tempCounter = 0;
 		currentMethod = currentClass.getMethod(d.i.s);
 
 		currentLocals.clear();

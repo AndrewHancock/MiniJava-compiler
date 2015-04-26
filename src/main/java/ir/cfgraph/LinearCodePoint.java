@@ -2,6 +2,7 @@ package ir.cfgraph;
 
 import ir.cfgraph.CodePoint;
 import ir.ops.Statement;
+import ir.regalloc.LivenessVisitor;
 
 public class LinearCodePoint extends CodePoint
 {
@@ -32,5 +33,11 @@ public class LinearCodePoint extends CodePoint
 	public void accept(Visitor v)
 	{
 		v.visit(this);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return statement.toString() + " -  " + liveSet.toString();
 	}
 }

@@ -21,4 +21,11 @@ public class Label implements Statement
 	{
 		return label;
 	}
+	
+	@Override
+	public String toString()
+	{
+		return label + ":";
+	}
+
 }

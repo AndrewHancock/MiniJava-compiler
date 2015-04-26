@@ -153,8 +153,8 @@ public class StatementVisitor implements IrVisitor
 	@Override
 	public void visit(SysCall s)
 	{
-		for(Expression id : s.getParameters())
-			s.accept(this);
+		for(Expression param : s.getParameters())
+			param.accept(this);
 	}
 
 	public HashSet<String> getLiveSet()

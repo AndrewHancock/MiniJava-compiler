@@ -37,5 +37,24 @@ public class Call implements Expression
 	{
 		visitor.visit(this);		
 	}
+	
+	@Override 
+	public String toString()
+	{
+		String paramList = "";
+		boolean first = true;
+		for(Expression param : parameters)
+		{
+			if(!first)
+			{
+				paramList += ", ";
+			}
+			else
+				first = false;
+			paramList += param.toString();
+			
+		}
+		return namespace + "." + id + "(" + paramList + ")";
+	}
 
 }

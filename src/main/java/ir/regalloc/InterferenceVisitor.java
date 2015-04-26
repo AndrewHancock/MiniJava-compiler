@@ -4,7 +4,6 @@ import ir.cfgraph.BottomUpVisitor;
 import ir.cfgraph.BranchCodePoint;
 import ir.cfgraph.LinearCodePoint;
 
-import java.util.BitSet;
 import java.util.HashSet;
 
 public class InterferenceVisitor extends BottomUpVisitor
@@ -16,27 +15,16 @@ public class InterferenceVisitor extends BottomUpVisitor
 	{
 				
 	}
-	
-	public void setTemporaryCount(int temporaryCount)
-	{
-		
-	}
-	
-	private HashSet<Integer> liveSet = new HashSet<Integer>();
-	private void handleLivenessSet(BitSet liveness)
+
+	private void handleLivenessSet(HashSet<String> liveSet)
 	{				
-		for(int i = 0; i < liveness.size() - 1; i++ )
-		{
-			if(liveness.get(i))
-				liveSet.add(i);			
-		}
-		
-		for(Integer index: liveSet)
-		{
-			graph.addNode(index);
-			for(Integer neighbor : liveSet)
-			{
-				graph.addEdge(index, neighbor);				
+		for(String label: liveSet)
+		{			
+			graph.addOrGetNode(label);
+			for(String neighbor : liveSet)
+			{				
+				if(!label.equals(neighbor))
+					graph.addEdge(label, neighbor);				
 			}
 		}
 	}
@@ -44,14 +32,14 @@ public class InterferenceVisitor extends BottomUpVisitor
 	@Override
 	public void visit(BranchCodePoint codePoint)
 	{
-		handleLivenessSet(codePoint.getLiveness());
+		handleLivenessSet(codePoint.getLiveSet());
 		super.visit(codePoint);
 	}
 
 	@Override
 	public void visit(LinearCodePoint codePoint)
 	{
-		handleLivenessSet(codePoint.getLiveness());
+		handleLivenessSet(codePoint.getLiveSet());
 		super.visit(codePoint);
 	}
 	

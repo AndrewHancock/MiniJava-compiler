@@ -17,4 +17,10 @@ public class Identifier implements Expression
 	{
 		visitor.visit(this);
 	}
+	
+	@Override
+	public String toString()
+	{
+		return id;
+	}
 }

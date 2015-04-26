@@ -1,14 +1,13 @@
 package ir.regalloc;
 
-import ir.backend.Location;
 import ir.cfgraph.ControlFlowGraphBuilder;
 import ir.cfgraph.FlowGraph;
 import ir.ops.FunctionDeclaration;
 import ir.ops.Identifier;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -16,65 +15,95 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 
-public class GraphColorAllocator
+public class GraphColorAllocator implements RegisterAllocator
 {
-	public Map<Identifier, Location> allocateRegisters(FunctionDeclaration func,
+	final static int WORD_SIZE = 8;
+	private int stackSlots;
+	private int spilled;
+	
+	public Map<String, Value> allocateRegisters(FunctionDeclaration func,
 			int k)
 	{
-		LivenessVisitor livenessVisitor = new LivenessVisitor();
-		InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
-
-		FlowGraph flowGraph = ControlFlowGraphBuilder.getCfg(func.getStatements());
-
-		livenessVisitor.setFunctionDeclaration(func);
-		flowGraph.getExit().accept(livenessVisitor);
-
-		int tempCount = func.getLocals().size() + func.getTemporaries().size();
-		interferenceVisitor.setTemporaryCount(tempCount);
-		flowGraph.getExit().accept(interferenceVisitor);
-
-		InterferenceGraph graph = interferenceVisitor.getInterferenceGraph();
-
-		Stack<Entry<Integer, Set<Integer>>> nodeStack = new Stack<Entry<Integer, Set<Integer>>>();
-		Set<Entry<Integer, Set<Integer>>> spillCandidates = new HashSet<Entry<Integer, Set<Integer>>>();
-		List<Entry<Integer, Set<Integer>>> sortedSpillCandidates = new ArrayList<Entry<Integer, Set<Integer>>>();
+		stackSlots = 0;
+		spilled = 0;
+		FlowGraph cfg = ControlFlowGraphBuilder.getCfg(func.getStatements());
+		LivenessVisitor liveness = new LivenessVisitor();
+		
+		HashSet<String> ids = new HashSet<String>();
+		for(Identifier id : func.getLocals())
+			ids.add(id.getId());
+		for(Identifier id : func.getTemporaries())
+			ids.add(id.getId());
+		for(Identifier id : func.getParams())
+			liveness.addIgnoredId(id.getId());
+		
+				
+		HashSet<String> spillCandidates = new HashSet<String>();
+		Stack<String> removedNodes = new Stack<String>();
+		Map<String, Value> allocationMap = new HashMap<String, Value>();		
 		do
 		{
-			List<Entry<Integer, Set<Integer>>> nodeList = graph.getEntryList();
-			Collections.sort(nodeList,
-					new Comparator<Entry<Integer, Set<Integer>>>()
+			spillCandidates.clear();
+			removedNodes.clear();
+			cfg.getExit().accept(liveness);
+			InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
+			cfg.getExit().accept(interferenceVisitor);
+			
+			InterferenceGraph graph = interferenceVisitor.getInterferenceGraph();
+			List<Entry<String, Set<String>>> graphEntries = graph.getEntryList();
+			Collections.sort(graphEntries, new Comparator<Entry<String, Set<String>>>()
 					{
 						@Override
-						public int compare(Entry<Integer, Set<Integer>> o1,
-								Entry<Integer, Set<Integer>> o2)
+						public int compare(Entry<String, Set<String>> o1,
+								Entry<String, Set<String>> o2)
 						{
-							return o1.getKey() - o2.getKey();
+					
+							return o1.getValue().size() - o2.getValue().size();
 						}
-					});
-
-			for (Entry<Integer, Set<Integer>> node : graph.getEntryList())
-			{
-				nodeStack.add(node);
-				graph.removeNode(node.getKey());
-
-				if (k >= node.getValue().size())
-					spillCandidates.add(node);
-			}
-			if (!spillCandidates.isEmpty())
-			{
-				Collections.sort(nodeList,
-						new Comparator<Entry<Integer, Set<Integer>>>()
-						{
-							@Override
-							public int compare(Entry<Integer, Set<Integer>> o1,
-									Entry<Integer, Set<Integer>> o2)
-							{
-								return o2.getKey() - o1.getKey();
-							}
-						});
 				
+					});
+			
+			for(Entry<String, Set<String>> entry : graphEntries)
+			{
+				removedNodes.add(entry.getKey());
+				ids.remove(entry.getKey());
+				if(entry.getValue().size() >= k)
+				{
+					spillCandidates.add(entry.getKey());					
+				}					
 			}
+			
+			if(!spillCandidates.isEmpty())
+			{
+				String removeId = graphEntries.get(graphEntries.size() -1 ).getKey();
+				allocationMap.put(removeId, new StackOffset(stackSlots++ * WORD_SIZE));
+				liveness.addIgnoredId(removeId);	
+				spilled++;
+			}
+			else
+			{
+				int i = 0;
+				for(String id : removedNodes)
+				{
+					allocationMap.put(id, new Register(i++));
+					if(i == k)
+						i = 0;
+				}
+			}
+		}
+		while(!spillCandidates.isEmpty());
+		return allocationMap;
+	}
 
-		} while (!spillCandidates.isEmpty());
+	@Override
+	public int getStackSize()
+	{ 
+		return stackSlots * WORD_SIZE;
+	}
+
+	@Override
+	public int getSpillCount()
+	{
+		return spilled;
 	}
 }

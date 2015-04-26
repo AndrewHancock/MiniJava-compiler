@@ -18,7 +18,12 @@ public class Return implements Statement
 	@Override
 	public void accept(IrVisitor visitor)
 	{
-		visitor.visit(this);
-		
+		visitor.visit(this);		
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "return " + operand.toString();
 	}
 }

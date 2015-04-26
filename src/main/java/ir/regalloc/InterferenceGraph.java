@@ -1,10 +1,8 @@
 package ir.regalloc;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,15 +10,21 @@ import java.util.Set;
 
 public class InterferenceGraph
 {
-	private Map<Integer, Set<Integer>> nodes = new HashMap<Integer, Set<Integer>>();
-	public void addNode(int label)
+	private Map<String, Set<String>> nodes = new HashMap<String, Set<String>>();
+	public Set<String> addOrGetNode(String label)
 	{
-		nodes.put(label, new HashSet<Integer>());
+		Set<String> node = nodes.get(label);
+		if(node == null)			
+		{
+			node = new HashSet<String>();
+			nodes.put(label, node);
+		}
+		return node;
 	}
 	
-	public void removeNode(int label)
+	public void removeNode(String label)
 	{
-		for(Entry<Integer, Set<Integer>> entry : nodes.entrySet())
+		for(Entry<String, Set<String>> entry : nodes.entrySet())
 		{
 			if(entry.getKey() != label)
 				entry.getValue().remove(label);
@@ -28,15 +32,16 @@ public class InterferenceGraph
 		nodes.remove(label);		
 	}
 	
-	public void addEdge(int srcLabel, int destLabel)
+	public void addEdge(String srcLabel, String destLabel)
 	{
-		nodes.get(srcLabel).add(destLabel);
-		nodes.get(destLabel).add(srcLabel);
+		
+		addOrGetNode(srcLabel).add(destLabel);
+		addOrGetNode(destLabel).add(srcLabel);
 	}
 		
-	public List<Entry<Integer, Set<Integer>>> getEntryList()
+	public List<Entry<String, Set<String>>> getEntryList()
 	{
-		List<Entry<Integer, Set<Integer>>> entryList = new ArrayList<Entry<Integer, Set<Integer>>>();
+		List<Entry<String, Set<String>>> entryList = new ArrayList<Entry<String, Set<String>>>();
 		entryList.addAll(nodes.entrySet());
 		return entryList;
 	}

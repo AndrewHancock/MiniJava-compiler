@@ -29,4 +29,10 @@ public class ConditionalJump implements Statement
 		visitor.visit(this);
 		
 	}
+	
+	@Override
+	public String toString()
+	{
+		return "jump if " + condition.toString() + " to " + label.getLabel();
+	}
 }

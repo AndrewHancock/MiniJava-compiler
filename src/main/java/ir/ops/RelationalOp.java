@@ -41,5 +41,25 @@ public class RelationalOp implements Expression
 	{
 		visitor.visit(this);		
 	}
+	
+	@Override
+	public String toString()
+	{
+		String result = src1.toString();
+		switch(op)
+		{
+		case LTE:
+			result += " <= ";
+			break;
+		case LT:
+			result += " < ";
+			break;
+		case EQ:
+			result += " == ";
+			break;
+		}
+		
+		return result + src2.toString();
+	}
 
 }

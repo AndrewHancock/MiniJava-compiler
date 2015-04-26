@@ -28,4 +28,10 @@ public class Assignment implements Statement
 	{
 		return dest;
 	}	
+	
+	@Override
+	public String toString()
+	{
+		return dest.toString() + " := " + src.toString();
+	}
 }

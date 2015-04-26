@@ -10,7 +10,6 @@ import ir.ops.ConditionalJump;
 import ir.ops.Expression;
 import ir.ops.FunctionDeclaration;
 import ir.ops.Identifier;
-import ir.ops.IntegerLiteral;
 import ir.ops.Jump;
 import ir.ops.Label;
 import ir.ops.RecordAccess;
@@ -20,23 +19,31 @@ import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.Statement;
 import ir.ops.SysCall;
+import ir.regalloc.GraphColorAllocator;
+import ir.regalloc.Register;
 import ir.regalloc.RegisterAllocator;
+import ir.regalloc.StackOffset;
 import ir.regalloc.Value;
 import ir.visitor.IrVisitor;
 
 import java.io.PrintStream;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Stack;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class X86CodeGenerator implements IrVisitor
 {
 	private PrintStream out;
 	private HashMap<String, RecordDeclaration> recordMap = new HashMap<String, RecordDeclaration>();
 
-	private String[] registers = { "rcx", "rdx", "r8", "r9", "r10", "r11", "r12",
-			"r13", "r14", "r15" };
+	private final int WORD_SIZE = 8;
+
+	private String[] callParamRegisters = { "rcx", "rdx", "r8", "r9" };
+	private String[] calleeSaveRegisters = { "r12", "r13",
+			"r14", "r15", "rdi", "rsi" };
+	private String[] callerSaveRegisters = { "r10", "r11" };
+	private String[] reservedRegisters = { "rax", "rbx" };
 
 	public X86CodeGenerator(PrintStream out)
 	{
@@ -83,33 +90,144 @@ public class X86CodeGenerator implements IrVisitor
 	}
 
 	private boolean startFrame;
-	private FunctionDeclaration currentFunction;
-	private RegisterAllocator allocator = new RegisterAllocator(registers.length);
+	private RegisterAllocator allocator = new GraphColorAllocator();
+	private Map<String, Value> idToValueMapping = new HashMap<String, Value>();
+	private Map<Value, String> valueToIdMapping = new HashMap<Value, String>();
+
+	private void allocateRegisters(FunctionDeclaration f)
+	{
+		Map<String, Value> callerSavedAllocation = allocator.allocateRegisters(f,
+				callerSaveRegisters.length);
+		if (allocator.getSpillCount() == 0)
+		{
+			idToValueMapping = callerSavedAllocation;
+		}
+		else
+		{
+			idToValueMapping = allocator.allocateRegisters(f,
+					calleeSaveRegisters.length + callerSaveRegisters.length);
+		}
+		assignInputParameters(f.getParams());
+		for (Entry<String, Value> entry : idToValueMapping.entrySet())
+		{
+			valueToIdMapping.put(entry.getValue(), entry.getKey());
+		}
+	}
+
+	private void assignInputParameters(List<Identifier> params)
+	{
+		int paramCount = 0;
+		for (paramCount = 0; paramCount < params.size() 
+				&& paramCount < callParamRegisters.length; paramCount++)
+		{
+			idToValueMapping.put(params.get(paramCount).getId(), new Register(
+					callerSaveRegisters.length + calleeSaveRegisters.length + paramCount));
+		}
+
+		for (; paramCount < params.size() - 1; paramCount++)
+		{
+			idToValueMapping.put(params.get(paramCount).getId(), new StackOffset(
+					paramCount * WORD_SIZE + 16));
+		}
+	}
+
+	private String valueString(String id)
+	{
+		Value value = idToValueMapping.get(id);
+		return valueString(value);
+	}
+
+	public String valueString(Value value)
+	{
+		if (value instanceof StackOffset)
+			return "-" + ((StackOffset) value).getStackOffset() + "(%rsp)";
+		else if (value instanceof RegisterDereference)
+		{
+			return "(%"
+					+ reservedRegisters[((RegisterDereference) value)
+							.getRegisterIndex()] + ")";
+		}
+		else if (value instanceof IntegerLiteral)
+		{
+			return "$" + ((IntegerLiteral) value).getValue();
+		}
+		else
+		{
+			int registerOffset = ((Register) value).getRegisterIndex();
+			if (registerOffset < callerSaveRegisters.length)
+				return "%" + callerSaveRegisters[registerOffset];
+			else if (registerOffset < calleeSaveRegisters.length)
+				return "%" + calleeSaveRegisters[registerOffset - callerSaveRegisters.length];
+			else
+				return "%" + callParamRegisters[registerOffset - callerSaveRegisters.length - calleeSaveRegisters.length];
+		}
+	}
+
+	public String idString(Value value)
+	{
+		if (value instanceof IntegerLiteral)
+		{
+			return Integer.toString(((IntegerLiteral) value).getValue());
+		}
+		if (value instanceof RegisterDereference)
+		{
+			return " value at address of "
+					+ reservedRegisters[((RegisterDereference) value)
+							.getRegisterIndex()];
+		}
+		else
+			return valueToIdMapping.get(value);
+
+	}
+
+	private void emitFunctionHeader(FunctionDeclaration f)
+	{
+		emitComment("Function: " + f.getNamespace() + "." + f.getId());
+		emitComment("");
+		emitComment("Register and Stack Allocation:");
+
+		for (Identifier id : f.getParams())
+		{
+			if (idToValueMapping.containsKey(id.getId()))
+				emitComment(valueString(id.getId()) + " - " + id.getId());
+		}
+
+		for (Identifier id : f.getLocals())
+		{
+			if (idToValueMapping.containsKey(id.getId()))
+				emitComment(valueString(id.getId()) + " - " + id.getId());
+			else
+				emitComment("Unused - " + id.getId());
+		}
+		for (Identifier id : f.getTemporaries())
+		{
+			if (idToValueMapping.containsKey(id.getId()))
+				emitComment(valueString(id.getId()) + " - " + id.getId());
+			else
+				emitComment("Unused - " + id.getId());
+		}
+
+	}
 
 	@Override
 	public void visit(FunctionDeclaration f)
 	{
-		allocator.clear();
 		if (!startFrame)
 		{
 			startFrame = true;
 			initFile(f.getId());
 		}
-
 		out.println();
+		allocateRegisters(f);
+		emitFunctionHeader(f);
 		String nameNames = f.getNamespace() + "_";
 		emitLabel(nameNames + f.getId());
 		emit("pushl %rbp");
 		emit("movl %rsp, %rbp");
-		currentFunction = f;
 
-		for (Identifier id : f.getLocals())
-			allocator.addIdentifier(id.getId());
-		for (Identifier id : f.getTemporaries())
-			allocator.addIdentifier(id.getId());
-
-		emit("subl $" + allocator.getStackSize() + " , %rsp",
-				"Reserve spsace for locals and temporaries.");
+		if (allocator.getStackSize() > 0)
+			emit("subl $" + allocator.getStackSize() + " , %rsp",
+					"Reserve spsace for locals and temporaries.");
 
 		for (Statement statement : f.getStatements())
 			statement.accept(this);
@@ -117,6 +235,115 @@ public class X86CodeGenerator implements IrVisitor
 		emit("leave");
 		emit("ret");
 		out.println();
+	}
+
+	private Value dest;
+
+	@Override
+	public void visit(Assignment assignment)
+	{
+		assignment.getDest().accept(this);
+		dest = currentValue;
+		assignment.getSrc().accept(this);
+		dest = null;
+	}
+
+	private void assignCallParameters(List<Expression> params, int startingRegister)
+	{
+		int paramCount = 0;
+		for (paramCount = 0; paramCount < params.size() - 1
+				&& paramCount < callParamRegisters.length - startingRegister; paramCount++)
+		{
+			params.get(paramCount).accept(this);
+			emit("movq " + valueString(currentValue) + ","
+					+ callParamRegisters[startingRegister + paramCount],
+					"Assign parameteter " + idString(currentValue)
+							+ " to param register "
+							+ (startingRegister + paramCount));
+		}
+
+		for (; paramCount < params.size() - 1; paramCount++)
+		{
+			params.get(paramCount).accept(this);
+			emit("pushq " + valueString(currentValue), "Save parameter "
+					+ idString(currentValue) + " to the stack");
+
+		}
+	}
+
+	private void restoreParameters(List<Expression> params, int startingRegister)
+	{
+
+		if (params.size() > callParamRegisters.length)
+		{
+			int callStackUsage = (params.size() - callParamRegisters.length)
+					* WORD_SIZE;
+			emit("addq $" + callStackUsage + ", %rsp", "Clean up parameter stack");
+
+		}
+		int paramCount = 0;
+		for (paramCount = 0; paramCount < params.size() - 1
+				&& paramCount < callParamRegisters.length - startingRegister; paramCount++)
+		{
+			params.get(paramCount).accept(this);
+			emit("movq " + valueString(currentValue) + ","
+					+ callParamRegisters[paramCount + startingRegister],
+					"Assign parameteter " + idString(currentValue)
+							+ " to param register "
+							+ (paramCount + startingRegister));
+		}
+
+	}
+
+	@Override
+	public void visit(Call call)
+	{
+		emitComment("Begin call " + call.getId());
+		assignCallParameters(call.getParameters(), 0);
+		emit("call " + call.getNamespace() + "_" + call.getId());
+		restoreParameters(call.getParameters(), 0);
+		if (dest != null)
+			emit("movq %rax, " + valueString(dest), "Assign return value to "
+					+ idString(dest));
+		emitComment("End call " + call.getId());
+	}
+
+	@Override
+	public void visit(SysCall call)
+	{
+		emitComment("Begin " + call.getId());
+
+		emit("movq $print_num, " + callParamRegisters[0],
+				"Move address of string '%d ' to param register 1");
+
+		if (call.getId().equals("print") || call.getId().equals("println"))
+		{
+			assignCallParameters(call.getParameters(), 1);
+			emit("call _printf");
+		}
+
+		if (call.getId().equals("println"))
+		{
+			emitComment("Print new line");
+			emit("pushl $newline");
+			emit("call _printf");
+		}
+		restoreParameters(call.getParameters(), 1);
+		emitComment("End " + call.getId());
+	}
+
+	private Value currentValue;
+
+	@Override
+	public void visit(Identifier i)
+	{
+		currentValue = idToValueMapping.get(i.getId());
+	}
+
+	@Override
+	public void visit(ir.ops.IntegerLiteral l)
+	{
+		currentValue = new IntegerLiteral(l.getValue());
 	}
 
 	private String getOpOpcode(BinOp.Op op)
@@ -143,132 +370,56 @@ public class X86CodeGenerator implements IrVisitor
 			Value left = currentValue;
 			b.getSrc2().accept(this);
 			Value right = currentValue;
-			emit("movl " + right + " ,  %rax");
-			emit(getOpOpcode(b.getOp()) + " " + left + ", %rax");
+
+			emit("movl " + valueString(left) + " , " + valueString(dest),
+					"Moving " + valueToIdMapping.get(left) + " to "
+							+ valueToIdMapping.get(dest));
+
+			emit(getOpOpcode(b.getOp()) + valueString(right) + " "
+					+ valueString(left), "BinOp on " + valueToIdMapping.get(left)
+					+ " and " + valueToIdMapping.get(right));
 		}
-	}
-
-	@Override
-	public void visit(Call call)
-	{
-		for (int i = call.getParameters().size() - 1; i >= 0; i--)
-			call.getParameters().get(i).accept(this);
-
-		emit("call " + call.getNamespace() + "_" + call.getId());
-		int paramSize = call.getParameters().size() * 4;
-		if (paramSize > 0)
-			emit("addl $" + paramSize + ", %esp   # Clean up parameters from call");
-		emit("push %eax  #Store results of call onto stack");
-	}
-
-	@Override
-	public void visit(SysCall call)
-	{
-		if (call.getId().equals("print") || call.getId().equals("println"))
-		{
-			for (Expression param : call.getParameters())
-			{
-				param.accept(this);
-				emit("pushl $print_num");
-				emit("call _printf");
-				emit("addl $8, %esp   # Pop _printf params off of stack");
-			}
-		}
-
-		// Note: Leave the return value on the stack
-		if (call.getId().equals("println"))
-		{
-			emitComment("Print new line");
-			emit("pushl $newline");
-			emit("call _printf");
-			emitComment("End println");
-		}
-
-	}
-
-	private int getIdByIndex(List<Identifier> ids, String id)
-	{
-		int result = -1;
-		for (int i = 0; i < ids.size(); i++)
-			if (ids.get(i).getId().equals(id))
-				result = i;
-		return result;
-	}
-
-	private int getIdentifierStackOffset(String id)
-	{
-		int paramIndex;
-		int localIndex;
-		int tempIndex;
-		if ((paramIndex = getIdByIndex(currentFunction.getParams(), id)) >= 0)
-		{
-			return 4 * paramIndex + 8;
-		}
-		else if ((localIndex = getIdByIndex(currentFunction.getLocals(), id)) >= 0)
-		{
-			return -(4 * localIndex + 4);
-		}
-		else if ((tempIndex = getIdByIndex(currentFunction.getTemporaries(), id)) >= 0)
-		{
-			return -(tempIndex * 4 + currentFunction.getLocals().size() * 4 + 4);
-		}
-		else
-			return -1;
-
-	}
-
-	private boolean rValue = true;
-	private Value currentValue;
-
-	@Override
-	public void visit(Identifier i)
-	{
-		currentValue = allocator.getValueForIdentifier(i.getId());
-	}
-
-	@Override
-	public void visit(IntegerLiteral l)
-	{
-		emit("pushl $" + l.getValue());
 	}
 
 	@Override
 	public void visit(ArrayAccess a)
 	{
-		boolean currentRValue = rValue;
 		emitComment("Access an array element");
-		rValue = true;
 		a.getReference().accept(this);
-
-		emit("popl %ebx   #Load array reference");
-		rValue = true;
+		emit("movq " + valueString(currentValue) + ", %rax", "Load array reference");
 		a.getIndex().accept(this);
-		rValue = currentRValue;
-		emit("popl %eax   #Load array index");
-		emit("imul $4, %eax");
-		emit("addl %ebx, %eax");
-		if (rValue)
-			emit("push (%eax)    # Store contents of value at offset onto stack");
+		emit("movq " + valueString(currentValue) + ", %rbx", "Load array index");
+		emit("leaq 0(,%rbx,4), %rbx", "Compute offset and store to %rbx");
+		emit("addq %rbx, %rax");
+		if (dest != null)
+			emit("movq (%eax), " + valueString(dest), "Assign array element to "
+					+ idString(dest));
 		else
-		{
-			rValue = true;
-			emit("push %eax");
-		}
+			currentValue = new RegisterDereference(0);
 	}
 
 	@Override
 	public void visit(ArrayAllocation n)
 	{
+		out.println();
 		emitComment("Allocate new array");
 		n.getSize().accept(this);
-		emit("pop %eax");
-		emit("mov %eax, %ebx", "Save size before _malloc call");
-		emit("imull $4, %eax");
-		emit("addl $4, %eax", "Request 4 additional bytes for size");
-		emit("push %eax");
+		emit("movq " + valueString(currentValue) + ", " + callParamRegisters[0],
+				"Load size from " + idString(currentValue) + " to param register 1");
+		emit("movq " + callParamRegisters[0] + ", " + reservedRegisters[0],
+				"Save size before _malloc call to reserved register");
+		emit("qmull $" + WORD_SIZE + ", " + callParamRegisters[0],
+				"Multiply number of elements by WORD_SIZE");
+		emit("addq $" + WORD_SIZE + ", " + callParamRegisters[0],
+				"Request WORD_SIZE additional bytes to store size");
 		emit("call _malloc");
-		emit("mov %ebx, (%eax)", "Store array length at zeroth location");
-		emit("push %eax");
+		emit("movq " + reservedRegisters[0] + ", (%rax)",
+				"Store array length at zeroth location");
+		if (dest != null)
+			emit("movq %rax, " + valueString(dest), "Assign new array to "
+					+ idString(dest));
+		emitComment("End array allocation");
+		out.println();
 	}
 
 	@Override
@@ -280,33 +431,19 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(RecordAccess r)
 	{
-		int offset = (r.getFieldIndex() * 4);
-		boolean isRValue = rValue;
-		rValue = true;
-		r.getIdentifier().accept(this);
-		rValue = isRValue;
-		emit("pop %esi");
-		if (rValue)
-			emit("push " + offset + "(%esi)");
-		else
-		{
-			if (offset > 0)
-				emit("addl $" + offset + ", %esi");
-			emit("push %esi");
-			rValue = true;
-		}
-	}
+		int offset = (r.getFieldIndex() * WORD_SIZE);
 
-	@Override
-	public void visit(Assignment assignment)
-	{
-		rValue = true;
-		assignment.getSrc().accept(this);
-		rValue = false;
-		assignment.getDest().accept(this);
-		emit("pop %eax");
-		emit("pop %ebx");
-		emit("movl %ebx, (%eax)");
+		out.println();
+		emitComment("Record Acccess");
+		r.getIdentifier().accept(this);
+		emit("movq " + valueString(currentValue) + ", " + reservedRegisters[0],
+				"Move address of record to reserved register 1");
+		if (offset > 0)
+			emit("addq " + offset + ", " + reservedRegisters[0],
+					"Add field offset to record address");
+		currentValue = new RegisterDereference(0);
+		emitComment("End record access");
+		out.println();
 	}
 
 	@Override
@@ -315,22 +452,23 @@ public class X86CodeGenerator implements IrVisitor
 		RecordDeclaration decl = recordMap.get(a.getNamespace() + a.getTypeId());
 		if (decl.getFieldCount() > 0)
 		{
-			emit("push $" + (decl.getFieldCount() * 4)
-					+ "     # Push object size onto stack");
+			emitComment("Record allocation");
+			emit("movq $" + (decl.getFieldCount() * WORD_SIZE) + ", "
+					+ callParamRegisters[0]);
 			emit("call _malloc");
-			emit("addl $4, %esp");
-			emit("push %eax");
+			if (dest != null)
+				emit("movq %rax, " + valueString(dest),
+						"Assign address of record to " + idString(dest));
+			emitComment("End record allocation");
 		}
-		else
-			emit("push $0      # Push placeholder address onto stack");
 	}
 
 	@Override
 	public void visit(Return r)
 	{
-		rValue = true;
 		r.getSource().accept(this);
-		emit("popl %eax", "Pop return value");
+		emit("moveq " + valueString(currentValue) + ", %rax", "Move "
+				+ idString(currentValue) + " to result register");
 	}
 
 	private String getJumpInstruction(RelationalOp.Op op)
@@ -355,16 +493,28 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		int relationalCount = this.relationalCount++;
 		r.getSrc1().accept(this);
+		Value leftOperand = currentValue;
 		r.getSrc2().accept(this);
-		emit("Popl %ebx", "Pop second operand");
-		emit("popl %eax", "Pop first operand");
-		emit("cmp %ebx, %eax", "Compare operands");
+		Value rightOperand = currentValue;
+		emit("cmp " + valueString(rightOperand) + ", " + valueString(leftOperand),
+				"Compare operand " + idString(leftOperand) + " and "
+						+ idString(rightOperand));
 		emit(getJumpInstruction(r.getOp()) + " relational_true_" + relationalCount);
 		emitLabel("relational_false_" + relationalCount);
-		emit("pushl $0");
+		if (dest != null)
+			emit("movq $0, " + valueString(dest), "Assigning 'false' to "
+					+ idString(dest));
+		else
+			emit("movq $0, " + reservedRegisters[0],
+					"Moving 'false' to reserved register 1.");
 		emit("jmp relational_end_" + relationalCount);
 		emitLabel("relational_true_" + relationalCount);
-		emit("pushl $1");
+		if (dest != null)
+			emit("movq $1, " + valueString(dest), "Assigning 'true' to "
+					+ idString(dest));
+		else
+			emit("movq $1, " + reservedRegisters[0],
+					"Moving 'true' to reserved register 1.");
 		emitLabel("relational_end_" + relationalCount);
 	}
 
@@ -372,12 +522,8 @@ public class X86CodeGenerator implements IrVisitor
 	public void visit(ArrayLength a)
 	{
 		a.getExpression().accept(this);
-		emit("popl %eax");
-		emit("pushl (%eax)");
+		currentValue = new RegisterDereference(0);
 	}
-
-
-
 
 	@Override
 	public void visit(Label label)
@@ -389,8 +535,8 @@ public class X86CodeGenerator implements IrVisitor
 	public void visit(ConditionalJump j)
 	{
 		j.getCondition().accept(this);
-		emit("pop %ebx", "Pop result of condition");
-		emit("cmp $1, %ebx");
+		emit("cmp $1, " + valueString(currentValue), "Compare 'true' to "
+				+ idString(currentValue));
 		emit("je " + j.getLabel().getLabel());
 	}
 
@@ -399,7 +545,5 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		emit("jmp " + j.getLabel().getLabel(), "Uncondintional jump to "
 				+ j.getLabel().toString());
-
 	}
-
 }

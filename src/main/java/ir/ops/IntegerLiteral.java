@@ -13,4 +13,10 @@ public class IntegerLiteral implements Expression
 	{
 		visitor.visit(this);
 	}
+	
+	@Override
+	public String toString()
+	{
+		return Integer.toString(value);
+	}
 }

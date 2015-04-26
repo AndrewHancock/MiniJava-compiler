@@ -4,57 +4,43 @@ import ir.cfgraph.BottomUpVisitor;
 import ir.cfgraph.BranchCodePoint;
 import ir.cfgraph.CodePoint;
 import ir.cfgraph.LinearCodePoint;
-import ir.ops.FunctionDeclaration;
 import ir.ops.Statement;
 
-import java.util.BitSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.HashSet;
 
 public class LivenessVisitor extends BottomUpVisitor
-{		
+{	
+	private HashSet<String> ignoreIds = new HashSet<String>();
 	
-	int nodeCount;
-	public void setNodeCount(int count)
+	public void addIgnoredId(String id)
 	{
-		nodeCount = count;
-	}
-
-	private int getIdentifierIndex(String id)
-	{
-		for(int i = 0; i < func.getLocals().size(); i++)
-			if(func.getLocals().get(i).equals(id))
-				return i;
-		
-		for(int i = func.getLocals().size(); i < func.getTemporaries().size(); i++)
-			if(func.getTemporaries().get(i).equals(id))
-				return i;
-	
-		throw new RuntimeException("Invalid identifier.");
+		ignoreIds.add(id);
 	}
 	
 	private StatementVisitor statementVisitor = new StatementVisitor();
-	private BitSet previousLivenessFlags;
+	private HashSet<String> previousLivenessFlags;
 	private void setLivenessFlag(Statement statement, CodePoint codePoint)
 	{
 		statementVisitor.clear();
 		statement.accept(statementVisitor);
-		BitSet liveness = codePoint.getLiveness();
+		HashSet<String> liveSet = codePoint.getLiveSet();
 		
 		if(previousLivenessFlags != null)
 		{
-			liveness.or(previousLivenessFlags);
-		}		
+			liveSet.addAll(previousLivenessFlags);
+		}
 		
 		for(String liveId : statementVisitor.getLiveSet())
-			liveness.set(getIdentifierIndex(liveId));
+			if(!ignoreIds.contains(liveId))
+				liveSet.add(liveId);
 		for(String deadId : statementVisitor.getDeadSet())
-			liveness.clear(getIdentifierIndex(deadId));
+			liveSet.remove(deadId);
 	}	
 	
-	protected void joinCallback(CodePoint codePoint)
+	@Override
+	protected void beforeParent(CodePoint codePoint)
 	{
-		previousLivenessFlags = codePoint.getLiveness();
+		previousLivenessFlags = codePoint.getLiveSet();
 	}	
 	
 	@Override

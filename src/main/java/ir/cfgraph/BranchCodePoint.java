@@ -43,4 +43,10 @@ public class BranchCodePoint extends CodePoint
 	{
 		v.visit(this);
 	}
+	
+	@Override
+	public String toString()
+	{
+		return condition.toString() + " - " + liveSet.toString();
+	}
 }

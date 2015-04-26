@@ -1,6 +1,7 @@
 package ir.cfgraph;
 
 import ir.ops.ConditionalJump;
+import ir.ops.Jump;
 import ir.ops.Label;
 import ir.ops.Statement;
 
@@ -28,7 +29,6 @@ public class ControlFlowGraphBuilder
 
 	public static FlowGraph getCfg(List<Statement> statements)
 	{
-
 		Map<String, LinearCodePoint> labelMap = getLabelMap(statements);
 
 		CodePoint entryPoint = null;
@@ -37,10 +37,15 @@ public class ControlFlowGraphBuilder
 
 		for (Statement statement : statements)
 		{
-
-			if (statement instanceof Label)
+			if(statement instanceof Label)
 			{
-				previousNode = labelMap.get(((Label) statement).getLabel());
+				LinearCodePoint label = labelMap.get(((Label) statement).getLabel());
+				if(previousNode != null)
+				{
+					previousNode.setSuccessor(label);
+					label.addParent(previousNode);					
+				}
+				previousNode = label;
 			}
 			else
 			{
@@ -50,13 +55,23 @@ public class ControlFlowGraphBuilder
 					BranchCodePoint newBranch = new BranchCodePoint(
 							(ConditionalJump) statement);
 					CodePoint targetLabel = labelMap
-							.get(((ConditionalJump) statement).getLabel());
+							.get(((ConditionalJump) statement).getLabel().getLabel());
 					newBranch.setTakenSuccessor(targetLabel);
 					targetLabel.addParent(newBranch);
 					newNode = newBranch;
 					if (incompleteBranch != null)
+					{
+						newBranch.addParent(incompleteBranch);
 						incompleteBranch.setNotTakenSuccessor(newBranch);
+					}
+					else if(previousNode != null)
+					{
+						newBranch.addParent(previousNode);
+						previousNode.setSuccessor(newBranch);
+						previousNode = null;
+					}
 					incompleteBranch = newBranch;
+					
 				}
 				else
 				{
@@ -64,16 +79,26 @@ public class ControlFlowGraphBuilder
 
 					if (incompleteBranch != null)
 					{
-						incompleteBranch.setNotTakenSuccessor(newNode);
 						newLinearNode.addParent(incompleteBranch);
+						incompleteBranch.setNotTakenSuccessor(newLinearNode);						
 						incompleteBranch = null;
 					}
 					else if (previousNode != null)
 					{
 						newLinearNode.addParent(previousNode);
-						previousNode.setSuccessor(newNode);						
+						previousNode.setSuccessor(newLinearNode);						
 					}
-					previousNode = newLinearNode;
+					
+					if(statement instanceof Jump)
+					{
+						CodePoint targetLabel = labelMap
+								.get(((Jump) statement).getLabel().getLabel());
+						targetLabel.addParent(newLinearNode);
+						newLinearNode.setSuccessor(targetLabel);
+						previousNode = null;
+					}
+					else
+						previousNode = newLinearNode;
 					newNode = newLinearNode;
 				}
 

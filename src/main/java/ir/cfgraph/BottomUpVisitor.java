@@ -1,6 +1,8 @@
 package ir.cfgraph;
 
 
+import ir.ops.Jump;
+
 import java.util.HashSet;
 
 public abstract class BottomUpVisitor implements Visitor
@@ -12,37 +14,31 @@ public abstract class BottomUpVisitor implements Visitor
 	}
 	
 	private void handleCodepoint(CodePoint codePoint)
-	{
-		boolean first = true;
+	{		
 		for(CodePoint parent : codePoint.getParents())
 		{
-			parent.accept(this);
-			
-			if (first)
+			if(!visited.contains(parent))
 			{
-				first = false;
-			}
-			else
-			{
-				joinCallback(codePoint);
+				beforeParent(codePoint);
+				parent.accept(this);
 			}
 		}
 	}
 	
-	protected void joinCallback(CodePoint codePoint)
+	protected void beforeParent(CodePoint codePoint)
 	{
 		
 	}
 	
 	public void visit(BranchCodePoint codePoint)
 	{
-		visited.add(codePoint);
 		handleCodepoint(codePoint);
 	}
 	
 	public void visit(LinearCodePoint codePoint)
 	{
-		visited.add(codePoint);
+		if(codePoint.getStatement() instanceof Jump)
+			visited.add(codePoint);
 		handleCodepoint(codePoint);
 	}
 }
