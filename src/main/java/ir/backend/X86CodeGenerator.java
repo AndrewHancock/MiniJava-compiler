@@ -45,17 +45,17 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		return registers.valueString(id);
 	}
-	
+
 	private String valueString(Value v)
 	{
 		return registers.valueString(v);
 	}
-	
+
 	private String idString(Value value)
 	{
 		return registers.idString(value);
 	}
-		
+
 	private void emit(String text)
 	{
 		out.println("\t" + text);
@@ -77,7 +77,7 @@ public class X86CodeGenerator implements IrVisitor
 	}
 
 	private void initFile(String startFrameId)
-	{		
+	{
 		emitComment("General constants used for output");
 		emitLabel("print_num");
 		emit(".ascii \"%d \\0\"");
@@ -127,11 +127,11 @@ public class X86CodeGenerator implements IrVisitor
 		}
 
 	}
-	
+
 	public void emitPrologue(FunctionDeclaration f)
 	{
 		out.println("");
-		emitComment("Begin prologue");		
+		emitComment("Begin prologue");
 	}
 
 	@Override
@@ -140,21 +140,21 @@ public class X86CodeGenerator implements IrVisitor
 		if (!startFrame)
 		{
 			startFrame = true;
-			initFile(f.getId());
+			initFile(f.getNamespace() + "_" + f.getId());
 		}
 		out.println();
-		registers.init(f);		
+		registers.init(f);
 		emitFunctionComment(f);
-		
+
 		String nameNames = f.getNamespace() + "_";
 		emitLabel(nameNames + f.getId());
 		emit("pushq %rbp");
-		emit("movq %rsp, %rbp");		
+		emit("movq %rsp, %rbp");
 
 		if (allocator.getStackSize() > 0)
 			emit("subl $" + allocator.getStackSize() + " , %rsp",
 					"Reserve spsace for locals and temporaries.");
-		
+
 		emitPrologue(f);
 
 		for (Statement statement : f.getStatements())
@@ -301,13 +301,12 @@ public class X86CodeGenerator implements IrVisitor
 			b.getSrc2().accept(this);
 			Value right = currentValue;
 
-			emit("movq " + valueString(left) + " , " + valueString(dest),
-					"Moving " + valueString(left) + " to "
-							+ valueString(dest));
+			emit("movq " + valueString(left) + " , " + valueString(dest), "Moving "
+					+ valueString(left) + " to " + valueString(dest));
 
-			emit(getOpOpcode(b.getOp()) + " " +  valueString(right) + ", "
-					+ valueString(dest), "BinOp on " + idString(left)
-					+ " and " + idString(right));
+			emit(getOpOpcode(b.getOp()) + " " + valueString(right) + ", "
+					+ valueString(dest), "BinOp on " + idString(left) + " and "
+					+ idString(right));
 		}
 	}
 
@@ -465,9 +464,9 @@ public class X86CodeGenerator implements IrVisitor
 	public void visit(ConditionalJump j)
 	{
 		j.getCondition().accept(this);
-		if(currentValue instanceof IntegerLiteral )
+		if (currentValue instanceof IntegerLiteral)
 		{
-			
+
 		}
 		else
 		{
