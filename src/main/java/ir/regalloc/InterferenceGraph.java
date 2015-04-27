@@ -11,6 +11,12 @@ import java.util.Set;
 public class InterferenceGraph
 {
 	private Map<String, Set<String>> nodes = new HashMap<String, Set<String>>();
+	
+	public void clear()
+	{
+		nodes.clear();
+	}
+	
 	public Set<String> addOrGetNode(String label)
 	{
 		Set<String> node = nodes.get(label);

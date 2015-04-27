@@ -38,6 +38,6 @@ public class LinearCodePoint extends CodePoint
 	@Override
 	public String toString()
 	{
-		return statement.toString() + " -  " + liveSet.toString();
+		return statement.toString();
 	}
 }

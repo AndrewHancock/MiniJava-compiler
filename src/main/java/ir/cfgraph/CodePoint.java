@@ -8,8 +8,7 @@ import java.util.HashSet;
 
 public abstract class CodePoint
 {
-	private Collection<CodePoint> parents = new ArrayList<CodePoint>();
-	protected HashSet<String> liveSet = new  HashSet<String>();
+	private Collection<CodePoint> parents = new ArrayList<CodePoint>();	
 	
 	public Collection<CodePoint> getParents()
 	{
@@ -21,10 +20,5 @@ public abstract class CodePoint
 		parents.add(parent);
 	}
 	
-	public abstract void accept(Visitor v);
-	
-	public HashSet<String> getLiveSet()
-	{
-		return liveSet;
-	}
+	public abstract void accept(Visitor v);	
 }

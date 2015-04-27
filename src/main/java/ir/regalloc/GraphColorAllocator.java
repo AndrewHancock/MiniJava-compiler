@@ -20,12 +20,14 @@ public class GraphColorAllocator implements RegisterAllocator
 	final static int WORD_SIZE = 8;
 	private int stackSlots;
 	private int spilled;
+	private int registerCount;
 	
 	public Map<String, Value> allocateRegisters(FunctionDeclaration func,
 			int k)
 	{
 		stackSlots = 0;
 		spilled = 0;
+		
 		FlowGraph cfg = ControlFlowGraphBuilder.getCfg(func.getStatements());
 		LivenessVisitor liveness = new LivenessVisitor();
 		
@@ -40,14 +42,21 @@ public class GraphColorAllocator implements RegisterAllocator
 				
 		HashSet<String> spillCandidates = new HashSet<String>();
 		Stack<String> removedNodes = new Stack<String>();
-		Map<String, Value> allocationMap = new HashMap<String, Value>();		
+		Map<String, Value> allocationMap = new HashMap<String, Value>();
+		InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
 		do
 		{
+			registerCount = 0;
 			spillCandidates.clear();
 			removedNodes.clear();
+			liveness.clear();
+			interferenceVisitor.clear();
 			cfg.getExit().accept(liveness);
-			InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
+			
+			interferenceVisitor.clear();
+			interferenceVisitor.setLivenessMap(liveness.getLivenessMap());			
 			cfg.getExit().accept(interferenceVisitor);
+			
 			
 			InterferenceGraph graph = interferenceVisitor.getInterferenceGraph();
 			List<Entry<String, Set<String>>> graphEntries = graph.getEntryList();
@@ -88,6 +97,8 @@ public class GraphColorAllocator implements RegisterAllocator
 					allocationMap.put(id, new Register(i++));
 					if(i == k)
 						i = 0;
+					if( i > registerCount)
+						registerCount = i;
 				}
 			}
 		}
@@ -105,5 +116,11 @@ public class GraphColorAllocator implements RegisterAllocator
 	public int getSpillCount()
 	{
 		return spilled;
+	}
+
+	@Override
+	public int getNumRegistersUsed()
+	{
+		return registerCount;
 	}
 }

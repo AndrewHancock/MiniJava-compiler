@@ -6,24 +6,36 @@ import ir.cfgraph.CodePoint;
 import ir.cfgraph.LinearCodePoint;
 import ir.ops.Statement;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class LivenessVisitor extends BottomUpVisitor
 {	
 	private HashSet<String> ignoreIds = new HashSet<String>();
+	private Map<CodePoint, Set<String>> livenessMap = new HashMap<CodePoint, Set<String>>();
 	
 	public void addIgnoredId(String id)
 	{
 		ignoreIds.add(id);
+		livenessMap = new HashMap<CodePoint, Set<String>>();
+		previousLivenessFlags = null;
 	}
 	
 	private StatementVisitor statementVisitor = new StatementVisitor();
-	private HashSet<String> previousLivenessFlags;
+	private Set<String> previousLivenessFlags;
 	private void setLivenessFlag(Statement statement, CodePoint codePoint)
 	{
-		statementVisitor.clear();
+		statementVisitor.clear();		
 		statement.accept(statementVisitor);
-		HashSet<String> liveSet = codePoint.getLiveSet();
+		
+		Set<String> liveSet = livenessMap.get(codePoint);
+		if(liveSet == null)
+		{
+			liveSet = new HashSet<String>();
+			livenessMap.put(codePoint, liveSet);
+		}
 		
 		if(previousLivenessFlags != null)
 		{
@@ -37,10 +49,14 @@ public class LivenessVisitor extends BottomUpVisitor
 			liveSet.remove(deadId);
 	}	
 	
+	public Map<CodePoint, Set<String>> getLivenessMap()
+	{
+		return livenessMap;
+	}
 	@Override
 	protected void beforeParent(CodePoint codePoint)
 	{
-		previousLivenessFlags = codePoint.getLiveSet();
+		previousLivenessFlags = livenessMap.get(codePoint);
 	}	
 	
 	@Override

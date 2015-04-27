@@ -9,5 +9,5 @@ public interface RegisterAllocator
 	Map<String, Value> allocateRegisters(FunctionDeclaration func, int k);
 	int getStackSize();
 	int getSpillCount();
-	
+	int getNumRegistersUsed();	
 }

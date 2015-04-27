@@ -252,7 +252,9 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(NewArray a)
 	{
 		a.e.accept(this);
-		currentOperand = new ir.ops.ArrayAllocation(DataType.INT, currentOperand);
+		Identifier dest = getNewTemporary(); 
+		addStatement(new Assignment(new ir.ops.ArrayAllocation(DataType.INT, currentOperand), dest));
+		currentOperand = dest;
 	}
 
 	@Override
@@ -399,8 +401,10 @@ public class IrGenerator extends DepthFirstVisitor
 			if (result.type() instanceof IdentifierType)
 				currentClassName = ((IdentifierType) result.type()).s;
 
-			currentOperand = new RecordAccess("minijava", currentClass.getId(),
-					new Identifier("this"), result.getMemoryOffset());
+			Identifier dest = getNewTemporary();
+			addStatement(new Assignment(new RecordAccess("minijava", currentClass.getId(),
+					new Identifier("this"), result.getMemoryOffset()), dest));
+			currentOperand = dest;
 		}
 
 	}

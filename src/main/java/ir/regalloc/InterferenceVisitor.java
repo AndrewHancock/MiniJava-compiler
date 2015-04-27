@@ -2,21 +2,37 @@ package ir.regalloc;
 
 import ir.cfgraph.BottomUpVisitor;
 import ir.cfgraph.BranchCodePoint;
+import ir.cfgraph.CodePoint;
 import ir.cfgraph.LinearCodePoint;
 
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class InterferenceVisitor extends BottomUpVisitor
 {
 
 	private InterferenceGraph graph = new InterferenceGraph();
-	
+	private Map<CodePoint, Set<String>>livenessMap; 
 	public InterferenceVisitor()
 	{
 				
 	}
+	
+	@Override
+	public void clear()
+	{
+		super.clear();
+		graph.clear();		
+	}
+	
+	
+	public void setLivenessMap(Map<CodePoint, Set<String>> livenessMap)
+	{
+		this.livenessMap = livenessMap;
+	}
 
-	private void handleLivenessSet(HashSet<String> liveSet)
+	private void handleLivenessSet(Set<String> liveSet)
 	{				
 		for(String label: liveSet)
 		{			
@@ -32,14 +48,14 @@ public class InterferenceVisitor extends BottomUpVisitor
 	@Override
 	public void visit(BranchCodePoint codePoint)
 	{
-		handleLivenessSet(codePoint.getLiveSet());
+		handleLivenessSet(livenessMap.get(codePoint));
 		super.visit(codePoint);
 	}
 
 	@Override
 	public void visit(LinearCodePoint codePoint)
 	{
-		handleLivenessSet(codePoint.getLiveSet());
+		handleLivenessSet(livenessMap.get(codePoint));
 		super.visit(codePoint);
 	}
 	
