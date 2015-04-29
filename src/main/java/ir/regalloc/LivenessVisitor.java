@@ -14,17 +14,15 @@ import java.util.Set;
 public class LivenessVisitor extends BottomUpVisitor
 {	
 	private Map<CodePoint, Set<String>> livenessMap = new HashMap<CodePoint, Set<String>>();
-
+	private Set<String> previousLivenessFlags = new HashSet<String>(); 
 	@Override
 	public void clear()
 	{
 		super.clear();
-		livenessMap.clear();
+		livenessMap.clear();		
 	}
 
 	private StatementVisitor statementVisitor = new StatementVisitor();
-	private Set<String> previousLivenessFlags;
-
 	private void setLivenessFlag(Statement statement, CodePoint codePoint)
 	{
 		statementVisitor.clear();
@@ -37,15 +35,17 @@ public class LivenessVisitor extends BottomUpVisitor
 			livenessMap.put(codePoint, liveSet);
 		}
 
-		if (previousLivenessFlags != null)
+		if (!previousLivenessFlags.isEmpty())
 		{
 			liveSet.addAll(previousLivenessFlags);
-		}
+			previousLivenessFlags.clear();
+		}		
 
 		for (String liveId : statementVisitor.getLiveSet())
 			liveSet.add(liveId);
-		for (String deadId : statementVisitor.getDeadSet())
-			liveSet.remove(deadId);
+		previousLivenessFlags.addAll(liveSet);
+		for (String deadId : statementVisitor.getDeadSet())		
+			previousLivenessFlags.remove(deadId); // Dead propegate up
 	}
 
 	public Map<CodePoint, Set<String>> getLivenessMap()

@@ -19,6 +19,7 @@ import ir.ops.RelationalOp;
 import ir.ops.Return;
 import ir.ops.Statement;
 import ir.ops.SysCall;
+import ir.regalloc.StackOffset;
 import ir.regalloc.Value;
 import ir.visitor.IrVisitor;
 
@@ -141,7 +142,7 @@ public class X86CodeGenerator implements IrVisitor
 	}
 
 	public void emitEpilogue(FunctionDeclaration f)
-	{		
+	{
 		for (int i = registers.getAllocator().getNumRegistersUsed()
 				- registers.getCallerSavedCount() - 1; i >= 0; i--)
 		{
@@ -192,7 +193,8 @@ public class X86CodeGenerator implements IrVisitor
 	public void visit(Assignment assignment)
 	{
 		emitComment(assignment.toString());
-		if (assignment.getDest() instanceof RecordAccess || assignment.getDest() instanceof ArrayAccess)
+		if (assignment.getDest() instanceof RecordAccess
+				|| assignment.getDest() instanceof ArrayAccess)
 		{
 			assignment.getSrc().accept(this);
 			src = currentValue;
@@ -226,7 +228,7 @@ public class X86CodeGenerator implements IrVisitor
 
 	private void restoreCallerSaveRegisters()
 	{
-		emit("addq $32, %rsp", "Clean up shadow stack space");		
+		emit("addq $32, %rsp", "Clean up shadow stack space");
 		for (int i = registers.getCallerSavedCount() - 1; i >= 0; i--)
 		{
 			emit("popq %" + registers.getCallerSavedReg(i),
@@ -303,7 +305,7 @@ public class X86CodeGenerator implements IrVisitor
 		}
 
 		if (call.getId().equals("println"))
-		{			
+		{
 			emit("movq $newline, %" + registers.getParamReg(0),
 					"Move address of string '\\n\\0' to param register 0");
 			emit("call printf", "Print new line");
@@ -316,13 +318,26 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(Identifier i)
 	{
+		Value src = registers.value(i.getId());
 		if (dest != null)
 		{
-			emit("movq " + valueString(i.getId()) + ", " + valueString(currentValue),
-					"Assign " + i.getId() + " to " + idString(currentValue));
+			if (dest instanceof StackOffset && src instanceof StackOffset)
+			{
+				emit("movq " + valueString(src) + ", %" + reservedRegisters[0],
+						"Move stack location to reserved register.");
+				emit("movq %" + reservedRegisters[0] + ", "
+						+ valueString(currentValue), "Assign reserved register to "
+						+ idString(currentValue));
+			}
+			else
+			{
+				emit("movq " + valueString(i.getId()) + ", "
+						+ valueString(currentValue), "Assign " + i.getId() + " to "
+						+ idString(currentValue));
+			}
 			dest = null;
 		}
-		currentValue = registers.value(i.getId());
+		currentValue = src;
 	}
 
 	@Override
@@ -386,17 +401,22 @@ public class X86CodeGenerator implements IrVisitor
 		Value assignTarget = dest;
 		dest = null;
 		a.getIndex().accept(this);
-		emit("movq " + valueString(currentValue) + ", %" + reservedRegisters[0], "Load array index to reserved register");
-		emit("imulq $" + registers.wordSize() + ", %" + reservedRegisters[0], "Multiply array index by WORD_SIZE");
-		emit("addq $" + registers.wordSize() + ", %" + reservedRegisters[0] , "Add WORD_SIZE to pointer to account for size word");
+		emit("movq " + valueString(currentValue) + ", %" + reservedRegisters[0],
+				"Load array index to reserved register");
+		emit("imulq $" + registers.wordSize() + ", %" + reservedRegisters[0],
+				"Multiply array index by WORD_SIZE");
+		emit("addq $" + registers.wordSize() + ", %" + reservedRegisters[0],
+				"Add WORD_SIZE to pointer to account for size word");
 		a.getReference().accept(this);
-		emit("addq " + valueString(currentValue) + ", %rax", "Add array address to offset");
-		
+		emit("addq " + valueString(currentValue) + ", %rax",
+				"Add array address to offset");
+
 		if (assignTarget != null)
 			emit("movq (%eax), " + valueString(assignTarget),
 					"Assign array element to " + idString(assignTarget));
 		else
-			emit("movq " + valueString(src) + ", (%rax)", "Assign " + idString(src) + " to array element.");
+			emit("movq " + valueString(src) + ", (%rax)", "Assign " + idString(src)
+					+ " to array element.");
 	}
 
 	@Override
