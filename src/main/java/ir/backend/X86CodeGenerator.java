@@ -468,6 +468,7 @@ public class X86CodeGenerator implements IrVisitor
 			emit("addq $" + offset + ", %" + reservedRegisters[0],
 					"Add field offset to record address");
 
+		
 		if (assignTarget != null)
 			emitMove("(%rax)", valueString(assignTarget), " Assign field to "
 					+ idString(assignTarget));
@@ -534,9 +535,18 @@ public class X86CodeGenerator implements IrVisitor
 		Value leftOperand = currentValue;
 		r.getSrc2().accept(this);
 		Value rightOperand = currentValue;
-		emit("cmp " + valueString(rightOperand) + ", " + valueString(leftOperand),
-				"Compare operand " + idString(leftOperand) + " and "
-						+ idString(rightOperand));
+		if(leftOperand instanceof StackOffset && rightOperand instanceof StackOffset)
+		{
+			emit("movq " + valueString(rightOperand) + ", %" + reservedRegisters[0], "Move operand to reserved register." );
+			emit("cmp %" + reservedRegisters[0] + ", " + valueString(leftOperand),
+					"Compare reserved register and "
+							+ idString(rightOperand));
+
+		}
+		else
+			emit("cmp " + valueString(rightOperand) + ", " + valueString(leftOperand),
+					"Compare operand " + idString(leftOperand) + " and "
+							+ idString(rightOperand));
 		emit(getJumpInstruction(r.getOp()) + " relational_true_" + relationalCount);
 		emitLabel("relational_false_" + relationalCount);
 		if (assignTarget != null)
