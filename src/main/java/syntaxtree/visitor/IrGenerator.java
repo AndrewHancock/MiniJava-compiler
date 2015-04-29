@@ -558,7 +558,8 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(ArrayLength l)
 	{
 		super.visit(l);
-		currentOperand = getNewTemporary();
-		addStatement(new Assignment(new ir.ops.ArrayLength(currentOperand), currentOperand));
+		Identifier dest = getNewTemporary();		
+		addStatement(new Assignment(new ir.ops.ArrayLength(currentOperand), dest));
+		currentOperand = dest;
 	}
 }

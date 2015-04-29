@@ -250,17 +250,22 @@ public class X86CodeGenerator implements IrVisitor
 	{
 
 		int paramCount = 0;
-		for (paramCount = 0; paramCount < params.size()
-				&& paramCount < registers.numCallParams() - startingRegister; paramCount++)
+		int maxParamRegister;
+		if(params.size() + startingRegister < registers.numCallParams())
+			maxParamRegister = params.size() + startingRegister -1;
+		else
+			maxParamRegister = registers.numCallParams() - 1;
+		
+		for (paramCount = maxParamRegister; paramCount >= startingRegister; paramCount--)
 		{
-			params.get(paramCount).accept(this);
+			params.get(paramCount -startingRegister).accept(this);
 			emit("movq " + valueString(currentValue) + ", %"
-					+ registers.getParamReg(startingRegister + paramCount),
+					+ registers.getParamReg(paramCount),
 					"Assign " + idString(currentValue) + " to param register "
-							+ (startingRegister + paramCount));
+							+ (paramCount));
 		}
 
-		for (; paramCount < params.size(); paramCount++)
+		for (paramCount = maxParamRegister + 1; paramCount < params.size(); paramCount++)
 		{
 			params.get(paramCount).accept(this);
 			emit("pushq " + valueString(currentValue), "Save parameter "
@@ -569,7 +574,14 @@ public class X86CodeGenerator implements IrVisitor
 	@Override
 	public void visit(ArrayLength a)
 	{
+		Value assignTarget = dest;
+		dest=null;		
 		a.getExpression().accept(this);
+		if(assignTarget != null)		
+		{
+			emitMove(valueString(currentValue), "%" + reservedRegisters[0], "Loading array reference into reserved register 0.");
+			emitMove("(%" + reservedRegisters[0] + ")", valueString(assignTarget), "Assign array length to " + idString(assignTarget));
+		}
 		currentValue = new RegisterDereference(0);
 	}
 

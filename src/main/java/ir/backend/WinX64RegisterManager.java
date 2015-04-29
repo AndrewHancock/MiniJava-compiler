@@ -73,7 +73,7 @@ public class WinX64RegisterManager
 	public String valueString(Value value)
 	{
 		if (value instanceof StackOffset)
-			return "-" + ((StackOffset) value).getStackOffset() + "(%rsp)";
+			return "-" + (((StackOffset) value).getStackOffset() + WORD_SIZE) + "(%rbp)";
 		else if (value instanceof RegisterDereference)
 		{
 			return "(%"
