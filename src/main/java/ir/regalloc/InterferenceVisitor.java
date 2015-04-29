@@ -23,7 +23,8 @@ public class InterferenceVisitor extends BottomUpVisitor
 	public void clear()
 	{
 		super.clear();
-		graph.clear();		
+		graph.clear();
+		livenessMap = null;
 	}
 	
 	

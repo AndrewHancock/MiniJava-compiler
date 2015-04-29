@@ -21,94 +21,120 @@ public class GraphColorAllocator implements RegisterAllocator
 	private int stackSlots;
 	private int spilled;
 	private int registerCount;
-	
-	public Map<String, Value> allocateRegisters(FunctionDeclaration func,
-			int k)
+
+	private LivenessVisitor liveness = new LivenessVisitor();
+	InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
+
+	public Map<String, Value> allocateRegisters(FunctionDeclaration func, int k)
 	{
 		stackSlots = 0;
 		spilled = 0;
-		
+
 		FlowGraph cfg = ControlFlowGraphBuilder.getCfg(func.getStatements());
-		LivenessVisitor liveness = new LivenessVisitor();
-		
-		HashSet<String> ids = new HashSet<String>();
-		for(Identifier id : func.getLocals())
-			ids.add(id.getId());
-		for(Identifier id : func.getTemporaries())
-			ids.add(id.getId());
-		for(Identifier id : func.getParams())
-			liveness.addIgnoredId(id.getId());
-		
-				
+		liveness.clear();
+		cfg.getExit().accept(liveness);
+		interferenceVisitor.clear();
+		interferenceVisitor.setLivenessMap(liveness.getLivenessMap());
+		cfg.getExit().accept(interferenceVisitor);
+		InterferenceGraph originalGraph = interferenceVisitor.getInterferenceGraph();
+		for(Identifier param : func.getParams())
+			originalGraph.removeNode(param.getId());
+
 		HashSet<String> spillCandidates = new HashSet<String>();
-		Stack<String> removedNodes = new Stack<String>();
+		Stack<String> stack = new Stack<String>();
 		Map<String, Value> allocationMap = new HashMap<String, Value>();
-		InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
+		Set<String> removedNodes = new HashSet<String>();
 		do
 		{
 			registerCount = 0;
 			spillCandidates.clear();
-			removedNodes.clear();
-			liveness.clear();
-			interferenceVisitor.clear();
-			cfg.getExit().accept(liveness);
-			
-			interferenceVisitor.clear();
-			interferenceVisitor.setLivenessMap(liveness.getLivenessMap());			
-			cfg.getExit().accept(interferenceVisitor);
-			
-			
-			InterferenceGraph graph = interferenceVisitor.getInterferenceGraph();
+			stack.clear();
+
+			InterferenceGraph graph = originalGraph.deepCopy();
+			for (String label : removedNodes)
+				graph.removeNode(label);
+
+			// Sort by number of neighbors, descending
 			List<Entry<String, Set<String>>> graphEntries = graph.getEntryList();
-			Collections.sort(graphEntries, new Comparator<Entry<String, Set<String>>>()
+			Collections.sort(graphEntries,
+					new Comparator<Entry<String, Set<String>>>()
 					{
 						@Override
 						public int compare(Entry<String, Set<String>> o1,
 								Entry<String, Set<String>> o2)
 						{
-					
-							return o1.getValue().size() - o2.getValue().size();
+
+							return o2.getValue().size() - o1.getValue().size();
 						}
-				
+
 					});
-			
-			for(Entry<String, Set<String>> entry : graphEntries)
+
+			for (Entry<String, Set<String>> entry : graphEntries)
 			{
-				removedNodes.add(entry.getKey());
-				ids.remove(entry.getKey());
-				if(entry.getValue().size() >= k)
+				stack.add(entry.getKey());
+				if (entry.getValue().size() >= k)
 				{
-					spillCandidates.add(entry.getKey());					
-				}					
+					spillCandidates.add(entry.getKey());
+				}
 			}
-			
-			if(!spillCandidates.isEmpty())
+
+			if (!spillCandidates.isEmpty())
 			{
-				String removeId = graphEntries.get(graphEntries.size() -1 ).getKey();
-				allocationMap.put(removeId, new StackOffset(stackSlots++ * WORD_SIZE));
-				liveness.addIgnoredId(removeId);	
+				int neighborCount = 0;
+				String removeLabel = null;
+				for(String candidate : spillCandidates)
+				{
+					if(graph.getNeighbors(candidate).size() > neighborCount)
+					{
+						removeLabel = candidate;
+						neighborCount = graph.getNeighbors(candidate).size();
+					}
+					
+				}
+				allocationMap.put(removeLabel,
+						new StackOffset(stackSlots++ * WORD_SIZE));
+				removedNodes.add(removeLabel);
 				spilled++;
 			}
 			else
 			{
-				int i = 0;
-				for(String id : removedNodes)
+				String nodeToColor = null;
+				while(!stack.isEmpty())
 				{
-					allocationMap.put(id, new Register(i++));
-					if(i == k)
-						i = 0;
-					if( i > registerCount)
-						registerCount = i;
+					nodeToColor = stack.pop();
+					int color = -1;
+					boolean sharesColor = false;
+					for (int i = 0; i < k; i++)					
+					{	
+						color = i;
+						for (String neighbor : originalGraph.getNeighbors(nodeToColor))
+						{
+							Value value = allocationMap.get(neighbor);
+							if(value instanceof Register && ((Register)value).getValue() == i)
+							{
+								sharesColor = true;
+								break;
+							}
+						}	
+						if(!sharesColor)
+							break;
+						sharesColor = false;
+					}
+					
+					if(!sharesColor)
+					{
+						allocationMap.put(nodeToColor, new Register(color));
+					}
+
 				}
 			}
-		}
-		while(!spillCandidates.isEmpty());
+		} while (!spillCandidates.isEmpty());
 		return allocationMap;
 	}
 
 	@Override
 	public int getStackSize()
-	{ 
+	{
 		return stackSlots * WORD_SIZE;
 	}
 

@@ -28,4 +28,9 @@ public class RecordAllocation implements Expression
 	{
 		return typeId;
 	}
+	
+	public String toString()
+	{
+		return "new " + namespace + "." + typeId;
+	}
 }

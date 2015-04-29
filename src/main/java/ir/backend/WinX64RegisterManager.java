@@ -137,6 +137,29 @@ public class WinX64RegisterManager
 	{
 		return idToValueMapping.get(id);
 	}
-
-
+	
+	public String getCalleeSavedReg(int i)
+	{
+		return calleeSaveRegisters[i];
+	}
+	
+	public int getCalleeSavedCount()
+	{
+		return calleeSaveRegisters.length;
+	}
+	
+	public int getCallerSavedCount()
+	{
+		return callerSaveRegisters.length;
+	}
+	
+	public String getCallerSavedReg(int i)
+	{
+		return callerSaveRegisters[i];
+	}
+	
+	public RegisterAllocator getAllocator()
+	{
+		return allocator;
+	}
 }

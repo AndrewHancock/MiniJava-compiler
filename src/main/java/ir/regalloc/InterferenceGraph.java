@@ -28,6 +28,11 @@ public class InterferenceGraph
 		return node;
 	}
 	
+	public Set<String> getNeighbors(String label)
+	{
+		return nodes.get(label);
+	}
+	
 	public void removeNode(String label)
 	{
 		for(Entry<String, Set<String>> entry : nodes.entrySet())
@@ -51,4 +56,31 @@ public class InterferenceGraph
 		entryList.addAll(nodes.entrySet());
 		return entryList;
 	}
+	
+	public InterferenceGraph deepCopy()
+	{
+		InterferenceGraph graph = new InterferenceGraph();
+		
+		for(Entry<String, Set<String>> entry : nodes.entrySet())
+		{
+			graph.addOrGetNode(entry.getKey());
+			for(String neighbor : entry.getValue())
+			graph.addEdge(entry.getKey(), neighbor);			
+		}
+		
+		return graph;
+	}
+	
+	@Override
+	public String toString()
+	{
+		String result = "";
+		for(Entry<String, Set<String>> entry : nodes.entrySet())
+		{
+			result += entry.getKey() + " = " + entry.getValue() + System.lineSeparator();			
+		}
+		return result;
+	}
+	
+	
 }

@@ -43,5 +43,10 @@ public class RecordAccess implements Expression
 	{
 		return typeName;
 	}
-
+	
+	@Override
+	public String toString()
+	{
+		return "(" + namespace + "." + typeName + ")" + identifier + "[" + recordIndex + "]";
+	}
 }

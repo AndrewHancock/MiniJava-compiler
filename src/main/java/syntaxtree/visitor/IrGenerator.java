@@ -264,8 +264,12 @@ public class IrGenerator extends DepthFirstVisitor
 		Expression array = currentOperand;
 		n.e2.accept(this);
 		Expression index = currentOperand;
-
-		currentOperand = new ArrayAccess(array, DataType.INT, index);
+		
+		Identifier idx = getNewTemporary();
+		addStatement(new Assignment(index, idx));
+		Identifier dest = getNewTemporary();
+		addStatement(new Assignment(new ArrayAccess(array, DataType.INT, idx), dest));
+		currentOperand = dest;
 	}
 
 	@Override
@@ -286,9 +290,15 @@ public class IrGenerator extends DepthFirstVisitor
 		a.e1.accept(this);
 		Expression index = currentOperand;
 		a.i.accept(this);
-		Expression dest = currentOperand;
+		Expression target = currentOperand;
 
-		addStatement(new Assignment(src, new ArrayAccess(dest, DataType.INT, index)));
+		Identifier idx = getNewTemporary();
+		addStatement(new Assignment(index, idx));
+		
+		Identifier temp = getNewTemporary();
+		addStatement(new Assignment(target, temp));
+		
+		addStatement(new Assignment(src, new ArrayAccess(temp, DataType.INT, idx)));
 	}
 
 	@Override
@@ -424,7 +434,7 @@ public class IrGenerator extends DepthFirstVisitor
 			currentClass.getVar(e.s).getMemoryOffset();
 			currentOperand = new RecordAccess("minijava", currentClass.getId(),
 					new Identifier("this"), currentClass.getVar(e.s)
-							.getMemoryOffset());
+							.getMemoryOffset());			
 		}
 	}
 
@@ -548,6 +558,7 @@ public class IrGenerator extends DepthFirstVisitor
 	public void visit(ArrayLength l)
 	{
 		super.visit(l);
-		currentOperand = new ir.ops.ArrayLength(currentOperand);
+		currentOperand = getNewTemporary();
+		addStatement(new Assignment(new ir.ops.ArrayLength(currentOperand), currentOperand));
 	}
 }

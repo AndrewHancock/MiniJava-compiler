@@ -36,4 +36,10 @@ public class ArrayAccess implements Expression
 	{
 		return index;
 	}
+	
+	@Override
+	public String toString()
+	{
+		return reference.toString() + "[" + index.toString() + "]";
+	}
 }

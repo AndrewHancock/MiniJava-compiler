@@ -10,6 +10,7 @@ public class ArrayLength implements Expression
 	{
 		this.id = id;
 	}
+	
 	@Override
 	public void accept(IrVisitor visitor)
 	{
@@ -19,5 +20,11 @@ public class ArrayLength implements Expression
 	public Expression getExpression()
 	{
 		return id;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return id + ".length";
 	}
 }

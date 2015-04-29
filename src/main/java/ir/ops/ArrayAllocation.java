@@ -24,4 +24,9 @@ public class ArrayAllocation implements Expression
 		return size;
 	}
 
+	@Override
+	public String toString()
+	{
+		return "new int[" + size + "]";
+	}
 }
