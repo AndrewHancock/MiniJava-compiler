@@ -2,7 +2,7 @@ package ir.backend;
 
 public abstract class Value
 {
-	private String str;
+	protected String str;
 	
 	public Value(String str)
 	{

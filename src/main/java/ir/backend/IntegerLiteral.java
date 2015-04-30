@@ -1,17 +1,17 @@
 package ir.backend;
 
-import ir.regalloc.Value;
 
 public class IntegerLiteral extends Value
 {
 
-	public IntegerLiteral(int value)
+	public IntegerLiteral(int i)
 	{
-		super(value);
+		super(Integer.toString(i));
 	}
 	
-	public int getValue()
+	@Override
+	public String toString()
 	{
-		return super.getValue();
+		return "$" + super.toString();
 	}
 }

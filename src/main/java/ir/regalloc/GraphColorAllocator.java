@@ -92,7 +92,7 @@ public class GraphColorAllocator implements RegisterAllocator
 					
 				}
 				allocationMap.put(removeLabel,
-						new StackOffset(stackSlots++ * WORD_SIZE));
+						new StackOffset(stackSlots++));
 				removedNodes.add(removeLabel);
 				spilled++;
 			}

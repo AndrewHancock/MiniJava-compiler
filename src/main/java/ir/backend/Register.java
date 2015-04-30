@@ -7,6 +7,11 @@ public class Register extends Value
 		super(str);		
 	}
 	
+	public Register(Register register)
+	{
+		super(register.str);
+	}
+	
 	@Override
 	public String toString()
 	{

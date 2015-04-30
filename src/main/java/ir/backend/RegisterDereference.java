@@ -1,12 +1,18 @@
 package ir.backend;
 
-import ir.regalloc.Register;
+
 
 public class RegisterDereference extends Register
 {
 
-	public RegisterDereference(int registerIndex)
+	public RegisterDereference(String str)
 	{
-		super(registerIndex);
+		super(str);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "(" + super.toString() + ")";
 	}
 }

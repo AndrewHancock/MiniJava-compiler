@@ -3,24 +3,22 @@ package ir.backend;
 import ir.ops.FunctionDeclaration;
 import ir.ops.Identifier;
 import ir.regalloc.GraphColorAllocator;
-import ir.regalloc.Register;
 import ir.regalloc.RegisterAllocator;
-import ir.regalloc.StackOffset;
-import ir.regalloc.Value;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class WinX64RegisterManager
+public class WinX64RegisterManager implements RegisterManager
 {
 	private final int WORD_SIZE = 8;
-	private final String[] callParamRegisters = { "rcx", "rdx", "r8", "r9" };
-	private final String[] calleeSaveRegisters = { "r12", "r13",
-			"r14", "r15", "rdi", "rsi" };
-	private final String[] callerSaveRegisters = { "r10", "r11" };
-	private final String[] reservedRegisters = { "rax", "rbx" };
+	private final Register[] callParamRegisters ={ new Register("rcx"), new Register("rdx"), new Register("r8"), new Register("r9") };
+	private final Register[] calleeSaveRegisters = { new Register("r12"), new Register("r13"),
+			new Register("r14"), new Register("r15"), new Register("rdi"), new Register("rsi") };
+	private final Register[] callerSaveRegisters = { new Register("r10"), new Register("r11") };
+	private final Register reservedRegister = new Register("rax");
+	
 	
 	private RegisterAllocator allocator = new GraphColorAllocator();
 	private Map<String, Value> idToValueMapping = new HashMap<String, Value>();
@@ -29,17 +27,16 @@ public class WinX64RegisterManager
 	
 	private void allocateRegisters(FunctionDeclaration f)
 	{
-		Map<String, Value> callerSavedAllocation = allocator.allocateRegisters(f,
-				callerSaveRegisters.length);
-		if (allocator.getSpillCount() == 0)
+		Map<String, ir.regalloc.Value> callerSavedAllocation = allocator.allocateRegisters(f,
+				callerSaveRegisters.length + calleeSaveRegisters.length);
+		for (Entry<String, ir.regalloc.Value> entry : callerSavedAllocation.entrySet())
 		{
-			idToValueMapping = callerSavedAllocation;
-		}
-		else
-		{
-			idToValueMapping = allocator.allocateRegisters(f,
-					calleeSaveRegisters.length + callerSaveRegisters.length);
-		}
+			if(entry.getValue() instanceof ir.regalloc.Register)
+				idToValueMapping.put(entry.getKey(), new Register(getRegisterByIndex(((ir.regalloc.Register)entry.getValue()).getRegisterIndex())));
+			else if (entry.getValue() instanceof ir.regalloc.StackOffset)
+				idToValueMapping.put(entry.getKey(), getStackOffset(((ir.regalloc.StackOffset)entry.getValue()).getStackOffset()  * -1 - 1));
+			
+		}			
 		assignInputParameters(f.getParams());
 		for (Entry<String, Value> entry : idToValueMapping.entrySet())
 		{
@@ -53,60 +50,35 @@ public class WinX64RegisterManager
 		for (paramCount = 0; paramCount < params.size() 
 				&& paramCount < callParamRegisters.length; paramCount++)
 		{
-			idToValueMapping.put(params.get(paramCount).getId(), new Register(
-					callerSaveRegisters.length + calleeSaveRegisters.length + paramCount));
+			idToValueMapping.put(params.get(paramCount).getId(),
+					callParamRegisters[paramCount]);
 		}
 
 		for (; paramCount < params.size() - 1; paramCount++)
 		{
-			idToValueMapping.put(params.get(paramCount).getId(), new StackOffset(
-					paramCount * WORD_SIZE + 16));
+			// 48 - Previous frame rbp + return address + "shadow space"
+			idToValueMapping.put(params.get(paramCount).getId(), getStackOffset(
+					paramCount * WORD_SIZE + 48));
 		}
 	}
 
 	public String valueString(String id)
 	{
 		Value value = idToValueMapping.get(id);
-		return valueString(value);
+		return value.toString();
 	}
 
-	public String valueString(Value value)
-	{
-		if (value instanceof StackOffset)
-			return "-" + (((StackOffset) value).getStackOffset() + WORD_SIZE) + "(%rbp)";
-		else if (value instanceof RegisterDereference)
-		{
-			return "(%"
-					+ reservedRegisters[((RegisterDereference) value)
-							.getRegisterIndex()] + ")";
-		}
-		else if (value instanceof IntegerLiteral)
-		{
-			return "$" + ((IntegerLiteral) value).getValue();
-		}
-		else
-		{
-			int registerOffset = ((Register) value).getRegisterIndex();
-			if (registerOffset < callerSaveRegisters.length)
-				return "%" + callerSaveRegisters[registerOffset];
-			else if (registerOffset < callerSaveRegisters.length + calleeSaveRegisters.length)
-				return "%" + calleeSaveRegisters[registerOffset - callerSaveRegisters.length];
-			else
-				return "%" + callParamRegisters[registerOffset - callerSaveRegisters.length - calleeSaveRegisters.length];
-		}
-	}
 
 	public String idString(Value value)
 	{
 		if (value instanceof IntegerLiteral)
 		{
-			return Integer.toString(((IntegerLiteral) value).getValue());
+			return value.toString();
 		}
 		if (value instanceof RegisterDereference)
 		{
 			return " value at address of "
-					+ reservedRegisters[((RegisterDereference) value)
-							.getRegisterIndex()];
+					+ getReservedRegister().toString();
 		}
 		else
 			return valueToIdMapping.get(value);
@@ -118,7 +90,7 @@ public class WinX64RegisterManager
 		return callParamRegisters.length;
 	}
 	
-	public String getParamReg(int i)
+	public Register getParamReg(int i)
 	{
 		return callParamRegisters[i];
 	}
@@ -138,7 +110,7 @@ public class WinX64RegisterManager
 		return idToValueMapping.get(id);
 	}
 	
-	public String getCalleeSavedReg(int i)
+	public Register getCalleeSavedReg(int i)
 	{
 		return calleeSaveRegisters[i];
 	}
@@ -153,7 +125,7 @@ public class WinX64RegisterManager
 		return callerSaveRegisters.length;
 	}
 	
-	public String getCallerSavedReg(int i)
+	public Register getCallerSavedReg(int i)
 	{
 		return callerSaveRegisters[i];
 	}
@@ -161,5 +133,25 @@ public class WinX64RegisterManager
 	public RegisterAllocator getAllocator()
 	{
 		return allocator;
+	}
+
+	@Override
+	public Register getRegisterByIndex(int i)
+	{
+		if(i < callerSaveRegisters.length)
+			return callerSaveRegisters[i];
+		else 
+			return calleeSaveRegisters[i];
+	}
+	
+	private StackOffset getStackOffset(int baseOffset)
+	{		
+		String result =  "" + (WORD_SIZE * baseOffset) + "(%rbp)";
+		return new StackOffset( result);
+	}
+	
+	public Register getReservedRegister()
+	{
+		return reservedRegister;
 	}
 }
