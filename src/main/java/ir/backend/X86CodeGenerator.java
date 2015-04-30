@@ -210,37 +210,37 @@ public class X86CodeGenerator implements IrVisitor
 
 	private void saveCallerSaveRegisters()
 	{
-		for (int i = 0; i < registers.numCallParams()
-				&& i < currentFunc.getParams().size(); i++)
-		{
-			emit("pushq " + registers.getParamReg(i), "Save param register " + i);
-		}
 		for (int i = 0; i < registers.getCallerSavedCount(); i++)
 		{
 			emit("pushq " + registers.getCallerSavedReg(i),
 					"Save caller save register " + i);
 		}
 		emit("subq $32, %rsp", "Create shadow space on the stack");
+		for (int i = 0; i < registers.numCallParams()
+				&& i < currentFunc.getParams().size(); i++)
+		{
+			emitMove(registers.getParamReg(i).toString(),
+					registers.getParamSpill(registers.getParamReg(i)).toString(),
+					"Save param register " + i);
+		}
 	}
 
 	private void restoreCallerSaveRegisters()
 	{
+		for (int i = 0; i < registers.numCallParams()
+				&& i < currentFunc.getParams().size(); i++)
+		{
+			emitMove(registers.getParamSpill(registers.getParamReg(i)).toString(),
+					registers.getParamReg(i).toString(), "Restore param register "
+							+ i);
+		}
 		emit("addq $32, %rsp", "Clean up shadow stack space");
 		for (int i = registers.getCallerSavedCount() - 1; i >= 0; i--)
 		{
 			emit("popq " + registers.getCallerSavedReg(i),
 					"Restore caller save register " + i);
 		}
-		int lastParamRegister;
-		if (currentFunc.getParams().size() >= registers.numCallParams())
-			lastParamRegister = registers.numCallParams() - 1;
-		else
-			lastParamRegister = currentFunc.getParams().size() - 1;
 
-		for (int i = lastParamRegister; i >= 0; i--)
-		{
-			emit("popq " + registers.getParamReg(i), "Restore param register " + i);
-		}
 	}
 
 	private void assignCallParameters(List<Expression> params, int startingRegister)
@@ -256,9 +256,19 @@ public class X86CodeGenerator implements IrVisitor
 		for (paramCount = maxParamRegister; paramCount >= startingRegister; paramCount--)
 		{
 			params.get(paramCount - startingRegister).accept(this);
-			emit("movq " + valueString(currentValue) + ", "
-					+ registers.getParamReg(paramCount), "Assign "
-					+ idString(currentValue) + " to param register " + (paramCount));
+			if (registers.isAssignedParam(currentValue))
+			{
+				if (!currentValue.toString().equals(
+						registers.getParamReg(paramCount).toString()))
+					emitMove(registers.getParamSpill(currentValue).toString(),
+							registers.getParamReg(paramCount).toString(),
+							"Assign parameter from shadow space ");
+			}
+			else
+				emit("movq " + valueString(currentValue) + ", "
+						+ registers.getParamReg(paramCount), "Assign "
+						+ idString(currentValue) + " to param register "
+						+ (paramCount));
 		}
 
 		for (paramCount = maxParamRegister + 1; paramCount < params.size(); paramCount++)
@@ -422,8 +432,9 @@ public class X86CodeGenerator implements IrVisitor
 					+ valueString(assignTarget), "Assign array element to "
 					+ idString(assignTarget));
 		else
-			emit("movq " + valueString(src) + ", (" + registers.getReservedRegister() + ")",
-					"Assign " + idString(src) + " to array element.");
+			emit("movq " + valueString(src) + ", ("
+					+ registers.getReservedRegister() + ")", "Assign "
+					+ idString(src) + " to array element.");
 	}
 
 	@Override
@@ -443,8 +454,8 @@ public class X86CodeGenerator implements IrVisitor
 				"Request WORD_SIZE additional bytes to store size");
 		emit("call malloc");
 		restoreCallerSaveRegisters();
-		emit("movq " + valueString(currentValue) + ", "
-				+ "(" + registers.getReservedRegister() + ")",
+		emit("movq " + valueString(currentValue) + ", " + "("
+				+ registers.getReservedRegister() + ")",
 				"Store array length at zeroth location");
 		if (assignTarget != null)
 			emit("movq " + registers.getReservedRegister() + ", "
@@ -575,7 +586,7 @@ public class X86CodeGenerator implements IrVisitor
 					+ idString(assignTarget));
 			emitLabel("relational_end_" + relationalCount);
 			currentValue = assignTarget;
-		}		
+		}
 	}
 
 	@Override
