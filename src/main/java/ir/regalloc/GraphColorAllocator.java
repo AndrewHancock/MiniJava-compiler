@@ -124,6 +124,8 @@ public class GraphColorAllocator implements RegisterAllocator
 					if(!sharesColor)
 					{
 						allocationMap.put(nodeToColor, new Register(color));
+						if(color >= registerCount)
+							registerCount = color + 1;
 					}
 
 				}

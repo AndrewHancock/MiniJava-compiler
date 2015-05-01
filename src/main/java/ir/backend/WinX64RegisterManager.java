@@ -31,6 +31,7 @@ public class WinX64RegisterManager implements RegisterManager
 		Map<String, ir.regalloc.Value> callerSavedAllocation = allocator
 				.allocateRegisters(f, callerSaveRegisters.length
 						+ calleeSaveRegisters.length);
+		idToValueMapping.clear();
 		for (Entry<String, ir.regalloc.Value> entry : callerSavedAllocation
 				.entrySet())
 		{
@@ -48,6 +49,7 @@ public class WinX64RegisterManager implements RegisterManager
 
 		}
 		assignInputParameters(f.getParams());
+		valueToIdMapping.clear();
 		for (Entry<String, Value> entry : idToValueMapping.entrySet())
 		{
 			valueToIdMapping.put(entry.getValue(), entry.getKey());
@@ -122,10 +124,19 @@ public class WinX64RegisterManager implements RegisterManager
 	{
 		return calleeSaveRegisters[i];
 	}
-
+	
 	public int getCalleeSavedCount()
 	{
 		return calleeSaveRegisters.length;
+	}
+	
+	public int getAssignedCalleeSavedCount()
+	{
+		int result = allocator.getNumRegistersUsed() - callerSaveRegisters.length;
+		if(result < 0)
+			return 0;
+		else
+			return result;
 	}
 
 	public int getCallerSavedCount()
@@ -149,7 +160,7 @@ public class WinX64RegisterManager implements RegisterManager
 		if (i < callerSaveRegisters.length)
 			return callerSaveRegisters[i];
 		else
-			return calleeSaveRegisters[i];
+			return calleeSaveRegisters[i - callerSaveRegisters.length];
 	}
 
 	private StackOffset getStackOffset(int baseOffset)
