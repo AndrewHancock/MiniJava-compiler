@@ -23,31 +23,36 @@ public class GraphColorAllocator implements RegisterAllocator
 	private int registerCount;
 
 	private LivenessVisitor liveness = new LivenessVisitor();
-	InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
+	private InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
+	private Map<String, Value> allocationMap = new HashMap<String, Value>();
+	private Set<String> removedNodes = new HashSet<String>();
 
 	public Map<String, Value> allocateRegisters(FunctionDeclaration func, int k)
 	{
+		liveness.clear();
+		allocationMap.clear();
+		interferenceVisitor.clear();
+		removedNodes.clear();
 		stackSlots = 0;
 		spilled = 0;
 
 		FlowGraph cfg = ControlFlowGraphBuilder.getCfg(func.getStatements());
-		liveness.clear();
+
 		cfg.getExit().accept(liveness);
-		interferenceVisitor.clear();
+
 		interferenceVisitor.setLivenessMap(liveness.getLivenessMap());
 		cfg.getExit().accept(interferenceVisitor);
 		InterferenceGraph originalGraph = interferenceVisitor.getInterferenceGraph();
-		for(Identifier param : func.getParams())
+		for (Identifier param : func.getParams())
 			originalGraph.removeNode(param.getId());
 
-		HashSet<String> spillCandidates = new HashSet<String>();
 		Stack<String> stack = new Stack<String>();
-		Map<String, Value> allocationMap = new HashMap<String, Value>();
-		Set<String> removedNodes = new HashSet<String>();
-		do
+
+		boolean complete = false;
+
+		while (!complete)
 		{
 			registerCount = 0;
-			spillCandidates.clear();
 			stack.clear();
 
 			InterferenceGraph graph = originalGraph.deepCopy();
@@ -72,66 +77,72 @@ public class GraphColorAllocator implements RegisterAllocator
 			for (Entry<String, Set<String>> entry : graphEntries)
 			{
 				stack.add(entry.getKey());
-				if (entry.getValue().size() >= k)
-				{
-					spillCandidates.add(entry.getKey());
-				}
 			}
 
-			if (!spillCandidates.isEmpty())
+			if (stack.isEmpty())
 			{
-				int neighborCount = 0;
-				String removeLabel = null;
-				for(String candidate : spillCandidates)
-				{
-					if(graph.getNeighbors(candidate).size() > neighborCount)
-					{
-						removeLabel = candidate;
-						neighborCount = graph.getNeighbors(candidate).size();
-					}
-					
-				}
-				allocationMap.put(removeLabel,
-						new StackOffset(stackSlots++));
-				removedNodes.add(removeLabel);
-				spilled++;
+				complete = true;
 			}
 			else
 			{
-				String nodeToColor = null;
-				while(!stack.isEmpty())
+				String nodeToColor;
+				while (!stack.isEmpty())
 				{
 					nodeToColor = stack.pop();
-					int color = -1;
-					boolean sharesColor = false;
-					for (int i = 0; i < k; i++)					
-					{	
-						color = i;
-						for (String neighbor : originalGraph.getNeighbors(nodeToColor))
-						{
-							Value value = allocationMap.get(neighbor);
-							if(value instanceof Register && ((Register)value).getValue() == i)
-							{
-								sharesColor = true;
-								break;
-							}
-						}	
-						if(!sharesColor)
-							break;
-						sharesColor = false;
-					}
-					
-					if(!sharesColor)
+					int color = assignColor(originalGraph, nodeToColor, k);
+					if (color == -1)
 					{
-						allocationMap.put(nodeToColor, new Register(color));
-						if(color >= registerCount)
-							registerCount = color + 1;
+						spill(nodeToColor);
+						complete = false;
+						break;
 					}
-
+					else
+					{
+						complete = true;
+					}
 				}
 			}
-		} while (!spillCandidates.isEmpty());
+		}
+
 		return allocationMap;
+	}
+
+	private void spill(String id)
+	{
+		allocationMap.put(id, new StackOffset(stackSlots++));
+		removedNodes.add(id);
+		spilled++;
+	}
+
+	private int assignColor(InterferenceGraph graph, String id, int k)
+	{
+		int color = -1;
+		boolean sharesColor = false;
+		int i;
+		for (i = 0; i < k; i++)
+		{
+			color = i;
+			for (String neighbor : graph.getNeighbors(id))
+			{
+				Value value = allocationMap.get(neighbor);
+				if (value instanceof Register && ((Register) value).getValue() == i)
+				{
+					sharesColor = true;
+					break;
+				}
+			}
+			if (!sharesColor)
+				break;
+			sharesColor = false;
+		}
+
+		if (!sharesColor)
+		{
+			allocationMap.put(id, new Register(color));
+			if (color >= registerCount)
+				registerCount = color + 1;
+		}
+		return color;
 	}
 
 	@Override
