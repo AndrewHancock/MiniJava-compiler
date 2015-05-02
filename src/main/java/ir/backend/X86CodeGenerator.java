@@ -103,14 +103,17 @@ public class X86CodeGenerator implements IrVisitor
 	{
 		emitComment("Function: " + f.getNamespace() + "." + f.getId());
 		emitComment("");
-		emitComment("Register and Stack Allocation:");
+		emitComment("Registers allocated: " + registers.getAllocatedRegisterCount());
+		emitComment("Spills: " + registers.getSpillCount());
 
+		emitComment("Input Parameters:");
 		for (Identifier id : f.getParams())
 		{
 			if (registers.value(id.getId()) != null)
 				emitComment(valueString(id.getId()) + " - " + id.getId());
 		}
 
+		emitComment("Locals:");
 		for (Identifier id : f.getLocals())
 		{
 			if (registers.value(id.getId()) != null)
@@ -118,6 +121,8 @@ public class X86CodeGenerator implements IrVisitor
 			else
 				emitComment("Unused - " + id.getId());
 		}
+		
+		emitComment("Temporaries:");
 		for (Identifier id : f.getTemporaries())
 		{
 			if (registers.value(id.getId()) != null)

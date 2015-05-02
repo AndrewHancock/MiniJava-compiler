@@ -117,11 +117,11 @@ public class GraphColorAllocator implements RegisterAllocator
 	private int assignColor(InterferenceGraph graph, String id, int k)
 	{
 		int color = -1;
-		boolean sharesColor = false;
+		
 		int i;
 		for (i = 0; i < k; i++)
 		{
-			color = i;
+			boolean sharesColor = false;
 			for (String neighbor : graph.getNeighbors(id))
 			{
 				Value value = allocationMap.get(neighbor);
@@ -132,11 +132,13 @@ public class GraphColorAllocator implements RegisterAllocator
 				}
 			}
 			if (!sharesColor)
+			{
+				color = i;
 				break;
-			sharesColor = false;
+			}			
 		}
 
-		if (!sharesColor)
+		if (color != -1)
 		{
 			allocationMap.put(id, new Register(color));
 			if (color >= registerCount)

@@ -18,7 +18,7 @@ public class WinX64RegisterManager implements RegisterManager
 	private final Register[] calleeSaveRegisters = { new Register("r12"),
 			new Register("r13"), new Register("r14"), new Register("r15"),
 			new Register("rdi"), new Register("rsi") };
-	private final Register[] callerSaveRegisters = { new Register("r10"),
+	private final Register[] callerSaveRegisters = {new Register("r10"),
 			new Register("r11") };
 	private final Register reservedRegister = new Register("rax");
 
@@ -190,5 +190,15 @@ public class WinX64RegisterManager implements RegisterManager
 			if (param.toString().equals(value.toString()))
 				return true;
 		return false;
+	}
+	
+	public int getAllocatedRegisterCount()
+	{
+		return allocator.getNumRegistersUsed();
+	}
+	
+	public int getSpillCount()
+	{
+		return allocator.getSpillCount();
 	}
 }
