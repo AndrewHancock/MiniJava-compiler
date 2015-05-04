@@ -25,12 +25,31 @@ public class WinX64RegisterManager implements RegisterManager
 	private RegisterAllocator allocator = new GraphColorAllocator();
 	private Map<String, Value> idToValueMapping = new HashMap<String, Value>();
 	private Map<Value, String> valueToIdMapping = new HashMap<Value, String>();
+	
+	private int k;
+	public WinX64RegisterManager()
+	{
+		k = callerSaveRegisters.length
+				+ calleeSaveRegisters.length;
+	}
+	
+	public WinX64RegisterManager(int k)
+	{
+		this.k = k;
+	}
+	
+	public void setK(int k)
+	{
+		if(k > callerSaveRegisters.length
+				+ calleeSaveRegisters.length)
+			throw new IllegalArgumentException("K cannot exceed available number of temporaries.");
+		this.k = k;
+	}
 
 	private void allocateRegisters(FunctionDeclaration f)
 	{
 		Map<String, ir.regalloc.Value> callerSavedAllocation = allocator
-				.allocateRegisters(f, 4/*callerSaveRegisters.length
-						+ calleeSaveRegisters.length*/);
+				.allocateRegisters(f, k);
 		idToValueMapping.clear();
 		for (Entry<String, ir.regalloc.Value> entry : callerSavedAllocation
 				.entrySet())
@@ -142,6 +161,14 @@ public class WinX64RegisterManager implements RegisterManager
 	public int getCallerSavedCount()
 	{
 		return callerSaveRegisters.length;
+	}
+	
+	public int getAssignedCallerSavedCount()
+	{
+		if(allocator.getNumRegistersUsed() < callerSaveRegisters.length)
+			return allocator.getNumRegistersUsed();
+		else
+			return callerSaveRegisters.length;
 	}
 
 	public Register getCallerSavedReg(int i)
