@@ -25,14 +25,14 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.List;
 
-public class X86CodeGenerator implements IrVisitor
+public class X64CodeGenerator implements IrVisitor
 {
 	private PrintStream out;
 	private HashMap<String, RecordDeclaration> recordMap = new HashMap<String, RecordDeclaration>();
 
 	private WinX64RegisterManager registers = new WinX64RegisterManager();
 
-	public X86CodeGenerator(PrintStream out)
+	public X64CodeGenerator(PrintStream out)
 	{
 		this.out = out;
 	}

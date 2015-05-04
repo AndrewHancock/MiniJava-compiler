@@ -55,7 +55,8 @@ public class IrPrintStream
 
 	public void println(String s)
 	{
-		// TODO Auto-generated method stub
+		
+		printIndent();
 		ps.println(s);
 		startOfLine = true;
 		

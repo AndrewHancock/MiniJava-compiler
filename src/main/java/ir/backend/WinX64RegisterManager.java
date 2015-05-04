@@ -18,7 +18,7 @@ public class WinX64RegisterManager implements RegisterManager
 	private final Register[] calleeSaveRegisters = { new Register("r12"),
 			new Register("r13"), new Register("r14"), new Register("r15"),
 			new Register("rdi"), new Register("rsi") };
-	private final Register[] callerSaveRegisters = {new Register("r10"),
+	private final Register[] callerSaveRegisters = {new Register("rbx"), new Register("r10"),
 			new Register("r11") };
 	private final Register reservedRegister = new Register("rax");
 
@@ -29,8 +29,8 @@ public class WinX64RegisterManager implements RegisterManager
 	private void allocateRegisters(FunctionDeclaration f)
 	{
 		Map<String, ir.regalloc.Value> callerSavedAllocation = allocator
-				.allocateRegisters(f, callerSaveRegisters.length
-						+ calleeSaveRegisters.length);
+				.allocateRegisters(f, 4/*callerSaveRegisters.length
+						+ calleeSaveRegisters.length*/);
 		idToValueMapping.clear();
 		for (Entry<String, ir.regalloc.Value> entry : callerSavedAllocation
 				.entrySet())

@@ -33,6 +33,6 @@ public class ConditionalJump implements Statement
 	@Override
 	public String toString()
 	{
-		return "jump if " + condition.toString() + " to " + label.getLabel();
+		return "if " + condition.toString() + " jump to " + label.getLabel();
 	}
 }

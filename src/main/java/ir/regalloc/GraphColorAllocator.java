@@ -25,6 +25,7 @@ public class GraphColorAllocator implements RegisterAllocator
 	private LivenessVisitor liveness = new LivenessVisitor();
 	private InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
 	private Map<String, Value> allocationMap = new HashMap<String, Value>();
+	private Map<String, Value> tempAllocationMap = new HashMap<String, Value>();
 	private Set<String> removedNodes = new HashSet<String>();
 
 	public Map<String, Value> allocateRegisters(FunctionDeclaration func, int k)
@@ -49,9 +50,12 @@ public class GraphColorAllocator implements RegisterAllocator
 		Stack<String> stack = new Stack<String>();
 
 		boolean complete = false;
+		
 
 		while (!complete)
 		{
+			tempAllocationMap.clear();
+			tempAllocationMap.putAll(allocationMap);			
 			registerCount = 0;
 			stack.clear();
 
@@ -104,6 +108,7 @@ public class GraphColorAllocator implements RegisterAllocator
 			}
 		}
 
+		allocationMap.putAll(tempAllocationMap);		
 		return allocationMap;
 	}
 
@@ -124,7 +129,7 @@ public class GraphColorAllocator implements RegisterAllocator
 			boolean sharesColor = false;
 			for (String neighbor : graph.getNeighbors(id))
 			{
-				Value value = allocationMap.get(neighbor);
+				Value value = tempAllocationMap.get(neighbor);
 				if (value instanceof Register && ((Register) value).getValue() == i)
 				{
 					sharesColor = true;
@@ -140,7 +145,7 @@ public class GraphColorAllocator implements RegisterAllocator
 
 		if (color != -1)
 		{
-			allocationMap.put(id, new Register(color));
+			tempAllocationMap.put(id, new Register(color));
 			if (color >= registerCount)
 				registerCount = color + 1;
 		}
