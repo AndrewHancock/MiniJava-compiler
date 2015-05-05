@@ -34,16 +34,16 @@ public class LivenessVisitor extends BottomUpVisitor
 			liveSet = new HashSet<String>();
 			livenessMap.put(codePoint, liveSet);
 		}
-
-		if (!previousLivenessFlags.isEmpty())
+		if(previousLivenessFlags != null)
 		{
 			liveSet.addAll(previousLivenessFlags);
-			previousLivenessFlags.clear();
+			previousLivenessFlags = null;
 		}		
 
 		for (String liveId : statementVisitor.getLiveSet())
 			liveSet.add(liveId);
-
+		for (String deadId : statementVisitor.getDeadSet())
+			liveSet.remove(deadId);
 	}
 
 	public Map<CodePoint, Set<String>> getLivenessMap()
@@ -53,11 +53,8 @@ public class LivenessVisitor extends BottomUpVisitor
 
 	@Override
 	protected void beforeParent(CodePoint codePoint)
-	{
-		Set<String> liveSet = livenessMap.get(codePoint);
-		previousLivenessFlags.addAll(liveSet);
-		for (String deadId : statementVisitor.getDeadSet())		
-			previousLivenessFlags.remove(deadId); // Dead propagate up
+	{		
+		previousLivenessFlags = livenessMap.get(codePoint);
 	}
 
 	@Override

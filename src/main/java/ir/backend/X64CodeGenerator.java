@@ -30,17 +30,17 @@ public class X64CodeGenerator implements IrVisitor
 	private PrintStream out;
 	private HashMap<String, RecordDeclaration> recordMap = new HashMap<String, RecordDeclaration>();
 
-	private WinX64RegisterManager registers = new WinX64RegisterManager();	
+	private WinX64RegisterManager registers = new WinX64RegisterManager();
 
 	public X64CodeGenerator(PrintStream out)
 	{
-		this.out = out;		
+		this.out = out;
 	}
-	
+
 	public X64CodeGenerator(PrintStream out, int k)
 	{
-		this(out);	
-		registers.setK(k);		
+		this(out);
+		registers.setK(k);
 	}
 
 	private String valueString(String id)
@@ -89,11 +89,13 @@ public class X64CodeGenerator implements IrVisitor
 	{
 		emit("movq " + src + ", " + dest, comment);
 	}
-	
+
 	private void emitMove(Value src, Value dest, String comment)
 	{
-		if(!src.toString().equals(dest.toString()))			
+		if (!src.toString().equals(dest.toString()))
 			emit("movq " + src + ", " + dest, comment);
+		else
+			emitComment(idString(src) + " and " + idString(dest) + " share a register. mov suppressed. # " + comment);
 	}
 
 	private void initFile(String startFrameId)
@@ -122,7 +124,8 @@ public class X64CodeGenerator implements IrVisitor
 	{
 		out.println("# Function: " + f.getNamespace() + "." + f.getId());
 		out.println("#");
-		out.println("# Registers allocated: " + registers.getAllocatedRegisterCount());
+		out.println("# Registers allocated: "
+				+ registers.getAllocatedRegisterCount());
 		out.println("# Spills: " + registers.getSpillCount());
 
 		out.println("# Input Parameters:");
@@ -145,7 +148,7 @@ public class X64CodeGenerator implements IrVisitor
 		for (Identifier id : f.getTemporaries())
 		{
 			if (registers.value(id.getId()) != null)
-				out.println("#    " + id.getId() + " - " +  valueString(id.getId()));
+				out.println("#    " + id.getId() + " - " + valueString(id.getId()));
 			else
 				out.println("#    " + id.getId() + " - unused");
 		}
@@ -255,8 +258,7 @@ public class X64CodeGenerator implements IrVisitor
 				&& i < currentFunc.getParams().size(); i++)
 		{
 			emitMove(registers.getParamSpill(registers.getParamReg(i)),
-					registers.getParamReg(i), "Restore param register "
-							+ i);
+					registers.getParamReg(i), "Restore param register " + i);
 		}
 		emit("addq $32, %rsp", "Clean up shadow stack space");
 		for (int i = registers.getAssignedCallerSavedCount() - 1; i >= 0; i--)
@@ -290,11 +292,11 @@ public class X64CodeGenerator implements IrVisitor
 							"Assign parameter from shadow space ");
 				}
 				else
-					emitComment(idString(currentValue) + " already located in param register " + paramCount);
+					emitComment(idString(currentValue)
+							+ " already located in param register " + paramCount);
 			}
 			else
-				emit("movq " + valueString(currentValue) + ", "
-						+ registers.getParamReg(paramCount), "Assign "
+				emitMove(currentValue, registers.getParamReg(paramCount), "Assign "
 						+ idString(currentValue) + " to param register "
 						+ (paramCount));
 		}
@@ -325,9 +327,8 @@ public class X64CodeGenerator implements IrVisitor
 		}
 		restoreCallerSaveRegisters();
 		if (assignTarget != null)
-			emitMove(registers.getReservedRegister(),
-					assignTarget, "Assign return value to "
-							+ idString(assignTarget));
+			emitMove(registers.getReservedRegister(), assignTarget,
+					"Assign return value to " + idString(assignTarget));
 		emitComment("End call " + call.getId());
 	}
 
@@ -363,17 +364,14 @@ public class X64CodeGenerator implements IrVisitor
 		{
 			if (dest instanceof StackOffset && src instanceof StackOffset)
 			{
-				emit("movq " + valueString(src) + ", "
-						+ registers.getReservedRegister().toString(),
+				emitMove(src, registers.getReservedRegister(),
 						"Move stack location to reserved register.");
-				emit("movq " + registers.getReservedRegister().toString() + ", "
-						+ valueString(currentValue), "Assign reserved register to "
-						+ idString(currentValue));
+				emitMove(registers.getReservedRegister(), currentValue,
+						"Assign reserved register to " + idString(currentValue));
 			}
 			else
 			{
-				emit("movq " + valueString(i.getId()) + ", "
-						+ valueString(currentValue), "Assign " + i.getId() + " to "
+				emitMove(src, currentValue, "Assign " + i.getId() + " to "
 						+ idString(currentValue));
 			}
 			dest = null;
@@ -422,11 +420,12 @@ public class X64CodeGenerator implements IrVisitor
 			b.getSrc2().accept(this);
 			Value right = currentValue;
 
-			if (assignTarget != null)
+			if ((assignTarget != null)
+					&& !b.getSrc1().toString().equals(assignTarget.toString())
+					&& !b.getSrc2().toString().equals(assignTarget.toString()))
 			{
-				emit("movq " + valueString(left) + " , " + valueString(assignTarget),
-						"Moving " + valueString(left) + " to "
-								+ valueString(assignTarget));
+				emitMove(left, assignTarget, "Moving " + valueString(left) + " to "
+						+ valueString(assignTarget));
 			}
 
 			emit(getOpOpcode(b.getOp()) + " " + valueString(right) + ", "
@@ -504,8 +503,9 @@ public class X64CodeGenerator implements IrVisitor
 	public void visit(RecordAccess r)
 	{
 		int offset = (r.getFieldIndex() * registers.wordSize());
-		
-		emitComment("Begin record access of " + r.getNamespace() + "." + r.getTypeName() + " field #" + r.getFieldIndex());
+
+		emitComment("Begin record access of " + r.getNamespace() + "."
+				+ r.getTypeName() + " field #" + r.getFieldIndex());
 		Value assignTarget = dest;
 		dest = null;
 		r.getIdentifier().accept(this);
@@ -523,7 +523,7 @@ public class X64CodeGenerator implements IrVisitor
 			emitMove(valueString(src), "(%rax)", " Assign " + idString(src)
 					+ " to field.");
 
-		emitComment("End record access");		
+		emitComment("End record access");
 	}
 
 	@Override
@@ -623,8 +623,8 @@ public class X64CodeGenerator implements IrVisitor
 		a.getExpression().accept(this);
 		if (assignTarget != null)
 		{
-			emitMove(currentValue, registers.getReservedRegister()
-					, "Loading array reference into reserved register 0.");
+			emitMove(currentValue, registers.getReservedRegister(),
+					"Loading array reference into reserved register 0.");
 			emitMove("(" + registers.getReservedRegister() + ")",
 					valueString(assignTarget), "Assign array length to "
 							+ idString(assignTarget));
