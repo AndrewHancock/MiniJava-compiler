@@ -1,5 +1,6 @@
 package ir.regalloc;
 
+import ir.cfgraph.CodePoint;
 import ir.cfgraph.ControlFlowGraphBuilder;
 import ir.cfgraph.FlowGraph;
 import ir.ops.FunctionDeclaration;
@@ -22,17 +23,33 @@ public class GraphColorAllocator implements RegisterAllocator
 	private int spilled;
 	private int registerCount;
 
-	private LivenessVisitor liveness = new LivenessVisitor();
-	private InterferenceVisitor interferenceVisitor = new InterferenceVisitor();
+	private LivenessVisitor liveness = new LivenessVisitor();	
 	private Map<String, Value> allocationMap = new HashMap<String, Value>();
 	private Map<String, Value> tempAllocationMap = new HashMap<String, Value>();
 	private Set<String> removedNodes = new HashSet<String>();
 
+	private InterferenceGraph buildInterferenceGraph(Map<CodePoint, Set<String>> livenessMap)	
+	{
+		InterferenceGraph graph = new InterferenceGraph();
+		for (Set<String> liveSet : livenessMap.values())
+		{
+			for (String label : liveSet)
+			{
+				graph.addOrGetNode(label);
+				for (String neighbor : liveSet)
+				{
+					if (!label.equals(neighbor))
+						graph.addEdge(label, neighbor);
+				}
+			}
+		}
+		return graph;
+	}
+
 	public Map<String, Value> allocateRegisters(FunctionDeclaration func, int k)
 	{
 		liveness.clear();
-		allocationMap.clear();
-		interferenceVisitor.clear();
+		allocationMap.clear();		
 		removedNodes.clear();
 		stackSlots = 0;
 		spilled = 0;
@@ -41,21 +58,18 @@ public class GraphColorAllocator implements RegisterAllocator
 
 		cfg.getExit().accept(liveness);
 
-		interferenceVisitor.setLivenessMap(liveness.getLivenessMap());
-		cfg.getExit().accept(interferenceVisitor);
-		InterferenceGraph originalGraph = interferenceVisitor.getInterferenceGraph();
+		InterferenceGraph originalGraph = buildInterferenceGraph(liveness.getLivenessMap());
 		for (Identifier param : func.getParams())
 			originalGraph.removeNode(param.getId());
 
 		Stack<String> stack = new Stack<String>();
 
 		boolean complete = false;
-		
 
 		while (!complete)
 		{
 			tempAllocationMap.clear();
-			tempAllocationMap.putAll(allocationMap);			
+			tempAllocationMap.putAll(allocationMap);
 			registerCount = 0;
 			stack.clear();
 
@@ -108,7 +122,7 @@ public class GraphColorAllocator implements RegisterAllocator
 			}
 		}
 
-		allocationMap.putAll(tempAllocationMap);		
+		allocationMap.putAll(tempAllocationMap);
 		return allocationMap;
 	}
 
@@ -122,7 +136,7 @@ public class GraphColorAllocator implements RegisterAllocator
 	private int assignColor(InterferenceGraph graph, String id, int k)
 	{
 		int color = -1;
-		
+
 		int i;
 		for (i = 0; i < k; i++)
 		{
@@ -140,7 +154,7 @@ public class GraphColorAllocator implements RegisterAllocator
 			{
 				color = i;
 				break;
-			}			
+			}
 		}
 
 		if (color != -1)

@@ -15,10 +15,10 @@ public class WinX64RegisterManager implements RegisterManager
 	private final int WORD_SIZE = 8;
 	private final Register[] callParamRegisters = { new Register("rcx"),
 			new Register("rdx"), new Register("r8"), new Register("r9") };
-	private final Register[] calleeSaveRegisters = { new Register("r12"),
+	private final Register[] calleeSaveRegisters = { new Register("rbx"), new Register("r12"),
 			new Register("r13"), new Register("r14"), new Register("r15"),
 			new Register("rdi"), new Register("rsi") };
-	private final Register[] callerSaveRegisters = {new Register("rbx"), new Register("r10"),
+	private final Register[] callerSaveRegisters = {new Register("r10"),
 			new Register("r11") };
 	private final Register reservedRegister = new Register("rax");
 
