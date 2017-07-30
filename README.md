@@ -1,6 +1,6 @@
 Minijava Compiler
 =================
-A compiler for a variant of "MiniJava." Supports x86 (AT&T Syntax), python and MIPS (SPIM) as target architecture.
+A compiler for a variant of "MiniJava." Supports x86 32-bit and 64-bit(AT&T Syntax) assembly, Python, and MIPS (SPIM) as target output.
 
 Usage
 =====
@@ -16,8 +16,8 @@ usage: RamCompiler
 If the output file option is ommited the generated code will be written to standard output.
  
 For example, to compile the "BinarySearchTree.ram" test program into x86 format:  
-`$ java -cp target/minijava-compiler-1.jar compiler/RamCompiler -i programs/codegen/BinarySearchTree.ram -o test.s -f x86`  
-  
+`$ java -cp target/minijava-compiler-1.jar compiler/MiniJavaCompiler -i programs/codegen/BinarySearchTree.ram -o test.s -f x86`
+
 To compile the same program for python and pipe the results to a python interpreter:
 `$ java -cp target/minijava-compiler-1.jar compiler/RamCompiler -i programs/codegen/BinarySearchTree.ram -f python | python`  
 

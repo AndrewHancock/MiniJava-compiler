@@ -420,16 +420,29 @@ public class X64CodeGenerator implements IrVisitor
 			b.getSrc2().accept(this);
 			Value right = currentValue;
 
-			if ((assignTarget != null)
-					&& !b.getSrc1().toString().equals(assignTarget.toString())
-					&& !b.getSrc2().toString().equals(assignTarget.toString()))
+			if(assignTarget != null)
 			{
-				emitMove(left, assignTarget, "Moving " + valueString(left) + " to "
-						+ valueString(assignTarget));
+				if (!left.toString().equals(assignTarget.toString())
+						&& !right.toString().equals(assignTarget.toString()))
+				{
+					emit("movq " + valueString(left) + ", " + valueString(assignTarget),
+							"Moving left operand " + valueString(left) + " to destination "
+									+ valueString(assignTarget));
+				}
+
+				// To properly support the SUB instruction, we need the the left operand must correspond to
+				// the destination. Therefore, we swap the operands in this case.
+				if (right.toString().equals(assignTarget.toString()))
+				{
+					emit("xchgq " + valueString(left) + ", " + valueString(right), "Swap the left and right operands");
+					Value tmp = left;
+					left = right;
+					right = tmp;
+				}
 			}
 
 			emit(getOpOpcode(b.getOp()) + " " + valueString(right) + ", "
-					+ valueString(assignTarget), "BinOp on " + idString(left)
+					+ valueString(assignTarget), "BinOp on " + idString(right)
 					+ " and " + idString(right));
 		}
 	}
